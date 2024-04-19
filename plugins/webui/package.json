@@ -1,0 +1,80 @@
+{
+  "name": "@cordisjs/plugin-webui",
+  "description": "Web User Interface for Koishi",
+  "version": "0.28.3",
+  "main": "lib/node/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "node": {
+        "require": "./lib/node/index.js",
+        "import": "./lib/node/index.mjs"
+      },
+      "browser": "./lib/browser/index.mjs",
+      "types": "./lib/index.d.ts"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "app",
+    "lib",
+    "dist",
+    "src"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cordisjs/webui.git",
+    "directory": "plugins/webui"
+  },
+  "bugs": {
+    "url": "https://github.com/cordisjs/webui/issues"
+  },
+  "keywords": [
+    "cordis",
+    "plugin",
+    "frontend",
+    "webui",
+    "console",
+    "service"
+  ],
+  "cordis": {
+    "description": {
+      "en": "Web UI interface",
+      "zh": "网页控制台"
+    },
+    "service": {
+      "implements": [
+        "webui"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "@cordisjs/client": "^0.28.3",
+    "cordis": "^3.13.6"
+  },
+  "peerDependenciesMeta": {
+    "@cordisjs/client": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@cordisjs/client": "^0.28.3",
+    "@cordisjs/loader": "^0.8.6",
+    "@cordisjs/server": "^0.1.8",
+    "@maikolib/vite-plugin-yaml": "^1.0.1",
+    "@types/uuid": "^8.3.4",
+    "@vitejs/plugin-vue": "^4.6.2",
+    "unocss": "^0.58.6",
+    "vite": "^4.5.3"
+  },
+  "dependencies": {
+    "@cordisjs/webui": "^0.28.3",
+    "cosmokit": "^1.6.2",
+    "open": "^8.4.2",
+    "uuid": "^8.3.2",
+    "ws": "^8.16.0"
+  }
+}

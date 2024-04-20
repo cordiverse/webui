@@ -100,10 +100,8 @@ class NodeConsole extends Console {
     this.serveAssets()
 
     this.ctx.on('server/ready', () => {
-      let { host, port } = this.ctx.server
-      if (['0.0.0.0', '::'].includes(host)) host = '127.0.0.1'
-      const target = `http://${host}:${port}${this.config.uiPath}`
-      if (this.config.open && !this.ctx.get('loader')?.envData.clientCount && !process.env.KOISHI_AGENT) {
+      const target = this.ctx.server.selfUrl + this.config.uiPath
+      if (this.config.open && !this.ctx.get('loader')?.envData.clientCount && !process.env.CORDIS_AGENT) {
         open(target)
       }
       this.ctx.logger.info('webui is available at %c', target)

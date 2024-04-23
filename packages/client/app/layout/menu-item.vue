@@ -8,7 +8,7 @@
 
 <script lang="ts" setup>
 
-import { MaybeGetter, useContext } from '@koishijs/client'
+import { MaybeGetter, useContext } from '@cordisjs/client'
 import { computed } from 'vue'
 
 const props = defineProps<{

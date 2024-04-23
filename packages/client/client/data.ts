@@ -1,5 +1,5 @@
-import type { ClientConfig, Console, DataService, Events } from '@cordisjs/plugin-webui'
-import type { Promisify, Universal } from 'koishi'
+import type { ClientConfig, Console, DataService, Events, WebSocket } from '@cordisjs/plugin-webui'
+import type { Promisify } from 'cosmokit'
 import { markRaw, reactive, ref } from 'vue'
 import { Context } from './context'
 
@@ -15,7 +15,7 @@ export function withProxy(url: string) {
   return (global.proxyBase || '') + url
 }
 
-export const socket = ref<Universal.WebSocket>(null)
+export const socket = ref<WebSocket>(null)
 const listeners: Record<string, (data: any) => void> = {}
 const responseHooks: Record<string, [Function, Function]> = {}
 
@@ -61,7 +61,7 @@ receive('response', ({ id, value, error }) => {
   }
 })
 
-export function connect(ctx: Context, callback: () => Universal.WebSocket) {
+export function connect(ctx: Context, callback: () => WebSocket) {
   const value = callback()
 
   let sendTimer: number
@@ -79,10 +79,10 @@ export function connect(ctx: Context, callback: () => Universal.WebSocket) {
     for (const key in store) {
       store[key] = undefined
     }
-    console.log('[koishi] websocket disconnected, will retry in 1s...')
+    console.log('[cordis] websocket disconnected, will retry in 1s...')
     setTimeout(() => {
       connect(ctx, callback).then(location.reload, () => {
-        console.log('[koishi] websocket disconnected, will retry in 1s...')
+        console.log('[cordis] websocket disconnected, will retry in 1s...')
       })
     }, 1000)
   }
@@ -99,7 +99,7 @@ export function connect(ctx: Context, callback: () => Universal.WebSocket) {
 
   value.addEventListener('close', reconnect)
 
-  return new Promise<Universal.WebSocket.Event>((resolve, reject) => {
+  return new Promise<WebSocket.Event>((resolve, reject) => {
     value.addEventListener('open', (event) => {
       socket.value = markRaw(value)
       resolve(event)

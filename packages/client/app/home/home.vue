@@ -8,14 +8,14 @@
       </k-slot>
     </el-scrollbar>
     <div v-else>
-      <k-card class="connect">{{ global.messages?.connecting || '正在连接到 Koishi 服务器……' }}</k-card>
+      <k-card class="connect">正在连接到 Cordis 服务器……</k-card>
     </div>
   </k-layout>
 </template>
 
 <script lang="ts" setup>
 
-import { global, socket } from '@cordisjs/client'
+import { socket } from '@cordisjs/client'
 import Welcome from './welcome.vue'
 
 </script>

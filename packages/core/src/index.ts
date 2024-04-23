@@ -10,12 +10,8 @@ export * from './client'
 export * from './entry'
 export * from './service'
 
-type NestedServices = {
-  [K in keyof Console.Services as `console.${K}`]: Console.Services[K]
-}
-
 declare module 'cordis' {
-  interface Context extends NestedServices {
+  interface Context {
     console: Console
   }
 
@@ -50,8 +46,6 @@ export class EntryProvider extends DataService<Dict<EntryData>> {
 }
 
 export abstract class Console extends Service {
-  static filter = false
-
   private id = Math.random().toString(36).slice(2)
 
   readonly entries: Dict<Entry> = Object.create(null)
@@ -106,11 +100,11 @@ export abstract class Console extends Service {
   }
 
   refresh<K extends keyof Console.Services>(type: K) {
-    return this.ctx.get(`console.${type}`)?.refresh()
+    return this.ctx.get(`console.services.${type}`)?.refresh()
   }
 
   patch<K extends keyof Console.Services>(type: K, value: Console.Services[K] extends DataService<infer T> ? T : never) {
-    return this.ctx.get(`console.${type}`)?.patch(value as any)
+    return this.ctx.get(`console.services.${type}`)?.patch(value as any)
   }
 }
 

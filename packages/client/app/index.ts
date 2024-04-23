@@ -1,4 +1,4 @@
-import { connect, global, root } from '@koishijs/client'
+import { connect, global, root } from '@cordisjs/client'
 import home from './home'
 import layout from './layout'
 import settings from './settings'

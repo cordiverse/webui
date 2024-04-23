@@ -9,7 +9,6 @@ export namespace DataService {
 }
 
 export abstract class DataService<T = never> extends Service {
-  static filter = false
   static inject = ['console']
 
   public async get(forced?: boolean, client?: Client): Promise<T> {

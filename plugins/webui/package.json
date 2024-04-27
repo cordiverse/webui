@@ -2,16 +2,16 @@
   "name": "@cordisjs/plugin-webui",
   "description": "Web User Interface for Koishi",
   "version": "0.28.3",
-  "main": "lib/node/index.js",
-  "types": "lib/index.d.ts",
+  "type": "module",
   "exports": {
     ".": {
-      "node": {
-        "require": "./lib/node/index.js",
-        "import": "./lib/node/index.mjs"
-      },
-      "browser": "./lib/browser/index.mjs",
-      "types": "./lib/index.d.ts"
+      "types": "./lib/index.d.ts",
+      "browser": "./lib/browser.js",
+      "default": "./lib/index.js"
+    },
+    "./shared": {
+      "types": "./lib/shared/index.d.ts",
+      "default": "./lib/shared/index.js"
     },
     "./src/*": "./src/*",
     "./package.json": "./package.json"
@@ -53,7 +53,7 @@
   },
   "peerDependencies": {
     "@cordisjs/client": "^0.28.3",
-    "cordis": "^3.13.6"
+    "cordis": "^3.14.0"
   },
   "peerDependenciesMeta": {
     "@cordisjs/client": {
@@ -62,8 +62,8 @@
   },
   "devDependencies": {
     "@cordisjs/client": "^0.28.3",
-    "@cordisjs/loader": "^0.8.6",
-    "@cordisjs/server": "^0.1.8",
+    "@cordisjs/loader": "^0.9.0",
+    "@cordisjs/plugin-server": "^0.2.1",
     "@maikolib/vite-plugin-yaml": "^1.0.1",
     "@types/uuid": "^8.3.4",
     "@vitejs/plugin-vue": "^4.6.2",
@@ -71,7 +71,6 @@
     "vite": "^4.5.3"
   },
   "dependencies": {
-    "@cordisjs/webui": "^0.28.3",
     "cosmokit": "^1.6.2",
     "open": "^8.4.2",
     "uuid": "^8.3.2",

@@ -2,16 +2,8 @@
   "name": "@cordisjs/plugin-insight",
   "description": "Show plugin dependency graph for Cordis",
   "version": "3.5.1",
-  "main": "lib/index.cjs",
-  "types": "lib/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./lib/index.mjs",
-      "require": "./lib/index.cjs",
-      "types": "./lib/index.d.ts"
-    },
-    "./package.json": "./package.json"
-  },
+  "type": "module",
+  "main": "lib/index.js",
   "files": [
     "lib",
     "dist",
@@ -52,7 +44,7 @@
   },
   "peerDependencies": {
     "@cordisjs/plugin-webui": "^0.28.3",
-    "cordis": "^4.17.4"
+    "cordis": "^3.14.0"
   },
   "devDependencies": {
     "@cordisjs/client": "^0.28.3",
@@ -60,6 +52,6 @@
     "d3-force": "^3.0.0"
   },
   "dependencies": {
-    "@cordisjs/webui": "^0.28.3"
+    "cosmokit": "^1.6.2"
   }
 }

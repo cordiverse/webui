@@ -1,10 +1,11 @@
-import { camelize, capitalize, Context, EffectScope, ForkScope, Plugin, Schema, ScopeStatus } from 'koishi'
-import { DataService } from '@cordisjs/webui'
-import { resolve } from 'path'
+import { Context, EffectScope, ForkScope, Plugin, Schema, ScopeStatus } from 'cordis'
+import { camelize, capitalize } from 'cosmokit'
+import { DataService } from '@cordisjs/plugin-webui'
 import {} from '@cordisjs/loader'
+import assert from 'node:assert'
 
-declare module '@cordisjs/webui' {
-  namespace Console {
+declare module '@cordisjs/plugin-webui' {
+  namespace WebUI {
     interface Services {
       insight: Insight
     }
@@ -16,17 +17,17 @@ function format(name: string) {
 }
 
 function getName(plugin: Plugin) {
-  if (!plugin) return 'App'
+  if (!plugin) return 'Root'
   if (!plugin.name || plugin.name === 'apply') return 'Anonymous'
   return format(plugin.name)
 }
 
 function getSourceId(child: ForkScope) {
-  const { state } = child.parent
-  if (state.runtime.isForkable) {
-    return state.uid
+  const { scope } = child.parent
+  if (scope.runtime.isForkable) {
+    return scope.uid
   } else {
-    return state.runtime.uid
+    return scope.runtime.uid
   }
 }
 
@@ -34,15 +35,12 @@ class Insight extends DataService<Insight.Payload> {
   constructor(ctx: Context) {
     super(ctx, 'insight')
 
-    ctx.console.addEntry(process.env.KOISHI_BASE ? [
-      process.env.KOISHI_BASE + '/dist/index.js',
-      process.env.KOISHI_BASE + '/dist/style.css',
-    ] : process.env.KOISHI_ENV === 'browser' ? [
-      // @ts-ignore
-      import.meta.url.replace(/\/src\/[^/]+$/, '/client/index.ts'),
-    ] : {
-      dev: resolve(__dirname, '../client/index.ts'),
-      prod: resolve(__dirname, '../dist'),
+    ctx.webui.addEntry({
+      dev: import.meta.resolve('../client/index.ts'),
+      prod: [
+        import.meta.resolve('../dist/index.js'),
+        import.meta.resolve('../dist/style.css'),
+      ],
     })
 
     const update = ctx.debounce(() => this.refresh(), 0)
@@ -69,9 +67,9 @@ class Insight extends DataService<Insight.Payload> {
 
     for (const runtime of this.ctx.registry.values()) {
       // Suppose we have the following types of nodes:
-      // - A, B: parent plugin states
-      // - X, Y: target fork states
-      // - M:    target main state
+      // - A, B: parent plugin scopes
+      // - X, Y: target fork scopes
+      // - M:    target main scope
       // - S:    service dependencies
 
       // We can divide plugins into three categories:
@@ -82,40 +80,43 @@ class Insight extends DataService<Insight.Payload> {
       // 3. non-reusable plugins
       //    will be displayed as A -> M -> S, B -> M -> S
 
-      function isActive(state: EffectScope) {
+      function isActive(scope: EffectScope) {
         // exclude plugins that don't work due to missing dependencies
-        // return runtime.using.every(name => state.ctx[name])
+        // return runtime.using.every(name => scope.ctx[name])
         return true
       }
 
       const name = getName(runtime.plugin)
 
-      function addNode(state: EffectScope) {
-        const { uid, key, disposables, status } = state
+      function addNode(scope: EffectScope) {
+        const { uid, entry, disposables, status, runtime } = scope
+        assert(uid !== null)
         const weight = disposables.length
-        const isGroup = name === 'Group'
+        const isGroup = !!runtime.plugin?.[Symbol.for('cordis.group')]
         const isRoot = uid === 0
-        const node = { uid, name, weight, status, isGroup, isRoot, services: services[uid] }
-        if (key) node.name += ` [${key}]`
+        const node = { uid, name, weight, status, isGroup, isRoot, services: services[uid!] }
+        if (entry) node.name += ` [${entry.options.id}]`
         nodes.push(node)
       }
 
-      function addEdge(type: 'dashed' | 'solid', source: number, target: number) {
+      function addEdge(type: 'dashed' | 'solid', source: number | null, target: number | null) {
+        assert(source !== null)
+        assert(target !== null)
         edges.push({ type, source, target })
       }
 
-      const addDeps = (state: EffectScope) => {
+      const addDeps = (scope: EffectScope) => {
         for (const name of runtime.using) {
           const instance = this.ctx.get(name)
           if (!(instance instanceof Object)) continue
           const ctx: Context = Reflect.getOwnPropertyDescriptor(instance, Context.current)?.value
-          const uid = ctx?.state.uid
+          const uid = ctx?.scope.uid
           if (!uid) continue
-          addEdge('dashed', uid, state.uid)
+          addEdge('dashed', uid, scope.uid)
         }
       }
 
-      const isReusable = runtime.plugin?.['reusable']
+      const isReusable = runtime.plugin?.reusable
       if (!isReusable) {
         if (!isActive(runtime)) continue
         addNode(runtime)

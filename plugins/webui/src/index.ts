@@ -6,8 +6,7 @@ import { FileSystemServeOptions, ViteDevServer } from 'vite'
 import { extname, resolve } from 'node:path'
 import { createReadStream, existsSync, Stats } from 'node:fs'
 import { readFile, stat } from 'node:fs/promises'
-import { createRequire } from 'node:module'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import { fileURLToPath } from 'node:url'
 import open from 'open'
 
 declare module 'cordis' {
@@ -63,11 +62,9 @@ class NodeConsole extends WebUI<NodeConsole.Config> {
       loader.envData.clientCount = this.layer.clients.size
     })
 
-    const base = import.meta.url || pathToFileURL(__filename).href
-    const require = createRequire(base)
-    this.root = config.devMode
-      ? resolve(require.resolve('@cordisjs/client/package.json'), '../app')
-      : fileURLToPath(new URL('../../dist', base))
+    this.root = fileURLToPath(config.devMode
+      ? new URL('./app', import.meta.resolve('@cordisjs/client/package.json'))
+      : new URL('../dist', import.meta.url))
   }
 
   createGlobal() {
@@ -103,15 +100,13 @@ class NodeConsole extends WebUI<NodeConsole.Config> {
   }
 
   resolveEntry(files: Entry.Files, key: string) {
-    const filenames: string[] = []
-    for (const url of makeArray(this.getFiles(files))) {
+    return makeArray(this.getFiles(files)).map((url, index) => {
       if (this.config.devMode) {
-        filenames.push('/vite/@fs/' + fileURLToPath(url))
+        return `/vite/@fs/${fileURLToPath(url)}`
       } else {
-        filenames.push(url)
+        return `${this.config.uiPath}/@vendor/${key}/${index}${extname(url)}`
       }
-    }
-    return filenames
+    })
   }
 
   private serveAssets() {
@@ -132,22 +127,22 @@ class NodeConsole extends WebUI<NodeConsole.Config> {
         return ctx.body = createReadStream(filename)
       }
 
-      if (name.startsWith('@plugin-')) {
-        const [key] = name.slice(8).split('/', 1)
-        if (this.entries[key]) {
-          const files = makeArray(this.getFiles(this.entries[key].files))
-          const filename = files[0] + name.slice(8 + key.length)
-          ctx.type = extname(filename)
-          if (this.config.devMode || ctx.type !== 'application/javascript') {
-            return sendFile(filename)
-          }
-
-          // we only transform js imports in production mode
-          const source = await readFile(filename, 'utf8')
-          return ctx.body = await this.transformImport(source)
-        } else {
-          return ctx.status = 404
+      if (name.startsWith('@vendor/')) {
+        const [key, value] = name.slice(8).split('/')
+        if (!this.entries[key]) return ctx.status = 404
+        const files = makeArray(this.getFiles(this.entries[key].files))
+        const type = extname(value)
+        const index = value.slice(0, -type.length)
+        if (!files[index]) return ctx.status = 404
+        const filename = fileURLToPath(files[index])
+        ctx.type = type
+        if (this.config.devMode || ctx.type !== 'application/javascript') {
+          return sendFile(filename)
         }
+
+        // we only transform js imports in production mode
+        const source = await readFile(filename, 'utf8')
+        return ctx.body = await this.transformImport(source)
       }
 
       const filename = resolve(this.root, name)
@@ -169,10 +164,10 @@ class NodeConsole extends WebUI<NodeConsole.Config> {
     while ((cap = /((?:^|;)import\b[^'"]+\bfrom\s*)(['"])([^'"]+)\2;/m.exec(source))) {
       const [stmt, left, quote, path] = cap
       output += source.slice(0, cap.index) + left + quote + ({
-        'vue': '../vue.js',
-        'vue-router': '../vue-router.js',
-        '@vueuse/core': '../vueuse.js',
-        '@cordisjs/client': '../client.js',
+        'vue': this.config.uiPath + '/vue.js',
+        'vue-router': this.config.uiPath + '/vue-router.js',
+        '@vueuse/core': this.config.uiPath + '/vueuse.js',
+        '@cordisjs/client': this.config.uiPath + '/client.js',
       }[path] ?? path) + quote + ';'
       source = source.slice(cap.index + stmt.length)
     }

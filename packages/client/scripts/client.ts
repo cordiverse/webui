@@ -1,6 +1,7 @@
 import { RollupOutput } from 'rollup'
-import { appendFile, copyFile } from 'fs/promises'
-import { resolve } from 'path'
+import { appendFile, copyFile } from 'node:fs/promises'
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import * as vite from 'vite'
 import unocss from 'unocss/vite'
 import mini from 'unocss/preset-mini'
@@ -8,12 +9,12 @@ import vue from '@vitejs/plugin-vue'
 import yaml from '@maikolib/vite-plugin-yaml'
 
 function findModulePath(id: string) {
-  const path = require.resolve(id).replace(/\\/g, '/')
+  const path = fileURLToPath(import.meta.resolve(id)).replace(/\\/g, '/')
   const keyword = `/node_modules/${id}/`
   return path.slice(0, path.indexOf(keyword)) + keyword.slice(0, -1)
 }
 
-const cwd = resolve(__dirname, '../../..')
+const cwd = resolve(fileURLToPath(import.meta.url), '../../../..')
 const dist = cwd + '/plugins/webui/dist'
 
 export async function build(root: string, config: vite.UserConfig = {}, isClient = false) {

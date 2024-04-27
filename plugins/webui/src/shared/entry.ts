@@ -1,5 +1,5 @@
 import { Context } from 'cordis'
-import { Client } from '.'
+import { Client } from './index.ts'
 
 export namespace Entry {
   export type Files = string | string[] | EntryOptions
@@ -15,16 +15,16 @@ export class Entry<T = any> {
   public dispose: () => void
 
   constructor(public ctx: Context, public files: Entry.Files, public data: (client: Client) => T) {
-    ctx.console.entries[this.id] = this
-    ctx.console.refresh('entry')
+    ctx.webui.entries[this.id] = this
+    ctx.webui.refresh('entry')
     this.dispose = ctx.collect('entry', () => {
-      delete this.ctx.console.entries[this.id]
-      ctx.console.refresh('entry')
+      delete this.ctx.webui.entries[this.id]
+      ctx.webui.refresh('entry')
     })
   }
 
   refresh() {
-    this.ctx.console.broadcast('entry-data', async (client: Client) => ({
+    this.ctx.webui.broadcast('entry-data', async (client: Client) => ({
       id: this.id,
       data: await this.data(client),
     }))

@@ -1,5 +1,5 @@
 import { Context, Service } from 'cordis'
-import Console, { Client } from '.'
+import Console, { Client } from './index.ts'
 
 export namespace DataService {
   export interface Options {
@@ -9,14 +9,14 @@ export namespace DataService {
 }
 
 export abstract class DataService<T = never> extends Service {
-  static inject = ['console']
+  static inject = ['webui']
 
   public async get(forced?: boolean, client?: Client): Promise<T> {
     return null as T
   }
 
   constructor(protected ctx: Context, protected key: keyof Console.Services, public options: DataService.Options = {}) {
-    super(ctx, `console.services.${key}`, options.immediate)
+    super(ctx, `webui:${key}`, options.immediate)
   }
 
   start() {
@@ -24,14 +24,14 @@ export abstract class DataService<T = never> extends Service {
   }
 
   async refresh(forced = true) {
-    this.ctx.get('console')?.broadcast('data', async (client: Client) => ({
+    this.ctx.get('webui')?.broadcast('data', async (client: Client) => ({
       key: this.key,
       value: await this.get(forced, client),
     }), this.options)
   }
 
   patch(value: T) {
-    this.ctx.get('console')?.broadcast('patch', {
+    this.ctx.get('webui')?.broadcast('patch', {
       key: this.key,
       value,
     }, this.options)

@@ -21,6 +21,7 @@ declare module '../context' {
     page(options: Activity.Options): () => void
   }
 
+  // https://github.com/typescript-eslint/typescript-eslint/issues/6720
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface Events<C> {
     'activity'(activity: Activity): boolean

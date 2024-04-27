@@ -1,20 +1,18 @@
 {
   "compilerOptions": {
     "target": "es2022",
-    "module": "nodenext",
-    "sourceMap": true,
+    "module": "esnext",
     "declaration": true,
-    "emitDeclarationOnly": true,
+    "jsx": "preserve",
+    "noEmit": true,
     "composite": true,
     "incremental": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "moduleResolution": "nodenext",
-    "allowImportingTsExtensions": true,
+    "moduleResolution": "node",
     "strictBindCallApply": true,
     "types": [
-      "node",
-      "yml-register/types",
+      "@koishijs/client/global",
     ],
   },
 }

@@ -1,9 +1,9 @@
 import { Context, Logger } from 'cordis'
-import { WebSocket } from './types'
-import { DataService } from './service'
+import { WebSocket } from './types.ts'
+import { DataService } from './service.ts'
 import { IncomingMessage } from 'node:http'
 
-const logger = new Logger('console')
+const logger = new Logger('webui')
 
 export function coerce(val: any) {
   // resolve error when stack is undefined, e.g. axios error with status code 401
@@ -30,13 +30,13 @@ export class Client {
 
   receive = async (data: WebSocket.MessageEvent) => {
     const { type, args, id } = JSON.parse(data.data.toString())
-    const listener = this.ctx.get('console').listeners[type]
+    const listener = this.ctx.get('webui').listeners[type]
     if (!listener) {
       logger.info('unknown message:', type, ...args)
       return this.send({ type: 'response', body: { id, error: 'not implemented' } })
     }
 
-    if (await this.ctx.serial('console/intercept', this, listener)) {
+    if (await this.ctx.serial('webui/intercept', this, listener)) {
       return this.send({ type: 'response', body: { id, error: 'unauthorized' } })
     }
 
@@ -52,11 +52,11 @@ export class Client {
 
   refresh() {
     Object.keys(this.ctx.root[Context.internal]).forEach(async (name) => {
-      if (!name.startsWith('console.services.')) return
-      const key = name.slice(17)
+      if (!name.startsWith('webui:')) return
+      const key = name.slice(6)
       const service = this.ctx.get(name) as DataService
       if (!service) return
-      if (await this.ctx.serial('console/intercept', this, service.options)) {
+      if (await this.ctx.serial('webui/intercept', this, service.options)) {
         return this.send({ type: 'data', body: { key, value: null } })
       }
 

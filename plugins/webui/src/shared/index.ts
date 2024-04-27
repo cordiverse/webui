@@ -1,27 +1,25 @@
 import { Context, Service } from 'cordis'
 import { Awaitable, Dict, valueMap } from 'cosmokit'
-import { DataService } from './service'
-import { Client } from './client'
+import { DataService } from './service.ts'
+import { Client } from './client.ts'
 import { IncomingMessage } from 'node:http'
-import { Entry } from './entry'
-import { WebSocket } from './types'
+import { Entry } from './entry.ts'
+import { WebSocket } from './types.ts'
 
-export * from './client'
-export * from './entry'
-export * from './service'
+export * from './client.ts'
+export * from './entry.ts'
+export * from './service.ts'
 
 declare module 'cordis' {
   interface Context {
-    console: Console
+    webui: Console
   }
 
   interface Events {
-    'console/connection'(client: Client): void
-    'console/intercept'(client: Client, listener: DataService.Options): Awaitable<boolean>
+    'webui/connection'(client: Client): void
+    'webui/intercept'(client: Client, listener: DataService.Options): Awaitable<boolean>
   }
 }
-
-export interface Console extends Console.Services {}
 
 export interface Listener extends DataService.Options {
   callback(this: Client, ...args: any[]): Awaitable<any>
@@ -41,7 +39,7 @@ export class EntryProvider extends DataService<Dict<EntryData>> {
   }
 
   async get(forced: boolean, client: Client) {
-    return this.ctx.get('console').get(client)
+    return this.ctx.get('webui').get(client)
   }
 }
 
@@ -53,7 +51,7 @@ export abstract class Console extends Service {
   readonly clients: Dict<Client> = Object.create(null)
 
   constructor(public ctx: Context) {
-    super(ctx, 'console', true)
+    super(ctx, 'webui', true)
     ctx.plugin(EntryProvider)
     this.addListener('ping', () => 'pong')
   }
@@ -62,10 +60,10 @@ export abstract class Console extends Service {
     const client = new Client(this.ctx, socket, request)
     socket.addEventListener('close', () => {
       delete this.clients[client.id]
-      this.ctx.emit('console/connection', client)
+      this.ctx.emit('webui/connection', client)
     })
     this.clients[client.id] = client
-    this.ctx.emit('console/connection', client)
+    this.ctx.emit('webui/connection', client)
   }
 
   async get(client: Client) {
@@ -92,7 +90,7 @@ export abstract class Console extends Service {
     const handles = Object.values(this.clients)
     if (!handles.length) return
     await Promise.all(Object.values(this.clients).map(async (client) => {
-      if (await this.ctx.serial('console/intercept', client, options)) return
+      if (await this.ctx.serial('webui/intercept', client, options)) return
       const data = { type, body }
       if (typeof body === 'function') data.body = await body(client)
       client.socket.send(JSON.stringify(data))
@@ -100,11 +98,11 @@ export abstract class Console extends Service {
   }
 
   refresh<K extends keyof Console.Services>(type: K) {
-    return this.ctx.get(`console.services.${type}`)?.refresh()
+    return this.ctx.get(`webui:${type}`)?.refresh()
   }
 
   patch<K extends keyof Console.Services>(type: K, value: Console.Services[K] extends DataService<infer T> ? T : never) {
-    return this.ctx.get(`console.services.${type}`)?.patch(value as any)
+    return this.ctx.get(`webui:${type}`)?.patch(value as any)
   }
 }
 

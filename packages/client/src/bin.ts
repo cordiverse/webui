@@ -2,7 +2,7 @@
 
 import { cac } from 'cac'
 import { resolve } from 'path'
-import { build } from '.'
+import { build } from './index.ts'
 import { version } from '../package.json'
 
 const cli = cac('koishi-console').help().version(version)

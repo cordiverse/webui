@@ -12,7 +12,7 @@ export * from './service.ts'
 
 declare module 'cordis' {
   interface Context {
-    webui: Console
+    webui: WebUI
   }
 
   interface Events {
@@ -39,18 +39,18 @@ export class EntryProvider extends DataService<Dict<EntryData>> {
   }
 
   async get(forced: boolean, client: Client) {
-    return this.ctx.get('webui').get(client)
+    return this.ctx.get('webui')!.get(client)
   }
 }
 
-export abstract class Console extends Service {
+export abstract class WebUI<T = unknown> extends Service<T> {
   private id = Math.random().toString(36).slice(2)
 
   readonly entries: Dict<Entry> = Object.create(null)
   readonly listeners: Dict<Listener> = Object.create(null)
   readonly clients: Dict<Client> = Object.create(null)
 
-  constructor(public ctx: Context) {
+  constructor(public ctx: Context, public config: T) {
     super(ctx, 'webui', true)
     ctx.plugin(EntryProvider)
     this.addListener('ping', () => 'pong')
@@ -79,7 +79,7 @@ export abstract class Console extends Service {
   protected abstract resolveEntry(files: Entry.Files, key: string): string[]
 
   addEntry<T>(files: Entry.Files, data?: () => T) {
-    return new Entry(this[Context.current], files, data)
+    return new Entry(this[Context.origin], files, data)
   }
 
   addListener<K extends keyof Events>(event: K, callback: Events[K], options?: DataService.Options) {
@@ -97,11 +97,11 @@ export abstract class Console extends Service {
     }))
   }
 
-  refresh<K extends keyof Console.Services>(type: K) {
+  refresh<K extends keyof WebUI.Services>(type: K) {
     return this.ctx.get(`webui:${type}`)?.refresh()
   }
 
-  patch<K extends keyof Console.Services>(type: K, value: Console.Services[K] extends DataService<infer T> ? T : never) {
+  patch<K extends keyof WebUI.Services>(type: K, value: WebUI.Services[K] extends DataService<infer T> ? T : never) {
     return this.ctx.get(`webui:${type}`)?.patch(value as any)
   }
 }
@@ -110,10 +110,10 @@ export interface Events {
   'ping'(): string
 }
 
-export namespace Console {
+export namespace WebUI {
   export interface Services {
     entry: EntryProvider
   }
 }
 
-export default Console
+export default WebUI

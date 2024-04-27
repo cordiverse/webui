@@ -1,12 +1,13 @@
 import * as vite from 'vite'
 import { RollupOutput } from 'rollup'
-import { existsSync, promises as fs } from 'fs'
+import { existsSync, promises as fs } from 'node:fs'
 import { resolve } from 'path'
 import { Context } from 'yakumo'
-import * as unocss from 'unocss/vite'
-import * as mini from 'unocss/preset-mini'
+import unocss from 'unocss/vite'
+import mini from 'unocss/preset-mini'
 import vue from '@vitejs/plugin-vue'
 import yaml from '@maikolib/vite-plugin-yaml'
+import { fileURLToPath } from 'node:url'
 
 declare module 'yakumo' {
   interface PackageConfig {
@@ -55,9 +56,9 @@ export async function build(root: string, config: vite.UserConfig = {}) {
     plugins: [
       vue(),
       yaml(),
-      unocss.default({
+      unocss({
         presets: [
-          mini.default({
+          mini({
             preflight: false,
           }),
         ],
@@ -89,25 +90,23 @@ export async function build(root: string, config: vite.UserConfig = {}) {
   }
 }
 
-export async function createServer(baseDir: string, config?: vite.InlineConfig) {
-  const root = resolve(__dirname, '../app')
+export async function createServer(baseDir: string, config: vite.InlineConfig = {}) {
+  const root = resolve(fileURLToPath(import.meta.url), '../../app')
   return vite.createServer(vite.mergeConfig({
     root,
     base: '/vite/',
     server: {
       middlewareMode: true,
       fs: {
-        allow: [
-          vite.searchForWorkspaceRoot(baseDir),
-        ],
+        allow: [baseDir],
       },
     },
     plugins: [
       vue(),
       yaml(),
-      unocss.default({
+      unocss({
         presets: [
-          mini.default({
+          mini({
             preflight: false,
           }),
         ],

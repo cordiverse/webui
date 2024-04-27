@@ -1,15 +1,12 @@
-import install, { Dict } from './components'
+import install from './components'
 import { Context } from './context'
 
 declare module '@cordisjs/plugin-webui' {
   export interface ClientConfig {
-    messages?: Dict<string>
     unsupported?: string[]
   }
 }
 
-export * as Satori from '@satorijs/protocol'
-export * as Universal from '@satorijs/protocol'
 export * from './plugins/action'
 export * from './plugins/i18n'
 export * from './plugins/loader'

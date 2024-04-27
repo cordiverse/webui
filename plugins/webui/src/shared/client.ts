@@ -8,7 +8,7 @@ const logger = new Logger('webui')
 export function coerce(val: any) {
   // resolve error when stack is undefined, e.g. axios error with status code 401
   const { message, stack } = val instanceof Error && val.stack ? val : new Error(val as any)
-  const lines = stack.split('\n')
+  const lines = stack!.split('\n')
   const index = lines.findIndex(line => line.endsWith(message))
   return lines.slice(index).join('\n')
 }
@@ -30,7 +30,7 @@ export class Client {
 
   receive = async (data: WebSocket.MessageEvent) => {
     const { type, args, id } = JSON.parse(data.data.toString())
-    const listener = this.ctx.get('webui').listeners[type]
+    const listener = this.ctx.get('webui')!.listeners[type]
     if (!listener) {
       logger.info('unknown message:', type, ...args)
       return this.send({ type: 'response', body: { id, error: 'not implemented' } })

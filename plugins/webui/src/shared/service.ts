@@ -1,5 +1,5 @@
 import { Context, Service } from 'cordis'
-import Console, { Client } from './index.ts'
+import WebUI, { Client } from './index.ts'
 
 export namespace DataService {
   export interface Options {
@@ -15,7 +15,7 @@ export abstract class DataService<T = never> extends Service {
     return null as T
   }
 
-  constructor(protected ctx: Context, protected key: keyof Console.Services, public options: DataService.Options = {}) {
+  constructor(protected ctx: Context, protected key: keyof WebUI.Services, public options: DataService.Options = {}) {
     super(ctx, `webui:${key}`, options.immediate)
   }
 

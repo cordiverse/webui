@@ -1,2 +1,2 @@
 // for backward compatibility
-export * from '.'
+export * from './index.ts'

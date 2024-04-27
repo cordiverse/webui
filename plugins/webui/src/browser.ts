@@ -1,11 +1,11 @@
 import { Schema } from 'cordis'
 import { makeArray } from 'cosmokit'
-import { Console, Entry } from './shared/index.ts'
+import { Entry, WebUI } from './shared/index.ts'
 import {} from '@cordisjs/loader'
 
 export * from './shared/index.ts'
 
-class BrowserConsole extends Console {
+class BrowserConsole extends WebUI {
   start() {
     this.accept(this.ctx.loader[Symbol.for('cordis.webui.socket')])
   }

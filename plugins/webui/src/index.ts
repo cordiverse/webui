@@ -1,7 +1,7 @@
 import { Context, Schema } from 'cordis'
 import { Dict, makeArray, noop, Time } from 'cosmokit'
 import { WebSocketLayer } from '@cordisjs/plugin-server'
-import { Console, Entry } from './shared/index.ts'
+import { Entry, WebUI } from './shared/index.ts'
 import { FileSystemServeOptions, ViteDevServer } from 'vite'
 import { extname, resolve } from 'node:path'
 import { createReadStream, existsSync, Stats } from 'node:fs'
@@ -42,19 +42,15 @@ interface HeartbeatConfig {
   timeout?: number
 }
 
-class NodeConsole extends Console {
+class NodeConsole extends WebUI<NodeConsole.Config> {
   static inject = ['server']
 
-  // workaround for edge case (collision with @cordisjs/plugin-config)
-  private _config: NodeConsole.Config
-
-  public vite: ViteDevServer
+  public vite!: ViteDevServer
   public root: string
   public layer: WebSocketLayer
 
   constructor(public ctx: Context, config: NodeConsole.Config) {
-    super(ctx)
-    this.config = config
+    super(ctx, config)
 
     this.layer = ctx.server.ws(config.apiPath, (socket, request) => {
       // @types/ws does not provide typings for `dispatchEvent`
@@ -72,15 +68,6 @@ class NodeConsole extends Console {
     this.root = config.devMode
       ? resolve(require.resolve('@cordisjs/client/package.json'), '../app')
       : fileURLToPath(new URL('../../dist', base))
-  }
-
-  // @ts-ignore FIXME
-  get config() {
-    return this._config
-  }
-
-  set config(value) {
-    this._config = value
   }
 
   createGlobal() {
@@ -111,22 +98,17 @@ class NodeConsole extends Console {
   private getFiles(files: Entry.Files) {
     if (typeof files === 'string' || Array.isArray(files)) return files
     if (!this.config.devMode) return files.prod
-    if (!existsSync(files.dev)) return files.prod
+    if (!existsSync(fileURLToPath(files.dev))) return files.prod
     return files.dev
   }
 
   resolveEntry(files: Entry.Files, key: string) {
-    const { devMode, uiPath } = this.config
     const filenames: string[] = []
-    for (const local of makeArray(this.getFiles(files))) {
-      const filename = devMode ? '/vite/@fs/' + local : uiPath + '/@plugin-' + key
-      if (extname(local)) {
-        filenames.push(filename)
+    for (const url of makeArray(this.getFiles(files))) {
+      if (this.config.devMode) {
+        filenames.push('/vite/@fs/' + fileURLToPath(url))
       } else {
-        filenames.push(filename + '/index.js')
-        if (existsSync(local + '/style.css')) {
-          filenames.push(filename + '/style.css')
-        }
+        filenames.push(url)
       }
     }
     return filenames
@@ -183,7 +165,7 @@ class NodeConsole extends Console {
 
   private async transformImport(source: string) {
     let output = ''
-    let cap: RegExpExecArray
+    let cap: RegExpExecArray | null
     while ((cap = /((?:^|;)import\b[^'"]+\bfrom\s*)(['"])([^'"]+)\2;/m.exec(source))) {
       const [stmt, left, quote, path] = cap
       output += source.slice(0, cap.index) + left + quote + ({
@@ -214,12 +196,12 @@ class NodeConsole extends Console {
 
   private async createVite() {
     const { cacheDir, dev } = this.config
-    const { createServer } = require('@cordisjs/client/lib') as typeof import('@cordisjs/client/lib')
+    const { createServer } = await import('@cordisjs/client/lib')
 
     this.vite = await createServer(this.ctx.baseDir, {
-      cacheDir: resolve(this.ctx.baseDir, cacheDir),
+      cacheDir: cacheDir && resolve(this.ctx.baseDir, cacheDir),
       server: {
-        fs: dev.fs,
+        fs: dev?.fs,
       },
     })
 
@@ -243,8 +225,9 @@ namespace NodeConsole {
   export const Dev: Schema<Dev> = Schema.object({
     fs: Schema.object({
       strict: Schema.boolean().default(true),
-      allow: Schema.array(String).default(null),
-      deny: Schema.array(String).default(null),
+      // FIXME fix typings
+      allow: Schema.array(String).default(null as any),
+      deny: Schema.array(String).default(null as any),
     }).hidden(),
   })
 
@@ -297,13 +280,13 @@ namespace NodeConsole {
   ])
 
   export interface Config {
-    uiPath?: string
-    devMode?: boolean
+    uiPath: string
+    devMode: boolean
     cacheDir?: string
     open?: boolean
     head?: Head[]
-    selfUrl?: string
-    apiPath?: string
+    selfUrl: string
+    apiPath: string
     heartbeat?: HeartbeatConfig
     dev?: Dev
   }

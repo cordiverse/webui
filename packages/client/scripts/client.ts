@@ -14,14 +14,14 @@ function findModulePath(id: string) {
 }
 
 const cwd = resolve(__dirname, '../../..')
-const dist = cwd + '/plugins/console/dist'
+const dist = cwd + '/plugins/webui/dist'
 
 export async function build(root: string, config: vite.UserConfig = {}, isClient = false) {
   const { rollupOptions = {} } = config.build || {}
   return await vite.build({
     root,
     build: {
-      outDir: cwd + '/plugins/console/dist',
+      outDir: cwd + '/plugins/webui/dist',
       emptyOutDir: true,
       cssCodeSplit: false,
       ...config.build,
@@ -66,7 +66,7 @@ export async function build(root: string, config: vite.UserConfig = {}, isClient
 }
 
 export default async function () {
-  // build for console main
+  // build for webui main
   const { output } = await build(cwd + '/packages/client/app', {
     plugins: [
       unocss({

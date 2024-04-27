@@ -14,7 +14,7 @@ export class Entry<T = any> {
   public id = Math.random().toString(36).slice(2)
   public dispose: () => void
 
-  constructor(public ctx: Context, public files: Entry.Files, public data: (client: Client) => T) {
+  constructor(public ctx: Context, public files: Entry.Files, public data?: (client: Client) => T) {
     ctx.webui.entries[this.id] = this
     ctx.webui.refresh('entry')
     this.dispose = ctx.collect('entry', () => {
@@ -26,7 +26,7 @@ export class Entry<T = any> {
   refresh() {
     this.ctx.webui.broadcast('entry-data', async (client: Client) => ({
       id: this.id,
-      data: await this.data(client),
+      data: await this.data!(client),
     }))
   }
 }

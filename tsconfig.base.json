@@ -1,17 +1,19 @@
 {
   "compilerOptions": {
     "target": "es2022",
-    "module": "nodenext",
+    "module": "esnext",
     "sourceMap": true,
     "declaration": true,
     "emitDeclarationOnly": true,
     "composite": true,
     "incremental": true,
     "skipLibCheck": true,
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
-    "moduleResolution": "nodenext",
+    "allowSyntheticDefaultImports": true,
     "allowImportingTsExtensions": true,
-    "strictBindCallApply": true,
+    "strict": true,
+    "noImplicitAny": false,
     "types": [
       "node",
       "yml-register/types",

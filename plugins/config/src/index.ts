@@ -1,5 +1,5 @@
 import { LocalScanner } from '@cordisjs/registry'
-import BaseManager from './shared'
+import { Manager } from './shared'
 
 export * from './shared'
 
@@ -29,7 +29,7 @@ class NodeScanner extends LocalScanner {
   }
 }
 
-export default class NodeManager extends BaseManager {
+export default class NodeManager extends Manager {
   scanner = new NodeScanner(this)
 
   async collect(forced: boolean) {

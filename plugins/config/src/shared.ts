@@ -18,19 +18,39 @@ declare module '@cordisjs/plugin-webui' {
   interface Events {
     'manager.config.list'(): LoaderEntry.Options[]
     'manager.config.create'(options: Omit<LoaderEntry.Options, 'id'> & EntryLocation): Promise<string>
-    'manager.config.update'(options: Omit<LoaderEntry.Options, 'id' | 'name'>): void
+    'manager.config.update'(options: Omit<LoaderEntry.Options, 'name'>): void
     'manager.config.remove'(options: { id: string }): void
     'manager.config.teleport'(options: { id: string } & EntryLocation): void
-    'manager.package.list'(): Promise<PackageProvider.Data[]>
-    'manager.package.runtime'(name: string): Promise<PackageProvider.RuntimeData>
+    'manager.package.list'(): Promise<PackageData[]>
+    'manager.package.runtime'(name: string): Promise<RuntimeData>
     'manager.service.list'(): Dict<string[]>
   }
 }
 
 export interface Data {
   config: LoaderEntry.Options[]
-  packages: Dict<PackageProvider.Data>
+  packages: Dict<PackageData>
   services: Dict<string[]>
+}
+
+export interface PackageData extends Pick<SearchObject, 'shortname' | 'workspace' | 'manifest' | 'portable'> {
+  name?: string
+  runtime?: RuntimeData
+  package: Pick<PackageJson, 'name' | 'version' | 'peerDependencies' | 'peerDependenciesMeta'>
+}
+
+export interface RuntimeData {
+  id?: number | null
+  filter?: boolean
+  forkable?: boolean
+  schema?: Schema
+  usage?: string
+  required?: string[]
+  optional?: string[]
+  failed?: boolean
+  forks?: Dict<{
+    status?: ScopeStatus
+  }>
 }
 
 interface EntryLocation {
@@ -38,11 +58,11 @@ interface EntryLocation {
   position?: number
 }
 
-export default abstract class Manager extends Service {
+export abstract class Manager extends Service {
   static inject = ['loader']
 
   entry?: ClientEntry
-  cache: Dict<PackageProvider.RuntimeData> = {}
+  cache: Dict<RuntimeData> = {}
   debouncedRefresh: () => void
 
   store = new WeakMap<Plugin, string>()
@@ -138,7 +158,7 @@ export default abstract class Manager extends Service {
     })
   }
 
-  abstract collect(forced: boolean): Promise<PackageProvider.Data[]>
+  abstract collect(forced: boolean): Promise<PackageData[]>
 
   async update(plugin: Plugin) {
     const name = this.store.get(plugin)
@@ -147,7 +167,7 @@ export default abstract class Manager extends Service {
     this.debouncedRefresh()
   }
 
-  parseRuntime(state: MainScope, result: PackageProvider.RuntimeData) {
+  parseRuntime(state: MainScope, result: RuntimeData) {
     result.id = state.runtime.uid
     result.forkable = state.runtime.isForkable
     result.forks = Object.fromEntries(state.children
@@ -170,7 +190,7 @@ export default abstract class Manager extends Service {
     try {
       const exports = await this.ctx.loader.resolve(name)
       if (exports) this.store.set(exports, name)
-      const result: PackageProvider.RuntimeData = { id: null }
+      const result: RuntimeData = { id: null }
       result.schema = exports?.Config || exports?.schema
       result.usage = exports?.usage
       result.filter = exports?.filter
@@ -196,27 +216,5 @@ export default abstract class Manager extends Service {
       this.ctx.logger.warn(error)
       return { failed: true }
     }
-  }
-}
-
-export namespace PackageProvider {
-  export interface Data extends Pick<SearchObject, 'shortname' | 'workspace' | 'manifest' | 'portable'> {
-    name?: string
-    runtime?: RuntimeData
-    package: Pick<PackageJson, 'name' | 'version' | 'peerDependencies' | 'peerDependenciesMeta'>
-  }
-
-  export interface RuntimeData {
-    id?: number | null
-    filter?: boolean
-    forkable?: boolean
-    schema?: Schema
-    usage?: string
-    required?: string[]
-    optional?: string[]
-    failed?: boolean
-    forks?: Dict<{
-      status?: ScopeStatus
-    }>
   }
 }

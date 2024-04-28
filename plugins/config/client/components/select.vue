@@ -1,6 +1,5 @@
 <template>
   <el-dialog
-    v-if="store.packages"
     :modelValue="!!dialogSelect"
     @update:modelValue="dialogSelect = null"
     class="plugin-select"
@@ -27,27 +26,36 @@
 
 <script lang="ts" setup>
 
-import { router, send, store, useI18nText } from '@cordisjs/client'
+import { router, send, useContext, useI18nText } from '@cordisjs/client'
 import { computed, inject, nextTick, ref, watch } from 'vue'
-import { PackageProvider } from '@cordisjs/plugin-config'
-import { dialogSelect } from './utils'
+import type { PackageData } from '../../src'
 
+const ctx = useContext()
 const tt = useI18nText()
+
+const dialogSelect = computed({
+  get: () => ctx.manager.dialogSelect.value,
+  set: (value) => ctx.manager.dialogSelect.value = value,
+})
 
 const keyword = ref('')
 const input = ref()
 
-const filter = inject('plugin-select-filter', (data: PackageProvider.Data) => true)
+const filter = inject('plugin-select-filter', (data: PackageData) => true)
 
-const packages = computed(() => Object.values(store.packages).filter(({ name, shortname }) => {
-  return name && shortname.includes(keyword.value.toLowerCase()) && filter(store.packages[name])
+const packages = computed(() => Object.values(ctx.manager.data.value.packages).filter(({ name, shortname }) => {
+  return name && shortname.includes(keyword.value.toLowerCase()) && filter(ctx.manager.data.value.packages[name])
 }))
 
 async function configure(name: string) {
-  const path = dialogSelect.value.path
+  const parent = dialogSelect.value.path
   dialogSelect.value = null
   keyword.value = ''
-  const id = await send('manager/add', { name, disabled: true }, path)
+  const id = await send('manager.config.create', {
+    name,
+    parent,
+    disabled: true,
+  })
   router.push('/plugins/' + id)
 }
 

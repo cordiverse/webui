@@ -1,23 +1,103 @@
-import { Context, router, send, Service } from '@cordisjs/client'
-import { defineComponent, h, resolveComponent } from 'vue'
-import type {} from '@cordisjs/plugin-config'
-import { dialogFork, plugins, type } from './components/utils'
+import { Context, Dict, router, ScopeStatus, send, Service } from '@cordisjs/client'
+import { computed, defineComponent, h, Ref, ref, resolveComponent } from 'vue'
+import type { Entry } from '@cordisjs/loader'
 import Settings from './components/index.vue'
 import Forks from './components/forks.vue'
 import Select from './components/select.vue'
+import type { Data } from '../src'
 
 import './index.scss'
 import './icons'
 
-export * from './components/utils'
-
 declare module '@cordisjs/client' {
   interface Context {
-    configWriter: ConfigWriter
+    manager: Manager
+  }
+
+  interface ActionContext {
+    'config.tree': Node
   }
 }
 
-export default class ConfigWriter extends Service {
+export const coreDeps = [
+  '@cordisjs/plugin-webui',
+  '@cordisjs/plugin-config',
+  '@cordisjs/plugin-server',
+]
+
+export interface Node {
+  id: string
+  name: string
+  path: string
+  label?: string
+  config?: any
+  parent?: Node
+  disabled?: boolean
+  children?: Node[]
+}
+
+interface DepInfo {
+  required: boolean
+}
+
+interface PeerInfo {
+  required: boolean
+  active: boolean
+}
+
+export interface EnvInfo {
+  impl: string[]
+  using: Dict<DepInfo>
+  peer: Dict<PeerInfo>
+  warning?: boolean
+}
+
+export default class Manager extends Service {
+  current = ref<Node>()
+  dialogFork = ref<string>()
+  dialogSelect = ref<Node>()
+
+  plugins = computed(() => {
+    const expanded: string[] = []
+    const forks: Dict<string[]> = {}
+    const paths: Dict<Node> = {}
+    const handle = (config: Entry.Options[]) => {
+      return config.map(options => {
+        const node: Node = {
+          id: options.id,
+          name: options.name,
+          path: options.id,
+          config: options.config,
+        }
+        if (options.name === 'cordis/group') {
+          node.children = handle(options.config)
+        }
+        if (!options.collapse && node.children) {
+          expanded.push(node.path)
+        }
+        forks[node.name] ||= []
+        forks[node.name].push(node.path)
+        paths[node.path] = node
+        return node
+      })
+    }
+    const data = handle(this.data.value.config)
+    return { data, forks, paths, expanded }
+  })
+
+  type = computed(() => {
+    const env = this.getEnvInfo(this.current.value?.name)
+    if (!env) return
+    if (env.warning && this.current.value.disabled) return 'warning'
+    for (const name in env.using) {
+      if (name in this.data.value.services || {}) {
+        if (env.impl.includes(name)) return 'warning'
+      } else {
+        if (env.using[name].required) return 'warning'
+      }
+    }
+  })
+
   constructor(ctx: Context) {
     super(ctx, 'configWriter', true)
 
@@ -52,13 +132,12 @@ export default class ConfigWriter extends Service {
       icon: 'activity:plugin',
       order: 800,
       authority: 4,
-      fields: ['config', 'packages', 'services'],
       component: Settings,
     })
 
     ctx.menu('config.tree', [{
       id: 'config.tree.toggle',
-      type: ({ config }) => config.tree?.disabled ? '' : type.value,
+      type: ({ config }) => config.tree?.disabled ? '' : this.type.value,
       icon: ({ config }) => config.tree?.disabled ? 'play' : 'stop',
       label: ({ config }) => (config.tree?.disabled ? '启用' : '停用')
         + (config.tree?.name === 'group' ? '分组' : '插件'),
@@ -98,30 +177,105 @@ export default class ConfigWriter extends Service {
     }])
   }
 
+  get data(): Ref<Data> {
+    return this.ctx.$entry?.data
+  }
+
   ensure(name: string, passive?: boolean) {
-    const forks = plugins.value.forks[name]
+    const forks = this.plugins.value.forks[name]
     if (!forks?.length) {
       const key = Math.random().toString(36).slice(2, 8)
-      send('manager/add', { name, disabled: true }, '')
+      send('manager.config.create', { name, disabled: true })
       if (!passive) router.push('/plugins/' + key)
     } else if (forks.length === 1) {
       if (!passive) router.push('/plugins/' + forks[0])
     } else {
-      if (!passive) dialogFork.value = name
+      if (!passive) this.dialogFork.value = name
     }
   }
 
-  remove(name: string) {
-    const shortname = name.replace(/(cordis-|^@cordisjs\/)plugin-/, '')
-    const forks = plugins.value.forks[shortname]
-    for (const id of forks) {
-      const tree = plugins.value.paths[id]
-      send('manager/remove', tree.id)
+  async remove(tree: string | Node) {
+    if (typeof tree === 'string') {
+      const forks = this.plugins.value.forks[tree]
+      for (const id of forks) {
+        const tree = this.plugins.value.paths[id]
+        await send('manager.config.remove', { id: tree.id })
+      }
+    } else {
+      await router.replace('/plugins/' + tree.parent!.path)
+      await send('manager.config.remove', { id: tree.id })
     }
   }
 
   get(name: string) {
-    const shortname = name.replace(/(cordis-|^@cordisjs\/)plugin-/, '')
-    return plugins.value.forks[shortname]?.map(id => plugins.value.paths[id])
+    return this.plugins.value.forks[name]?.map(id => this.plugins.value.paths[id])
+  }
+
+  getStatus(tree: Node) {
+    switch (this.data.value.packages?.[tree.name]?.runtime?.forks?.[tree.path]?.status) {
+      case ScopeStatus.PENDING: return 'pending'
+      case ScopeStatus.LOADING: return 'loading'
+      case ScopeStatus.ACTIVE: return 'active'
+      case ScopeStatus.FAILED: return 'failed'
+      case ScopeStatus.DISPOSED: return 'disposed'
+      default: return 'disabled'
+    }
+  }
+
+  getEnvInfo(name: string) {
+    function setService(name: string, required: boolean) {
+      if (services.has(name)) return
+      if (name === 'console') return
+      result.using[name] = { required }
+    }
+
+    const local = this.data.value.packages[name]
+    if (!local) return
+
+    const result: EnvInfo = { impl: [], using: {}, peer: {} }
+    const services = new Set<string>()
+
+    // check peer dependencies
+    for (const name in local.package.peerDependencies ?? {}) {
+      if (!name.includes('@cordisjs/plugin-') && !name.includes('cordis-plugin-')) continue
+      if (coreDeps.includes(name)) continue
+      const required = !local.package.peerDependenciesMeta?.[name]?.optional
+      const active = !!this.data.value.packages[name]?.runtime?.id
+      result.peer[name] = { required, active }
+      for (const service of this.data.value.packages[name]?.manifest?.service.implements ?? []) {
+        services.add(service)
+      }
+    }
+
+    // check implementations
+    for (const name of local.manifest.service.implements) {
+      if (name === 'adapter') continue
+      result.impl.push(name)
+    }
+
+    // check services
+    for (const name of local.runtime?.required ?? []) {
+      setService(name, true)
+    }
+    for (const name of local.runtime?.optional ?? []) {
+      setService(name, false)
+    }
+
+    // check reusability
+    if (local.runtime?.id && !local.runtime?.forkable) {
+      result.warning = true
+    }
+
+    // check schema
+    if (!local.runtime?.schema) {
+      result.warning = true
+    }
+
+    return result
+  }
+
+  hasCoreDeps(tree: Node) {
+    if (coreDeps.includes(tree.name)) return true
+    if (tree.children) return tree.children.some(node => this.hasCoreDeps(node))
   }
 }

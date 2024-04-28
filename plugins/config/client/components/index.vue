@@ -23,8 +23,8 @@
       <div>请在左侧选择插件</div>
     </k-empty>
     <k-content v-else class="plugin-view" :key="path">
-      <group-settings v-if="current.children" v-model="config" :current="current"></group-settings>
-      <plugin-settings v-else :current="current" v-model="config"></plugin-settings>
+      <group-settings v-if="current.children" v-model="config"></group-settings>
+      <plugin-settings v-else v-model="config"></plugin-settings>
     </k-content>
 
     <el-dialog
@@ -38,7 +38,7 @@
       </template>
       <template #footer>
         <el-button @click="showRemove = false">取消</el-button>
-        <el-button type="danger" @click="(showRemove = false, removeItem(remove), tree?.activate())">确定</el-button>
+        <el-button type="danger" @click="(showRemove = false, ctx.manager.remove(remove), tree?.activate())">确定</el-button>
       </template>
     </el-dialog>
 
@@ -78,14 +78,22 @@
 
 import { computed, ref, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { clone, message, send, store, useContext, Schema } from '@cordisjs/client'
-import { Tree, hasCoreDeps, current, plugins, removeItem, dialogSelect, dialogFork } from './utils'
+import { clone, message, send, useContext, Schema } from '@cordisjs/client'
+import { Node } from '..'
 import GroupSettings from './group.vue'
 import TreeView from './tree.vue'
 import PluginSettings from './plugin.vue'
 
 const route = useRoute()
 const router = useRouter()
+
+const current = computed(() => ctx.manager.current.value)
+const plugins = computed(() => ctx.manager.plugins.value)
+
+const dialogFork = computed({
+  get: () => ctx.manager.dialogFork.value,
+  set: (value) => ctx.manager.dialogFork.value = value,
+})
 
 const path = computed<string>({
   get() {
@@ -109,9 +117,9 @@ async function handleOpen() {
   inputEl.value?.focus()
 }
 
-const remove = ref<Tree>()
+const remove = ref<Node>()
 const showRemove = ref(false)
-const rename = ref<Tree>()
+const rename = ref<Node>()
 const showRename = ref(false)
 const groupCreate = ref<string>(null)
 
@@ -124,17 +132,17 @@ watch(rename, (value) => {
 })
 
 watch(() => plugins.value.paths[path.value], (value) => {
-  current.value = value
+  ctx.manager.current.value = value
   if (value) config.value = clone(value.config)
 }, { immediate: true })
 
 const ctx = useContext()
 
-ctx.define('config.tree', current)
+ctx.define('config.tree', ctx.manager.current)
 
 ctx.action('config.tree.add-plugin', {
   hidden: ({ config }) => config.tree && !config.tree.children,
-  action: ({ config }) => dialogSelect.value = config.tree,
+  action: ({ config }) => ctx.manager.dialogSelect.value = config.tree,
 })
 
 ctx.action('config.tree.add-group', {
@@ -145,7 +153,11 @@ ctx.action('config.tree.add-group', {
 })
 
 async function createGroup(label: string) {
-  const id = await send('manager/add', { name: 'cordis/group', label }, groupCreate.value)
+  const id = await send('manager.config.create', {
+    name: 'cordis/group',
+    parent: groupCreate.value,
+    label,
+  })
   router.replace('/plugins/' + id)
   groupCreate.value = null
 }
@@ -157,11 +169,13 @@ ctx.action('config.tree.clone', {
       ? config.tree.parent.children
       : plugins.value.data.slice(1)
     const index = children.findIndex(tree => tree.path === config.tree.path)
-    const id = await send('manager/add', {
+    const id = await send('manager.config.create', {
       name: config.tree.name,
       config: config.tree.config,
       disabled: true,
-    }, config.tree.parent.id, index + 1)
+      parent: config.tree.parent.id,
+      position: index + 1,
+    })
     router.replace(`/plugins/${id}`)
   },
 })
@@ -182,12 +196,12 @@ ctx.action('config.tree.rename', {
 })
 
 ctx.action('config.tree.remove', {
-  disabled: ({ config }) => !config.tree || hasCoreDeps(config.tree),
+  disabled: ({ config }) => !config.tree || ctx.manager.hasCoreDeps(config.tree),
   action: ({ config }) => remove.value = config.tree,
 })
 
 function checkConfig(name: string) {
-  let schema = store.packages[name]?.runtime.schema
+  let schema = ctx.manager.data.value.packages[name]?.runtime.schema
   if (!schema) return true
   try {
     (new Schema(schema))(config.value)
@@ -205,7 +219,7 @@ ctx.action('config.tree.save', {
     const { disabled } = tree
     if (!disabled && !checkConfig(tree.name)) return
     try {
-      await execute(tree, disabled ? 'unload' : 'reload')
+      await execute(tree, disabled || null)
       message.success(disabled ? '配置已保存。' : '配置已重载。')
     } catch (error) {
       message.error('操作失败，请检查日志！')
@@ -214,12 +228,12 @@ ctx.action('config.tree.save', {
 })
 
 ctx.action('config.tree.toggle', {
-  disabled: ({ config }) => !config.tree || hasCoreDeps(config.tree),
+  disabled: ({ config }) => !config.tree || ctx.manager.hasCoreDeps(config.tree),
   action: async ({ config: { tree } }) => {
     const { disabled, name } = tree
     if (disabled && !checkConfig(tree.name)) return
     try {
-      await execute(tree, disabled ? 'reload' : 'unload')
+      await execute(tree, !disabled || null)
       message.success((name === 'group' ? '分组' : '插件') + (disabled ? '已启用。' : '已停用。'))
     } catch (error) {
       message.error('操作失败，请检查日志！')
@@ -227,14 +241,20 @@ ctx.action('config.tree.toggle', {
   },
 })
 
-async function execute(tree: Tree, event: 'unload' | 'reload') {
-  await send(`manager/${event}`, tree.id, config.value)
+async function execute(tree: Node, disabled: true | null) {
+  await send('manager.config.update', {
+    id: tree.id,
+    disabled,
+  })
 }
 
-function renameItem(tree: Tree, name: string) {
+async function renameItem(tree: Node, name: string) {
   showRename.value = false
   tree.label = name
-  send('manager/meta', tree.path, { $label: name || null })
+  await send('manager.config.update', {
+    id: tree.path,
+    label: name || null,
+  })
 }
 
 </script>

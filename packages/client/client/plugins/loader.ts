@@ -8,7 +8,7 @@ import { Dict } from 'cosmokit'
 declare module '../context' {
   interface Context {
     $loader: LoaderService
-    $entry?: ClientEntry
+    $entry?: LoadState
   }
 }
 
@@ -53,7 +53,7 @@ const loaders: Dict<LoaderFactory> = {
   },
 }
 
-export interface ClientEntry {
+export interface LoadState {
   fork?: ForkScope
   paths: string[]
   done: Ref<boolean>
@@ -63,7 +63,7 @@ export interface ClientEntry {
 export default class LoaderService extends Service {
   private backendId: any
 
-  public extensions: Dict<ClientEntry> = shallowReactive({})
+  public extensions: Dict<LoadState> = shallowReactive({})
 
   constructor(ctx: Context) {
     super(ctx, '$loader', true)

@@ -1,5 +1,5 @@
 import { SearchResult } from '@cordisjs/registry'
-import BaseManager from './shared'
+import { Manager } from './shared'
 
 export * from './shared'
 
@@ -9,7 +9,7 @@ declare module '@cordisjs/loader' {
   }
 }
 
-export default class BrowserManager extends BaseManager {
+export default class BrowserManager extends Manager {
   async collect(forced: boolean) {
     return this.ctx.loader.market.objects
   }

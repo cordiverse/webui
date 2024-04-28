@@ -12,13 +12,13 @@
     <table>
       <tr v-for="id in plugins.forks[dialogFork]" :key="id">
         <td class="text-left">
-          <span class="status-light" :class="getStatus(plugins.paths[id])"></span>
+          <span class="status-light" :class="ctx.manager.getStatus(plugins.paths[id])"></span>
           <span class="path">{{ getFullPath(plugins.paths[id]) }}</span>
         </td>
         <td class="text-right">
           <span class="actions">
             <span class="action" @click.stop="configure(id)"><k-icon name="arrow-right"></k-icon></span>
-            <span class="action" @click.stop="removeItem(plugins.paths[id])"><k-icon name="delete"></k-icon></span>
+            <span class="action" @click.stop="ctx.manager.remove(plugins.paths[id])"><k-icon name="delete"></k-icon></span>
           </span>
         </td>
       </tr>
@@ -42,16 +42,23 @@
 <script setup lang="ts">
 
 import { computed } from 'vue'
-import { store, send, router } from '@cordisjs/client'
-import { dialogFork, plugins, getStatus, removeItem, Tree } from './utils'
+import { send, router, useContext } from '@cordisjs/client'
+import { Node } from '..'
 
-const local = computed(() => store.packages?.[dialogFork.value])
+const ctx = useContext()
+const plugins = computed(() => ctx.manager.plugins.value)
+const dialogFork = computed({
+  get: () => ctx.manager.dialogFork.value,
+  set: (value) => ctx.manager.dialogFork.value = value,
+})
 
-function getLabel(tree: Tree) {
+const local = computed(() => ctx.manager.data.value.packages?.[dialogFork.value])
+
+function getLabel(tree: Node) {
   return `${tree.label ? `${tree.label} ` : ''}[${tree.path}]`
 }
 
-function getFullPath(tree: Tree) {
+function getFullPath(tree: Node) {
   const path = [getLabel(tree)]
   while (tree.parent) {
     tree = tree.parent
@@ -63,7 +70,10 @@ function getFullPath(tree: Tree) {
 
 async function configure(id?: string) {
   if (!id) {
-    id = await send('manager/add', { name: dialogFork.value, disabled: true }, '')
+    id = await send('manager.config.create', {
+      name: dialogFork.value,
+      disabled: true,
+    })
   }
   await router.push('/plugins/' + id)
   dialogFork.value = null

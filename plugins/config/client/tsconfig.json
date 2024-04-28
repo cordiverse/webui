@@ -1,9 +1,11 @@
 {
   "extends": "../../../tsconfig.client",
-  "compilerOptions": {
-    "rootDir": ".",
-  },
   "include": [
     ".",
+  ],
+  "references": [
+    {
+      "path": "../tsconfig.json",
+    },
   ],
 }

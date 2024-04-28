@@ -28,7 +28,7 @@
           {{ getLabel(node) }}
         </div>
         <div class="right">
-          <span v-if="node.data.name" class="status-light" :class="getStatus(node.data)"></span>
+          <span v-if="node.data.name" class="status-light" :class="ctx.manager.getStatus(node.data)"></span>
         </div>
       </div>
     </el-tree>
@@ -37,18 +37,20 @@
 
 <script lang="ts" setup>
 
-import { ref, onActivated, nextTick, watch } from 'vue'
+import { computed, ref, onActivated, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import type { ElScrollbar, ElTree } from 'element-plus'
-import { send, useMenu, store } from '@cordisjs/client'
-import { Tree, getStatus, plugins } from './utils'
+import { send, useContext, useMenu } from '@cordisjs/client'
+import { Node } from '..'
 
 const props = defineProps<{
   modelValue: string
 }>()
 
+const ctx = useContext()
 const route = useRoute()
 const trigger = useMenu('config.tree')
+const plugins = computed(() => ctx.manager.plugins.value)
 
 const emit = defineEmits(['update:modelValue'])
 
@@ -56,7 +58,7 @@ const root = ref<InstanceType<typeof ElScrollbar>>(null)
 const tree = ref<InstanceType<typeof ElTree>>(null)
 const keyword = ref('')
 
-function filterNode(value: string, data: Tree) {
+function filterNode(value: string, data: Node) {
   return data.name.toLowerCase().includes(keyword.value.toLowerCase())
 }
 
@@ -86,16 +88,16 @@ function handleItemMount(itemEl: HTMLElement) {
   activate()
 }
 
-interface Node {
-  data: Tree
+interface TreeNode {
+  data: Node
   label?: string
-  parent: Node
+  parent: TreeNode
   expanded: boolean
   isLeaf: boolean
-  childNodes: Node[]
+  childNodes: TreeNode[]
 }
 
-function getLabel(node: Node) {
+function getLabel(node: TreeNode) {
   if (node.data.name === 'group') {
     return '分组：' + (node.label || node.data.path)
   } else {
@@ -103,18 +105,18 @@ function getLabel(node: Node) {
   }
 }
 
-function allowDrag(node: Node) {
+function allowDrag(node: TreeNode) {
   return node.data.path !== ''
 }
 
-function allowDrop(source: Node, target: Node, type: 'inner' | 'prev' | 'next') {
+function allowDrop(source: TreeNode, target: TreeNode, type: 'inner' | 'prev' | 'next') {
   if (type !== 'inner') {
     return target.data.path !== '' || type === 'next'
   }
   return target.data.id.startsWith('group:')
 }
 
-function handleClick(tree: Tree, target: Node, instance: any, event: MouseEvent) {
+function handleClick(tree: Node, target: TreeNode, instance: any, event: MouseEvent) {
   emit('update:modelValue', tree.path)
   // el-tree will stop propagation,
   // so we need to manually trigger the event
@@ -122,25 +124,34 @@ function handleClick(tree: Tree, target: Node, instance: any, event: MouseEvent)
   window.dispatchEvent(new MouseEvent(event.type, event))
 }
 
-function handleExpand(data: Tree, target: Node, instance) {
-  send('manager/meta', data.path, { $collapsed: null })
+function handleExpand(data: Node, target: TreeNode, instance) {
+  send('manager.config.update', {
+    id: data.path,
+    collapse: null,
+  })
 }
 
-function handleCollapse(data: Tree, target: Node, instance) {
-  send('manager/meta', data.path, { $collapsed: true })
+function handleCollapse(data: Node, target: TreeNode, instance) {
+  send('manager.config.update', {
+    id: data.path,
+    collapse: true,
+  })
 }
 
-function handleDrop(source: Node, target: Node, position: 'before' | 'after' | 'inner', event: DragEvent) {
+function handleDrop(source: TreeNode, target: TreeNode, position: 'before' | 'after' | 'inner', event: DragEvent) {
   const parent = position === 'inner' ? target : target.parent
   let index = parent.childNodes.findIndex(node => node.data.path === source.data.path)
-  if (!parent.data.path) index -= 1 // global config
-  send('manager/teleport', source.data.parent?.path ?? '', source.data.id, parent.data.path, index)
+  send('manager.config.teleport', {
+    id: source.data.id,
+    parent: parent.data.path,
+    position: index,
+  })
 }
 
-function getClass(tree: Tree) {
+function getClass(tree: Node) {
   const words: string[] = []
   if (tree.children) words.push('is-group')
-  if (!tree.children && !(tree.name in store.packages)) words.push('is-disabled')
+  if (!tree.children && !(tree.name in ctx.manager.data.value.packages)) words.push('is-disabled')
   if (tree.path === props.modelValue) words.push('is-active')
   return words.join(' ')
 }

@@ -4,10 +4,8 @@
 <script lang="ts" setup>
 
 import { computed } from 'vue'
-import { Tree } from './utils'
 
 const props = defineProps<{
-  current: Tree
   modelValue: any
 }>()
 

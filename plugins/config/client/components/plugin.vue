@@ -1,5 +1,5 @@
 <template>
-  <template v-if="name">
+  <template v-if="current?.name in data.packages">
     <k-comment v-if="!local.runtime">
       <p>正在加载插件配置……</p>
     </k-comment>
@@ -20,9 +20,9 @@
           </k-comment>
           <k-comment
             v-for="({ required }, name) in env.using" :key="name"
-            :type="name in store.services ? 'success' : required ? 'warning' : 'primary'">
+            :type="name in data.services ? 'success' : required ? 'warning' : 'primary'">
             <p>
-              {{ required ? '必需' : '可选' }}服务：{{ name }} ({{ name in store.services ? '已加载' : '未加载' }})
+              {{ required ? '必需' : '可选' }}服务：{{ name }} ({{ name in data.services ? '已加载' : '未加载' }})
             </p>
           </k-comment>
         </k-slot>
@@ -31,7 +31,7 @@
       <!-- implements -->
       <k-slot-item :order="600">
         <template v-for="name in env.impl" :key="name">
-          <k-comment v-if="name in store.services && current.disabled" type="warning">
+          <k-comment v-if="name in data.services && current.disabled" type="warning">
             <p>此插件将会提供 {{ name }} 服务，但此服务已被其他插件实现。</p>
           </k-comment>
           <k-comment v-else :type="current.disabled ? 'primary' : 'success'">
@@ -46,14 +46,14 @@
           <p>此插件已在运行且不可重用，启用可能会导致非预期的问题。</p>
         </k-comment>
         <k-comment v-if="plugins.forks[current.name]?.length > 1" type="primary">
-          <p>此插件存在多份配置，<span class="k-link" @click.stop="dialogFork = name">点击前往管理</span>。</p>
+          <p>此插件存在多份配置，<span class="k-link" @click.stop="dialogFork = current.name">点击前往管理</span>。</p>
         </k-comment>
       </k-slot-item>
 
       <!-- implements -->
       <k-slot-item :order="300">
         <template v-for="(activity, key) in ctx.$router.pages" :key="key">
-          <k-comment type="success" v-if="activity.ctx.extension?.paths.includes(current.path) && !activity.disabled()">
+          <k-comment type="success" v-if="activity.ctx.$entry?.paths.includes(current.path) && !activity.disabled()">
             <p>
               <span>此插件提供了页面：</span>
               <k-activity-link :id="activity.id" />
@@ -94,38 +94,46 @@
 
 <script lang="ts" setup>
 
-import { store, send, useContext } from '@cordisjs/client'
+import { send, useContext, useRpc } from '@cordisjs/client'
 import { computed, provide, watch } from 'vue'
-import { envMap, name, plugins, dialogFork, Tree } from './utils'
+import { Data } from '../../src'
 
 const props = defineProps<{
-  current: Tree
   modelValue: any
 }>()
 
 const emit = defineEmits(['update:modelValue'])
 
 const ctx = useContext()
+const data = useRpc<Data>()
+
+const current = computed(() => ctx.manager.current.value)
+const plugins = computed(() => ctx.manager.plugins.value)
+
+const dialogFork = computed({
+  get: () => ctx.manager.dialogFork.value,
+  set: (value) => ctx.manager.dialogFork.value = value,
+})
 
 const config = computed({
   get: () => props.modelValue,
   set: value => emit('update:modelValue', value),
 })
 
-const env = computed(() => envMap.value[name.value])
-const local = computed(() => store.packages[name.value])
+const env = computed(() => ctx.manager.getEnvInfo(current.value?.name))
+const local = computed(() => data.value.packages[current.value?.name])
 const hint = computed(() => local.value.workspace ? '请检查插件源代码。' : '请联系插件作者并反馈此问题。')
 
 watch(local, (value) => {
   if (!value || value.runtime) return
-  send('config/request-runtime', value.name)
+  send('manager.package.runtime', value.name)
 }, { immediate: true })
 
 provide('plugin:name', name)
 provide('plugin:env', env)
 provide('manager.settings.local', local)
 provide('manager.settings.config', config)
-provide('manager.settings.current', computed(() => props.current))
+provide('manager.settings.current', current)
 
 </script>
 

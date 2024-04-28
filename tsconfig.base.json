@@ -9,8 +9,6 @@
     "incremental": true,
     "skipLibCheck": true,
     "moduleResolution": "bundler",
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
     "allowImportingTsExtensions": true,
     "strict": true,
     "noImplicitAny": false,

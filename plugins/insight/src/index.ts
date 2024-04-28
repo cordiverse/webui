@@ -1,15 +1,28 @@
 import { Context, EffectScope, ForkScope, Plugin, Schema, ScopeStatus } from 'cordis'
 import { camelize, capitalize } from 'cosmokit'
-import { DataService } from '@cordisjs/plugin-webui'
+import {} from '@cordisjs/plugin-webui'
 import {} from '@cordisjs/loader'
 import assert from 'node:assert'
 
-declare module '@cordisjs/plugin-webui' {
-  namespace WebUI {
-    interface Services {
-      insight: Insight
-    }
-  }
+export interface Data {
+  nodes: Node[]
+  edges: Link[]
+}
+
+export interface Node {
+  uid: number
+  name: string
+  weight: number
+  status: ScopeStatus
+  isGroup?: boolean
+  isRoot?: boolean
+  services?: string[]
+}
+
+export interface Link {
+  type: 'solid' | 'dashed'
+  source: number
+  target: number
 }
 
 function format(name: string) {
@@ -31,41 +44,45 @@ function getSourceId(child: ForkScope) {
   }
 }
 
-class Insight extends DataService<Insight.Payload> {
-  constructor(ctx: Context) {
-    super(ctx, 'insight')
+export const name = 'insight'
 
-    ctx.webui.addEntry({
-      dev: import.meta.resolve('../client/index.ts'),
-      prod: [
-        import.meta.resolve('../dist/index.js'),
-        import.meta.resolve('../dist/style.css'),
-      ],
-    })
+export const inject = ['webui']
 
-    const update = ctx.debounce(() => this.refresh(), 0)
-    ctx.on('internal/fork', update)
-    ctx.on('internal/runtime', update)
-    ctx.on('internal/service', update)
-    ctx.on('internal/status', update)
-  }
+export interface Config {}
 
-  async get() {
-    const nodes: Insight.Node[] = []
-    const edges: Insight.Link[] = []
+export const Config: Schema<Config> = Schema.object({})
+
+export function apply(ctx: Context) {
+  const entry = ctx.webui.addEntry({
+    dev: import.meta.resolve('../client/index.ts'),
+    prod: [
+      import.meta.resolve('../dist/index.js'),
+      import.meta.resolve('../dist/style.css'),
+    ],
+  }, getGraph)
+
+  const update = ctx.debounce(() => entry.refresh(), 0)
+  ctx.on('internal/fork', update)
+  ctx.on('internal/runtime', update)
+  ctx.on('internal/service', update)
+  ctx.on('internal/status', update)
+
+  function getGraph() {
+    const nodes: Node[] = []
+    const edges: Link[] = []
 
     const services = {} as Record<number, string[]>
-    for (const [key, { type }] of Object.entries(this.ctx.root[Context.internal])) {
+    for (const [key, { type }] of Object.entries(ctx.root[Context.internal])) {
       if (type !== 'service') continue
-      const instance = this.ctx.get(key)
+      const instance = ctx.get(key)
       if (!(instance instanceof Object)) continue
-      const ctx: Context = Reflect.getOwnPropertyDescriptor(instance, Context.current)?.value
-      if (ctx?.scope.uid) {
-        (services[ctx.scope.uid] ||= []).push(key)
+      const ctx2: Context = Reflect.getOwnPropertyDescriptor(instance, Context.current)?.value
+      if (ctx2?.scope.uid) {
+        (services[ctx2.scope.uid] ||= []).push(key)
       }
     }
 
-    for (const runtime of this.ctx.registry.values()) {
+    for (const runtime of ctx.registry.values()) {
       // Suppose we have the following types of nodes:
       // - A, B: parent plugin scopes
       // - X, Y: target fork scopes
@@ -107,10 +124,10 @@ class Insight extends DataService<Insight.Payload> {
 
       const addDeps = (scope: EffectScope) => {
         for (const name of runtime.using) {
-          const instance = this.ctx.get(name)
+          const instance = ctx.get(name)
           if (!(instance instanceof Object)) continue
-          const ctx: Context = Reflect.getOwnPropertyDescriptor(instance, Context.current)?.value
-          const uid = ctx?.scope.uid
+          const ctx2: Context = Reflect.getOwnPropertyDescriptor(instance, Context.current)?.value
+          const uid = ctx2?.scope.uid
           if (!uid) continue
           addEdge('dashed', uid, scope.uid)
         }
@@ -143,32 +160,3 @@ class Insight extends DataService<Insight.Payload> {
     return { nodes, edges }
   }
 }
-
-namespace Insight {
-  export interface Payload {
-    nodes: Node[]
-    edges: Link[]
-  }
-
-  export interface Node {
-    uid: number
-    name: string
-    weight: number
-    status: ScopeStatus
-    isGroup?: boolean
-    isRoot?: boolean
-    services?: string[]
-  }
-
-  export interface Link {
-    type: 'solid' | 'dashed'
-    source: number
-    target: number
-  }
-
-  export interface Config {}
-
-  export const Config: Schema<Config> = Schema.object({})
-}
-
-export default Insight

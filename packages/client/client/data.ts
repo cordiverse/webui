@@ -1,14 +1,16 @@
-import type { ClientConfig, Console, DataService, Events, WebSocket } from '@cordisjs/plugin-webui'
+import type { ClientConfig, DataService, Events, WebSocket, WebUI } from '@cordisjs/plugin-webui'
 import type { Promisify } from 'cosmokit'
 import { markRaw, reactive, ref } from 'vue'
 import { Context } from './context'
 
 export type Store = {
-  [K in keyof Console.Services]?: Console.Services[K] extends DataService<infer T> ? T : never
+  [K in keyof WebUI.Services]?: WebUI.Services[K] extends DataService<infer T> ? T : never
 }
 
 declare const KOISHI_CONFIG: ClientConfig
 export const global = KOISHI_CONFIG
+
+/** @deprecated */
 export const store = reactive<Store>({})
 
 export function withProxy(url: string) {

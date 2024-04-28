@@ -39,7 +39,8 @@
 <script lang="ts" setup>
 
 import { onMounted, ref, computed, watch, reactive } from 'vue'
-import { store } from '@cordisjs/client'
+import { useRpc } from '@cordisjs/client'
+import type { Data } from '../src'
 import { useTooltip, getEventPoint } from './tooltip'
 import { useElementSize, useEventListener, watchThrottled } from '@vueuse/core'
 import { Node, Link } from './utils'
@@ -53,10 +54,12 @@ const { width, height } = useElementSize(root)
 const tooltip = useTooltip()
 const dragged = ref<Node>(null)
 const fNode = ref<Node>(null) 
-const fLink = ref<Link>(null) 
+const fLink = ref<Link>(null)
 
-const nodes = reactive<Node[]>(store.insight.nodes as any)
-const links = computed<Link[]>(() => store.insight.edges as any)
+const data = useRpc<Data>()
+
+const nodes = reactive<Node[]>(data.value.nodes as any)
+const links = computed<Link[]>(() => data.value.edges as any)
 
 const svgAttrs = computed(() => {
   // fix all the nodes in the root element
@@ -152,7 +155,7 @@ onMounted(() => {
   }, { deep: true, throttle: 100, trailing: true })
 })
 
-watch(() => store.insight, (value) => {
+watch(() => data.value, (value) => {
   if (!value) return
   nodes.slice().forEach((source, index) => {
     const target = value.nodes.find(n => n.uid === source.uid)

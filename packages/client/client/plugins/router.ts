@@ -40,6 +40,7 @@ export namespace Activity {
     order?: number
     authority?: number
     position?: 'top' | 'bottom'
+    /** @deprecated */
     fields?: (keyof Store)[]
     /** @deprecated */
     when?: () => boolean

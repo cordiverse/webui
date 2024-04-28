@@ -1,5 +1,5 @@
 import * as d3 from 'd3-force'
-import Insight from '@cordisjs/plugin-insight'
+import * as Insight from '../src'
 
 export interface Node extends Insight.Node, d3.SimulationNodeDatum {
   lastX?: number

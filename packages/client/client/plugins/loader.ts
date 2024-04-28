@@ -2,13 +2,13 @@ import { Ref, ref, shallowReactive, watch } from 'vue'
 import { Context } from '../context'
 import { Service } from '../utils'
 import { receive, store } from '../data'
-import { EffectScope } from 'cordis'
+import { ForkScope } from 'cordis'
 import { Dict } from 'cosmokit'
 
 declare module '../context' {
   interface Context {
     $loader: LoaderService
-    extension?: LoadResult
+    $entry?: ClientEntry
   }
 }
 
@@ -23,7 +23,20 @@ export function unwrapExports(module: any) {
   return module?.default || module
 }
 
-const loaders: Dict<(ctx: Context, url: string) => Promise<void>> = {
+type LoaderFactory = (ctx: Context, url: string) => Promise<ForkScope>
+
+function jsLoader(ctx: Context, exports: {}) {
+  return ctx.plugin(unwrapExports(exports), ctx.$entry.data)
+}
+
+function cssLoader(ctx: Context, link: HTMLLinkElement) {
+  ctx.effect(() => {
+    document.head.appendChild(link)
+    return () => document.head.removeChild(link)
+  })
+}
+
+const loaders: Dict<LoaderFactory> = {
   async [`.css`](ctx, url) {
     const link = document.createElement('link')
     link.rel = 'stylesheet'
@@ -31,20 +44,17 @@ const loaders: Dict<(ctx: Context, url: string) => Promise<void>> = {
     await new Promise((resolve, reject) => {
       link.onload = resolve
       link.onerror = reject
-      ctx.effect(() => {
-        document.head.appendChild(link)
-        return () => document.head.removeChild(link)
-      })
     })
+    return ctx.plugin(cssLoader, link)
   },
   async [``](ctx, url) {
     const exports = await import(/* @vite-ignore */ url)
-    ctx.plugin(unwrapExports(exports), ctx.extension.data)
+    return ctx.plugin(jsLoader, exports)
   },
 }
 
-export interface LoadResult {
-  scope: EffectScope
+export interface ClientEntry {
+  fork?: ForkScope
   paths: string[]
   done: Ref<boolean>
   data: Ref
@@ -53,7 +63,7 @@ export interface LoadResult {
 export default class LoaderService extends Service {
   private backendId: any
 
-  public extensions: Dict<LoadResult> = shallowReactive({})
+  public extensions: Dict<ClientEntry> = shallowReactive({})
 
   constructor(ctx: Context) {
     super(ctx, '$loader', true)
@@ -77,18 +87,19 @@ export default class LoaderService extends Service {
 
       for (const key in this.extensions) {
         if (rest[key]) continue
-        this.extensions[key].scope.dispose()
+        this.extensions[key].fork?.dispose()
         delete this.extensions[key]
       }
 
       await Promise.all(Object.entries(rest).map(([key, { files, paths, data }]) => {
         if (this.extensions[key]) return
-        const scope = this.ctx.isolate('extension').plugin(() => {})
-        scope.ctx.extension = this.extensions[key] = { done: ref(false), scope, paths, data: ref(data) }
-        const task = Promise.all(files.map((url) => {
+        const ctx = this.ctx.isolate('$entry')
+        ctx.$entry = this.extensions[key] = { done: ref(false), paths, data: ref(data) }
+
+        const task = Promise.all(files.map(async (url) => {
           for (const ext in loaders) {
             if (!url.endsWith(ext)) continue
-            return loaders[ext](scope.ctx, url)
+            ctx.$entry.fork = await loaders[ext](ctx, url)
           }
         }))
         task.finally(() => this.extensions[key].done.value = true)

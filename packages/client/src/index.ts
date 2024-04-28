@@ -90,7 +90,9 @@ export async function build(root: string, config: vite.UserConfig = {}) {
   }
 }
 
-export async function createServer(baseDir: string, config: vite.InlineConfig = {}) {
+export interface InlineConfig extends vite.InlineConfig {}
+
+export async function createServer(baseDir: string, config: InlineConfig = {}) {
   const root = resolve(fileURLToPath(import.meta.url), '../../app')
   return vite.createServer(vite.mergeConfig({
     root,

@@ -198,6 +198,28 @@ class NodeConsole extends WebUI<NodeConsole.Config> {
       server: {
         fs: dev?.fs,
       },
+      plugins: [{
+        name: 'cordis-hmr',
+        transform: (code, id, options) => {
+          for (const [key, { files }] of Object.entries(this.entries)) {
+            if (typeof files === 'string' || Array.isArray(files)) continue
+            if (fileURLToPath(files.dev) !== id) continue
+            return {
+              code: code + [
+                'if (import.meta.hot) {',
+                '  import.meta.hot.accept(async (module) => {',
+                '    const { root } = await import("@cordisjs/client");',
+                `    const entry = root.$loader.extensions["${key}"];`,
+                '    if (!entry?.fork) return;',
+                '    entry.fork.update(module, true);',
+                '  });',
+                '}',
+              ].join('\n') + '\n',
+              map: null,
+            }
+          }
+        },
+      }],
     })
 
     this.ctx.server.all('/vite(/.+)*', (ctx) => new Promise((resolve) => {

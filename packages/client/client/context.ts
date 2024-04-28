@@ -1,7 +1,7 @@
 import * as cordis from 'cordis'
 import {
-  App, Component, createApp, defineComponent, h, inject, markRaw,
-  onBeforeUnmount, provide, Ref, resolveComponent,
+  App, Component, createApp, defineComponent, h, inject, InjectionKey,
+  markRaw, onBeforeUnmount, provide, Ref, resolveComponent,
 } from 'vue'
 import ActionService from './plugins/action'
 import I18nService from './plugins/i18n'
@@ -19,16 +19,18 @@ export interface Context {
   internal: Internal
 }
 
+const kContext = Symbol('context') as InjectionKey<Context>
+
 export function useContext() {
-  const parent = inject('cordis') as Context
+  const parent = inject(kContext)
   const fork = parent.plugin(() => {})
   onBeforeUnmount(() => fork.dispose())
   return fork.ctx
 }
 
 export function useRpc<T>(): Ref<T> {
-  const parent = inject('cordis') as Context
-  return parent.extension?.data
+  const parent = inject(kContext)
+  return parent.$entry?.data
 }
 
 export interface Internal {}
@@ -38,7 +40,7 @@ export class Context extends cordis.Context {
 
   constructor() {
     super()
-    this.extension = null
+    this.$entry = null
     this.internal = {} as Internal
     this.app = createApp(defineComponent({
       setup: () => () => [
@@ -46,7 +48,7 @@ export class Context extends cordis.Context {
         h(resolveComponent('k-slot'), { name: 'global' }),
       ],
     }))
-    this.app.provide('cordis', this)
+    this.app.provide(kContext, this)
 
     this.plugin(ActionService)
     this.plugin(I18nService)
@@ -77,9 +79,9 @@ export class Context extends cordis.Context {
   wrapComponent(component: Component) {
     if (!component) return
     const caller = this[Context.current] || this
-    if (!caller.extension) return component
+    if (!caller.$entry) return component
     return defineComponent((props, { slots }) => {
-      provide('cordis', caller)
+      provide(kContext, caller)
       return () => h(component, props, slots)
     })
   }

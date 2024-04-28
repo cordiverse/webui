@@ -1,8 +1,16 @@
-import { DataService } from '@cordisjs/webui'
+import { DataService } from '@cordisjs/plugin-webui'
 import { Context, Logger } from 'cordis'
 import { Entry, Loader } from '@cordisjs/loader'
 
-declare module '@cordisjs/webui' {
+declare module '@cordisjs/loader' {
+  namespace Entry {
+    interface Options {
+      collapsed?: boolean
+    }
+  }
+}
+
+declare module '@cordisjs/plugin-webui' {
   interface Events {
     'manager/app-reload'(config: any): void
     'manager/teleport'(source: string, key: string, target: string, index: number): void

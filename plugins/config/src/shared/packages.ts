@@ -1,6 +1,6 @@
 import { Context, Logger, MainScope, Plugin, Schema, ScopeStatus } from 'cordis'
 import { Dict } from 'cosmokit'
-import { DataService } from '@cordisjs/webui'
+import { DataService } from '@cordisjs/plugin-webui'
 import { PackageJson, SearchObject, SearchResult } from '@cordisjs/registry'
 import {} from '@cordisjs/plugin-hmr'
 
@@ -10,7 +10,7 @@ declare module '@cordisjs/loader' {
   }
 }
 
-declare module '@cordisjs/webui' {
+declare module '@cordisjs/plugin-webui' {
   interface Events {
     'config/request-runtime'(name: string): void
   }

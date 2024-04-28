@@ -2,8 +2,8 @@ import { PackageProvider } from './packages'
 import { ServiceProvider } from './services'
 import { ConfigWriter } from './writer'
 
-declare module '@cordisjs/webui' {
-  namespace Console {
+declare module '@cordisjs/plugin-webui' {
+  namespace WebUI {
     interface Services {
       packages: PackageProvider
       services: ServiceProvider

@@ -63,6 +63,14 @@ export async function build(root: string, config: vite.UserConfig = {}) {
           }),
         ],
       }),
+      {
+        name: 'auto-import',
+        transform(code, id, options) {
+          if (id !== root + '/client/index.ts') return
+          code = 'import "virtual:uno.css";\n\n' + code
+          return { code, map: null }
+        },
+      },
     ],
     resolve: {
       alias: {

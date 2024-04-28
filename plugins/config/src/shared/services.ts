@@ -1,4 +1,4 @@
-import { DataService } from '@cordisjs/webui'
+import { DataService } from '@cordisjs/plugin-webui'
 import { Context } from 'cordis'
 import { Dict } from 'cosmokit'
 

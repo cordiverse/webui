@@ -21,7 +21,7 @@
     "dist"
   ],
   "author": "Shigma <shigma10826@gmail.com>",
-  "license": "AGPL-3.0",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/cordisjs/webui.git",
@@ -48,20 +48,21 @@
     },
     "service": {
       "required": [
-        "console"
+        "webui"
       ]
     }
   },
   "peerDependencies": {
     "@cordisjs/loader": "^0.9.0",
-    "@cordisjs/plugin-webui": "^0.28.3",
+    "@cordisjs/plugin-webui": "^0.1.0",
     "cordis": "^3.14.0"
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.28.3",
-    "@cordisjs/plugin-hmr": "^0.2.0"
+    "@cordisjs/client": "^0.1.0",
+    "@cordisjs/plugin-hmr": "^0.2.1"
   },
   "dependencies": {
-    "@cordisjs/registry": "^7.0.3"
+    "@cordisjs/registry": "^7.0.3",
+    "cosmokit": "^1.6.2"
   }
 }

@@ -10,7 +10,7 @@
     "src"
   ],
   "author": "Shigma <shigma10826@gmail.com>",
-  "license": "AGPL-3.0",
+  "license": "MIT",
   "scripts": {
     "lint": "eslint src --ext .ts"
   },
@@ -38,16 +38,16 @@
     },
     "service": {
       "required": [
-        "console"
+        "webui"
       ]
     }
   },
   "peerDependencies": {
-    "@cordisjs/plugin-webui": "^0.28.3",
+    "@cordisjs/plugin-webui": "^0.1.0",
     "cordis": "^3.14.0"
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.28.3",
+    "@cordisjs/client": "^0.1.0",
     "@types/d3-force": "^3.0.9",
     "d3-force": "^3.0.0"
   },

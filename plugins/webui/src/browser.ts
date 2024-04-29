@@ -5,7 +5,7 @@ import {} from '@cordisjs/loader'
 
 export * from './shared/index.ts'
 
-class BrowserConsole extends WebUI {
+class BrowserWebUI extends WebUI {
   start() {
     this.accept(this.ctx.loader[Symbol.for('cordis.webui.socket')])
   }
@@ -16,10 +16,10 @@ class BrowserConsole extends WebUI {
   }
 }
 
-namespace BrowserConsole {
+namespace BrowserWebUI {
   export interface Config {}
 
   export const Config: Schema<Config> = Schema.object({})
 }
 
-export default BrowserConsole
+export default BrowserWebUI

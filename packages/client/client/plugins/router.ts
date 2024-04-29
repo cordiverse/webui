@@ -3,7 +3,7 @@ import Overlay from '../components/chat/overlay.vue'
 import { Context } from '../context'
 import { insert, Service } from '../utils'
 import { Component, MaybeRefOrGetter, reactive, ref, toValue } from 'vue'
-import { global, Store, store } from '../data'
+import { global } from '../data'
 import { Dict, omit, remove } from 'cosmokit'
 import { Disposable } from 'cordis'
 import { SlotOptions } from '../components'
@@ -41,10 +41,8 @@ export namespace Activity {
     authority?: number
     position?: 'top' | 'bottom'
     /** @deprecated */
-    fields?: (keyof Store)[]
-    /** @deprecated */
     when?: () => boolean
-    disabled?: () => boolean
+    disabled?: () => boolean | undefined
   }
 }
 
@@ -69,7 +67,6 @@ export class Activity {
     this.id ??= id
     this.handleUpdate()
     this.authority ??= 0
-    this.fields ??= []
     ctx.$router.pages[this.id] = this
   }
 
@@ -77,7 +74,7 @@ export class Activity {
     if (redirectTo.value) {
       const location = this.ctx.$router.router.resolve(redirectTo.value)
       if (location.matched.length) {
-        redirectTo.value = null
+        redirectTo.value = undefined
         this.ctx.$router.router.replace(location)
       }
     }
@@ -97,7 +94,6 @@ export class Activity {
 
   disabled() {
     if (this.ctx.bail('activity', this)) return true
-    if (!this.fields.every(key => store[key])) return true
     if (this.when && !this.when()) return true
     if (this.options.disabled?.()) return true
   }

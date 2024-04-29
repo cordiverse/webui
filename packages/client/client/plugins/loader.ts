@@ -1,9 +1,10 @@
-import { Ref, ref, shallowReactive, watch } from 'vue'
+import { Ref, ref, shallowReactive } from 'vue'
 import { Context } from '../context'
 import { Service } from '../utils'
-import { receive, store } from '../data'
+import { receive } from '../data'
 import { ForkScope } from 'cordis'
 import { defineProperty, Dict } from 'cosmokit'
+import { Entry } from '@cordisjs/plugin-webui'
 
 declare module '../context' {
   interface Context {
@@ -57,30 +58,30 @@ const loaders: Dict<LoaderFactory> = {
 }
 
 export interface LoadState {
-  fork?: ForkScope
+  forks: ForkScope[]
   paths: string[]
   done: Ref<boolean>
   data: Ref
 }
 
 export default class LoaderService extends Service {
-  private backendId: any
+  public id?: string
 
-  public extensions: Dict<LoadState> = shallowReactive({})
+  public entries: Dict<LoadState> = shallowReactive({})
 
   constructor(ctx: Context) {
     super(ctx, '$loader', true)
 
-    receive('entry:data', ({ id, data }) => {
-      const entry = store.entry?.[id]
+    receive('entry:refresh', ({ id, data }) => {
+      const entry = this.entries[id]
       if (!entry) return
-      this.extensions[id].data.value = data
+      entry.data.value = data
     })
 
     receive('entry:patch', ({ id, data, key }) => {
-      const entry = store.entry?.[id]
+      const entry = this.entries[id]
       if (!entry) return
-      let node = this.extensions[id].data.value
+      let node = entry.data.value
       const parts: string[] = key ? key.split('.') : []
       while (parts.length) {
         const part = parts.shift()!
@@ -91,35 +92,36 @@ export default class LoaderService extends Service {
   }
 
   initTask = new Promise<void>((resolve) => {
-    watch(() => store.entry, async (newValue, oldValue) => {
-      const { _id, ...rest } = newValue || {}
-      if (this.backendId && _id && this.backendId !== _id) {
-        window.location.reload()
-        return
+    receive('entry:init', async (value) => {
+      const { _id, ...rest } = value as Dict<Entry.Data> & { _id?: string }
+      if (this.id && _id && this.id !== _id as unknown) {
+        return window.location.reload()
       }
-      this.backendId = _id
+      this.id = _id
 
-      for (const key in this.extensions) {
+      for (const key in this.entries) {
         if (rest[key]) continue
-        this.extensions[key].fork?.dispose()
-        delete this.extensions[key]
+        for (const fork of this.entries[key].forks) {
+          fork?.dispose()
+        }
+        delete this.entries[key]
       }
 
-      await Promise.all(Object.entries(rest).map(([key, { files, paths, data }]) => {
-        if (this.extensions[key]) return
+      await Promise.all(Object.entries(rest).map(([key, { files, paths = [], data }]) => {
+        if (this.entries[key]) return
         const ctx = this.ctx.isolate('$entry')
-        ctx.$entry = this.extensions[key] = { done: ref(false), paths, data: ref(data) }
+        ctx.$entry = this.entries[key] = { done: ref(false), paths, data: ref(data), forks: [] }
 
-        const task = Promise.all(files.map(async (url) => {
+        const task = Promise.allSettled(files.map(async (url, index) => {
           for (const ext in loaders) {
             if (!url.endsWith(ext)) continue
-            ctx.$entry!.fork = await loaders[ext](ctx, url)
+            ctx.$entry!.forks[index] = await loaders[ext](ctx, url)
           }
         }))
-        task.finally(() => this.extensions[key].done.value = true)
+        task.then(() => this.entries[key].done.value = true)
       }))
 
-      if (!oldValue) resolve()
-    }, { deep: true })
+      if (_id) resolve()
+    })
   })
 }

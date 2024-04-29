@@ -1,12 +1,12 @@
 import { Context, Schema } from 'cordis'
 import { Dict, makeArray, noop, Time } from 'cosmokit'
 import { WebSocketLayer } from '@cordisjs/plugin-server'
-import { Entry, WebUI } from './shared/index.ts'
 import { FileSystemServeOptions, ViteDevServer } from 'vite'
 import { extname, resolve } from 'node:path'
 import { createReadStream, existsSync, Stats } from 'node:fs'
 import { readFile, stat } from 'node:fs/promises'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import { Entry, WebUI } from './shared'
 import open from 'open'
 
 declare module 'cordis' {
@@ -15,7 +15,7 @@ declare module 'cordis' {
   }
 }
 
-export * from './shared/index.ts'
+export * from './shared'
 
 function escapeHTML(source: string, inline = false) {
   const result = (source ?? '')
@@ -41,14 +41,14 @@ interface HeartbeatConfig {
   timeout?: number
 }
 
-class NodeConsole extends WebUI<NodeConsole.Config> {
+class NodeWebUI extends WebUI<NodeWebUI.Config> {
   static inject = ['server']
 
   public vite!: ViteDevServer
   public root: string
   public layer: WebSocketLayer
 
-  constructor(public ctx: Context, config: NodeConsole.Config) {
+  constructor(public ctx: Context, config: NodeWebUI.Config) {
     super(ctx, config)
 
     this.layer = ctx.server.ws(config.apiPath, (socket, request) => {
@@ -202,16 +202,15 @@ class NodeConsole extends WebUI<NodeConsole.Config> {
         name: 'cordis-hmr',
         transform: (code, id, options) => {
           for (const [key, { files }] of Object.entries(this.entries)) {
-            if (typeof files === 'string' || Array.isArray(files)) continue
-            if (fileURLToPath(files.dev) !== id) continue
+            const index = makeArray(this.getFiles(files)).indexOf(pathToFileURL(id).href)
+            if (index < 0) continue
             return {
               code: code + [
                 'if (import.meta.hot) {',
                 '  import.meta.hot.accept(async (module) => {',
                 '    const { root } = await import("@cordisjs/client");',
-                `    const entry = root.$loader.extensions["${key}"];`,
-                '    if (!entry?.fork) return;',
-                '    entry.fork.update(module, true);',
+                `    const fork = root.$loader.entries["${key}"]?.forks[${index}];`,
+                '    fork?.update(module, true);',
                 '  });',
                 '}',
               ].join('\n') + '\n',
@@ -234,7 +233,7 @@ class NodeConsole extends WebUI<NodeConsole.Config> {
   }
 }
 
-namespace NodeConsole {
+namespace NodeWebUI {
   export interface Dev {
     fs: FileSystemServeOptions
   }
@@ -326,4 +325,4 @@ namespace NodeConsole {
   ])
 }
 
-export default NodeConsole
+export default NodeWebUI

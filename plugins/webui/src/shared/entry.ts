@@ -8,25 +8,35 @@ export namespace Entry {
     dev: string
     prod: string | string[]
   }
+
+  export interface Data {
+    files: string[]
+    paths?: string[]
+    data?: any
+  }
 }
 
 export class Entry<T = any> {
   public id = Math.random().toString(36).slice(2)
   public dispose: () => void
 
-  constructor(public ctx: Context, public files: Entry.Files, public data?: (client: Client) => T) {
+  constructor(public ctx: Context, public files: Entry.Files, public data?: () => T) {
     ctx.webui.entries[this.id] = this
-    ctx.webui.refresh('entry')
+    ctx.webui.broadcast('entry:init', {
+      [this.id]: this,
+    })
     this.dispose = ctx.collect('entry', () => {
       delete this.ctx.webui.entries[this.id]
-      ctx.webui.refresh('entry')
+      ctx.webui.broadcast('entry:init', {
+        [this.id]: null,
+      })
     })
   }
 
   refresh() {
-    this.ctx.webui.broadcast('entry:data', async (client: Client) => ({
+    this.ctx.webui.broadcast('entry:refresh', async (client: Client) => ({
       id: this.id,
-      data: await this.data!(client),
+      data: await this.data!(),
     }))
   }
 
@@ -36,5 +46,13 @@ export class Entry<T = any> {
       data,
       key,
     })
+  }
+
+  toJSON(): Entry.Data {
+    return {
+      files: this.ctx.webui.resolveEntry(this.files, this.id),
+      paths: this.ctx.get('loader')?.paths(this.ctx.scope),
+      data: this.data?.(),
+    }
   }
 }

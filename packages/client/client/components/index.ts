@@ -1,12 +1,9 @@
 import { App } from 'vue'
 import Markdown from 'marked-vue'
-import components, { SchemaBase } from '@cordisjs/components'
+import components from '@cordisjs/components'
 import Element, { ElLoading, ElMessage, ElMessageBox } from 'element-plus'
 
-import { store } from '../data'
 import common from './common'
-import Dynamic from './dynamic.vue'
-import Perms from './perms.vue'
 import ChatImage from './chat/image.vue'
 import * as icons from './icons'
 import layout from './layout'
@@ -28,20 +25,6 @@ export * from 'vue-i18n'
 export * from '@cordisjs/components'
 
 export { icons, ChatImage }
-
-SchemaBase.extensions.add({
-  type: 'any',
-  role: 'dynamic',
-  component: Dynamic,
-})
-
-SchemaBase.extensions.add({
-  type: 'array',
-  role: 'perms',
-  component: Perms,
-  // @ts-ignore
-  validate: () => !!store.permissions,
-})
 
 export default function (app: App) {
   app.use(Element)

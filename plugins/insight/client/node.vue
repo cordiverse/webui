@@ -1,5 +1,5 @@
 <template>
-  <g class="node">
+  <g class="node" v-if="node.x && node.y">
     <circle
       :r="isActive ? 12 : 9"
       :cx="node.x"

@@ -20,8 +20,8 @@ export function useTooltip() {
 
   const active = ref(false)
   const inactive = ref(true)
-  const left = ref(0)
-  const top = ref(0)
+  const left = ref<number>()
+  const top = ref<number>()
 
   const style = computed<StyleValue>(() => {
     if (!left.value || !top.value) {
@@ -50,8 +50,8 @@ export function useTooltip() {
       if (!inactive.value) return
       active.value = false
       if (!clear) return
-      left.value = null
-      top.value = null
+      left.value = undefined
+      top.value = undefined
     }, delay)
   }
 

@@ -29,7 +29,7 @@ function clear(object: Dict) {
 export class LocalScanner {
   public cache: Dict<LocalObject> = Object.create(null)
 
-  private subTasks!: Dict<Promise<LocalObject | undefined>>
+  private subTasks: Dict<Promise<LocalObject | undefined>> = Object.create(null)
   private mainTask?: Promise<LocalObject[]>
   private require!: NodeRequire
 

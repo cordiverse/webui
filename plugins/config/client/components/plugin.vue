@@ -121,12 +121,12 @@ const config = computed({
 })
 
 const env = computed(() => ctx.manager.getEnvInfo(current.value?.name))
-const local = computed(() => data.value.packages[current.value?.name])
+const local = computed(() => data.value.packages[current.value?.name!])
 const hint = computed(() => local.value.workspace ? '请检查插件源代码。' : '请联系插件作者并反馈此问题。')
 
 watch(local, (value) => {
   if (!value || value.runtime) return
-  send('manager.package.runtime', value.name)
+  send('manager.package.runtime', value.package.name)
 }, { immediate: true })
 
 provide('plugin:name', name)

@@ -1,6 +1,6 @@
 import type { ClientConfig, DataService, Events, WebSocket, WebUI } from '@cordisjs/plugin-webui'
 import type { Promisify } from 'cosmokit'
-import { markRaw, reactive, ref } from 'vue'
+import { markRaw, ref } from 'vue'
 import { Context } from './context'
 
 export type Store = {
@@ -10,58 +10,29 @@ export type Store = {
 declare const KOISHI_CONFIG: ClientConfig
 export const global = KOISHI_CONFIG
 
-/** @deprecated */
-export const store = reactive<Store>({})
-
 export function withProxy(url: string) {
   return (global.proxyBase || '') + url
 }
 
-export const socket = ref<WebSocket>(null)
+export const socket = ref<WebSocket>()
 const listeners: Record<string, (data: any) => void> = {}
-const responseHooks: Record<string, [Function, Function]> = {}
 
 export function send<T extends keyof Events>(type: T, ...args: Parameters<Events[T]>): Promisify<ReturnType<Events[T]>>
-export function send(type: string, ...args: any[]) {
+export async function send(type: string, ...args: any[]) {
   if (!socket.value) return
-  console.debug('↑%c', 'color:brown', type, args)
-  const id = Math.random().toString(36).slice(2, 9)
-  socket.value.send(JSON.stringify({ id, type, args }))
-  return new Promise((resolve, reject) => {
-    responseHooks[id] = [resolve, reject]
-    setTimeout(() => {
-      delete responseHooks[id]
-      reject(new Error('timeout'))
-    }, 60000)
+  console.debug('[request]', type, args)
+  const response = await fetch(`${global.endpoint}/${type}`, {
+    method: 'POST',
+    body: JSON.stringify(args[0]),
   })
+  const result = await response.json()
+  console.debug('[response]', result)
+  return result
 }
 
 export function receive<T = any>(event: string, listener: (data: T) => void) {
   listeners[event] = listener
 }
-
-receive('data', ({ key, value }) => {
-  store[key] = value
-})
-
-receive('patch', ({ key, value }) => {
-  if (Array.isArray(store[key])) {
-    store[key].push(...value)
-  } else if (store[key]) {
-    Object.assign(store[key], value)
-  }
-})
-
-receive('response', ({ id, value, error }) => {
-  if (!responseHooks[id]) return
-  const [resolve, reject] = responseHooks[id]
-  delete responseHooks[id]
-  if (error) {
-    reject(error)
-  } else {
-    resolve(value)
-  }
-})
 
 export function connect(ctx: Context, callback: () => WebSocket) {
   const value = callback()
@@ -70,17 +41,20 @@ export function connect(ctx: Context, callback: () => WebSocket) {
   let closeTimer: number
   const refresh = () => {
     if (!global.heartbeat) return
+
     clearTimeout(sendTimer)
+    sendTimer = +setTimeout(() => {
+      value?.send(JSON.stringify({ type: 'ping' }))
+    }, global.heartbeat.interval)
+
     clearTimeout(closeTimer)
-    sendTimer = +setTimeout(() => send('ping'), global.heartbeat.interval)
-    closeTimer = +setTimeout(() => value?.close(), global.heartbeat.timeout)
+    closeTimer = +setTimeout(() => {
+      value?.close()
+    }, global.heartbeat.timeout)
   }
 
   const reconnect = () => {
-    socket.value = null
-    for (const key in store) {
-      store[key] = undefined
-    }
+    socket.value = undefined
     console.log('[cordis] websocket disconnected, will retry in 1s...')
     setTimeout(() => {
       connect(ctx, callback).then(location.reload, () => {
@@ -92,7 +66,9 @@ export function connect(ctx: Context, callback: () => WebSocket) {
   value.addEventListener('message', (ev) => {
     refresh()
     const data = JSON.parse(ev.data)
-    console.debug('↓%c', 'color:purple', data.type, data.body)
+    if (data.type !== 'pong') {
+      console.debug('↓%c', 'color:purple', data.type, data.body)
+    }
     if (data.type in listeners) {
       listeners[data.type](data.body)
     }

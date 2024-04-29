@@ -24,9 +24,17 @@ export class Entry<T = any> {
   }
 
   refresh() {
-    this.ctx.webui.broadcast('entry-data', async (client: Client) => ({
+    this.ctx.webui.broadcast('entry:data', async (client: Client) => ({
       id: this.id,
       data: await this.data!(client),
     }))
+  }
+
+  patch(data: any, key?: string) {
+    this.ctx.webui.broadcast('entry:patch', {
+      id: this.id,
+      data,
+      key,
+    })
   }
 }

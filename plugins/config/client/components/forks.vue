@@ -52,7 +52,7 @@ const dialogFork = computed({
   set: (value) => ctx.manager.dialogFork.value = value,
 })
 
-const local = computed(() => ctx.manager.data.value.packages?.[dialogFork.value])
+const local = computed(() => ctx.manager.data.value.packages[dialogFork.value])
 
 function getLabel(tree: Node) {
   return `${tree.label ? `${tree.label} ` : ''}[${tree.path}]`

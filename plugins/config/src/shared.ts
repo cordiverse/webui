@@ -1,8 +1,8 @@
 import { Context, MainScope, Plugin, Schema, ScopeStatus, Service } from 'cordis'
-import { Dict } from 'cosmokit'
+import { Dict, pick } from 'cosmokit'
 import { Entry as LoaderEntry } from '@cordisjs/loader'
 import { Entry as ClientEntry } from '@cordisjs/plugin-webui'
-import { PackageJson, SearchObject } from '@cordisjs/registry'
+import { LocalObject } from '@cordisjs/registry'
 import {} from '@cordisjs/plugin-hmr'
 
 declare module '@cordisjs/loader' {
@@ -21,22 +21,22 @@ declare module '@cordisjs/plugin-webui' {
     'manager.config.update'(options: Omit<LoaderEntry.Options, 'name'>): void
     'manager.config.remove'(options: { id: string }): void
     'manager.config.teleport'(options: { id: string } & EntryLocation): void
-    'manager.package.list'(): Promise<PackageData[]>
+    'manager.package.list'(): Promise<LocalObject[]>
     'manager.package.runtime'(name: string): Promise<RuntimeData>
     'manager.service.list'(): Dict<string[]>
   }
 }
 
-export interface Data {
-  config: LoaderEntry.Options[]
-  packages: Dict<PackageData>
-  services: Dict<string[]>
+declare module '@cordisjs/registry' {
+  interface LocalObject {
+    runtime?: RuntimeData
+  }
 }
 
-export interface PackageData extends Pick<SearchObject, 'shortname' | 'workspace' | 'manifest' | 'portable'> {
-  name?: string
-  runtime?: RuntimeData
-  package: Pick<PackageJson, 'name' | 'version' | 'peerDependencies' | 'peerDependenciesMeta'>
+export interface Data {
+  config: LoaderEntry.Options[]
+  packages: Dict<LocalObject>
+  services: Dict<string[]>
 }
 
 export interface RuntimeData {
@@ -62,10 +62,11 @@ export abstract class Manager extends Service {
   static inject = ['loader']
 
   entry?: ClientEntry
-  cache: Dict<RuntimeData> = {}
-  debouncedRefresh: () => void
+  packages: Dict<LocalObject> = Object.create(null)
+  plugins = new WeakMap<Plugin, string>()
 
-  store = new WeakMap<Plugin, string>()
+  pending = new Set<string>()
+  flushTimer?: NodeJS.Timeout
 
   constructor(public ctx: Context) {
     super(ctx, 'manager', true)
@@ -74,7 +75,6 @@ export abstract class Manager extends Service {
       throw new Error('@cordisjs/plugin-config is only available for json/yaml config file')
     }
 
-    this.debouncedRefresh = ctx.debounce(() => this.entry?.refresh(), 0)
     this.installWebUI()
   }
 
@@ -103,22 +103,26 @@ export abstract class Manager extends Service {
           import.meta.resolve('../dist/index.js'),
           import.meta.resolve('../dist/style.css'),
         ],
-      }, async () => ({
+      }, () => (this.getPackages(), {
         config: this.getConfig(),
-        packages: await this.getPackages(),
+        packages: this.packages,
         services: this.getServices(),
       }))
 
-      ctx.on('config', () => this.entry?.refresh())
-      ctx.on('internal/service', () => this.entry?.refresh())
+      ctx.on('config', ctx.debounce(() => {
+        this.entry?.patch({ config: this.getConfig() })
+      }, 0))
 
-      ctx.on('internal/runtime', scope => this.update(scope.runtime.plugin))
-      ctx.on('internal/fork', scope => this.update(scope.runtime.plugin))
-      ctx.on('internal/status', scope => this.update(scope.runtime.plugin))
+      ctx.on('internal/service', ctx.debounce(() => {
+        this.entry?.patch({ services: this.getServices() })
+      }, 0))
+
+      ctx.on('internal/runtime', scope => this.updateRuntime(scope.runtime))
+      ctx.on('internal/fork', scope => this.updateRuntime(scope.runtime))
+      ctx.on('internal/status', scope => this.updateRuntime(scope.runtime))
+
       ctx.on('hmr/reload', (reloads) => {
-        for (const [plugin] of reloads) {
-          this.update(plugin)
-        }
+        reloads.forEach((_, plugin) => this.updatePlugin(plugin))
       })
 
       ctx.webui.addListener('manager.config.list', () => {
@@ -142,14 +146,16 @@ export abstract class Manager extends Service {
         throw new Error('Not implemented')
       })
 
-      ctx.webui.addListener('manager.package.list', () => {
-        return this.getPackages()
+      ctx.webui.addListener('manager.package.list', async () => {
+        return await this.getPackages()
       })
 
       ctx.webui.addListener('manager.package.runtime', async (name) => {
-        this.cache[name] = await this.parseExports(name)
-        this.entry?.refresh()
-        return this.cache[name]
+        const object = await this.parsePackage(name)
+        if (!object) throw new Error('Package not found')
+        object.runtime = await this.parseExports(name)
+        this.flushPackage(name)
+        return object.runtime
       })
 
       ctx.webui.addListener('manager.service.list', () => {
@@ -158,38 +164,44 @@ export abstract class Manager extends Service {
     })
   }
 
-  abstract collect(forced: boolean): Promise<PackageData[]>
+  abstract getPackages(forced?: boolean): Promise<LocalObject[]>
+  abstract parsePackage(name: string): Promise<LocalObject | undefined>
 
-  async update(plugin: Plugin) {
-    const name = this.store.get(plugin)
-    if (!name || !this.cache[name]) return
-    this.cache[name] = await this.parseExports(name)
-    this.debouncedRefresh()
+  flushPackage(name: string) {
+    this.pending.add(name)
+    this.flushTimer ??= setTimeout(() => {
+      this.entry?.patch(pick(this.packages, this.pending), 'packages')
+      this.pending.clear()
+      this.flushTimer = undefined
+    }, 100)
   }
 
-  parseRuntime(state: MainScope, result: RuntimeData) {
-    result.id = state.runtime.uid
-    result.forkable = state.runtime.isForkable
-    result.forks = Object.fromEntries(state.children
+  async updatePlugin(plugin: Plugin) {
+    const name = this.plugins.get(plugin)
+    if (!name || !this.packages[name].runtime) return
+    this.packages[name].runtime = await this.parseExports(name)
+    this.flushPackage(name)
+  }
+
+  updateRuntime(main: MainScope) {
+    const name = this.plugins.get(main.plugin)
+    if (!name || !this.packages[name].runtime) return
+    this.parseRuntime(main, this.packages[name].runtime!)
+    this.flushPackage(name)
+  }
+
+  parseRuntime(main: MainScope, runtime: RuntimeData) {
+    runtime.id = main.uid
+    runtime.forkable = main.isForkable
+    runtime.forks = Object.fromEntries(main.children
       .filter(fork => fork.entry)
       .map(fork => [fork.entry!.options.id, { status: fork.status }]))
   }
 
-  async getPackages(forced = false) {
-    const objects = (await this.collect(forced)).slice()
-    for (const object of objects) {
-      object.name = object.package?.name || ''
-      if (!this.cache[object.name]) continue
-      object.runtime = this.cache[object.name]
-    }
-
-    return Object.fromEntries(objects.map(data => [data.name, data]))
-  }
-
   async parseExports(name: string) {
     try {
-      const exports = await this.ctx.loader.resolve(name)
-      if (exports) this.store.set(exports, name)
+      const exports = this.ctx.loader.unwrapExports(await this.ctx.loader.import(name))
+      if (exports) this.plugins.set(exports, name)
       const result: RuntimeData = { id: null }
       result.schema = exports?.Config || exports?.schema
       result.usage = exports?.usage

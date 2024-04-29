@@ -31,9 +31,9 @@ export type LegacyMenuItem = Partial<ActionOptions> & Omit<MenuItem, 'id'>
 
 export interface MenuItem {
   id: string
-  label?: MaybeGetter<string>
-  type?: MaybeGetter<string>
-  icon?: MaybeGetter<string>
+  label?: MaybeGetter<string | undefined>
+  type?: MaybeGetter<string | undefined>
+  icon?: MaybeGetter<string | undefined>
   order?: number
 }
 
@@ -90,7 +90,7 @@ export default class ActionService extends Service {
       for (const action of Object.values(ctx.internal.actions)) {
         if (!action.shortcut) continue
         const keys = action.shortcut.split('+').map(key => key.toLowerCase().trim())
-        let ctrlKey = false, shiftKey = false, metaKey = false, code: string
+        let ctrlKey = false, shiftKey = false, metaKey = false, code: string | undefined
         for (const key of keys) {
           switch (key) {
             case 'shift': shiftKey = true; continue

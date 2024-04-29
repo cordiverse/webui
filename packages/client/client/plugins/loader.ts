@@ -3,7 +3,7 @@ import { Context } from '../context'
 import { Service } from '../utils'
 import { receive, store } from '../data'
 import { ForkScope } from 'cordis'
-import { Dict } from 'cosmokit'
+import { defineProperty, Dict } from 'cosmokit'
 
 declare module '../context' {
   interface Context {
@@ -26,7 +26,7 @@ export function unwrapExports(module: any) {
 type LoaderFactory = (ctx: Context, url: string) => Promise<ForkScope>
 
 function jsLoader(ctx: Context, exports: {}) {
-  return ctx.plugin(unwrapExports(exports), ctx.$entry.data)
+  return ctx.plugin(unwrapExports(exports), ctx.$entry!.data)
 }
 
 function cssLoader(ctx: Context, link: HTMLLinkElement) {
@@ -35,6 +35,9 @@ function cssLoader(ctx: Context, link: HTMLLinkElement) {
     return () => document.head.removeChild(link)
   })
 }
+
+defineProperty(jsLoader, 'reusable', true)
+defineProperty(cssLoader, 'reusable', true)
 
 const loaders: Dict<LoaderFactory> = {
   async [`.css`](ctx, url) {
@@ -68,11 +71,22 @@ export default class LoaderService extends Service {
   constructor(ctx: Context) {
     super(ctx, '$loader', true)
 
-    receive('entry-data', ({ id, data }) => {
+    receive('entry:data', ({ id, data }) => {
       const entry = store.entry?.[id]
       if (!entry) return
-      entry.data = data
       this.extensions[id].data.value = data
+    })
+
+    receive('entry:patch', ({ id, data, key }) => {
+      const entry = store.entry?.[id]
+      if (!entry) return
+      let node = this.extensions[id].data.value
+      const parts: string[] = key ? key.split('.') : []
+      while (parts.length) {
+        const part = parts.shift()!
+        node = node[part]
+      }
+      Object.assign(node, data)
     })
   }
 
@@ -99,7 +113,7 @@ export default class LoaderService extends Service {
         const task = Promise.all(files.map(async (url) => {
           for (const ext in loaders) {
             if (!url.endsWith(ext)) continue
-            ctx.$entry.fork = await loaders[ext](ctx, url)
+            ctx.$entry!.fork = await loaders[ext](ctx, url)
           }
         }))
         task.finally(() => this.extensions[key].done.value = true)

@@ -53,6 +53,10 @@ export interface EnvInfo {
 }
 
 export default class Manager extends Service {
+  static inject = {
+    optional: ['manager'],
+  }
+
   current = ref<Node>()
   dialogFork = ref<string>()
   dialogSelect = ref<Node>()
@@ -88,7 +92,7 @@ export default class Manager extends Service {
   type = computed(() => {
     const env = this.getEnvInfo(this.current.value?.name)
     if (!env) return
-    if (env.warning && this.current.value.disabled) return 'warning'
+    if (env.warning && this.current.value!.disabled) return 'warning'
     for (const name in env.using) {
       if (name in this.data.value.services || {}) {
         if (env.impl.includes(name)) return 'warning'
@@ -99,33 +103,35 @@ export default class Manager extends Service {
   })
 
   constructor(ctx: Context) {
-    super(ctx, 'configWriter', true)
+    super(ctx, 'manager', true)
+  }
 
-    ctx.slot({
+  start() {
+    this.ctx.slot({
       type: 'global',
       component: defineComponent(() => () => {
         return h(resolveComponent('k-slot'), { name: 'plugin-select', single: true })
       }),
     })
 
-    ctx.slot({
+    this.ctx.slot({
       type: 'plugin-select-base',
       component: Select,
       order: -1000,
     })
 
-    ctx.slot({
+    this.ctx.slot({
       type: 'plugin-select',
       component: Select,
       order: -1000,
     })
 
-    ctx.slot({
+    this.ctx.slot({
       type: 'global',
       component: Forks,
     })
 
-    ctx.page({
+    this.ctx.page({
       id: 'config',
       path: '/plugins/:name*',
       name: '插件配置',
@@ -135,7 +141,7 @@ export default class Manager extends Service {
       component: Settings,
     })
 
-    ctx.menu('config.tree', [{
+    this.ctx.menu('config.tree', [{
       id: 'config.tree.toggle',
       type: ({ config }) => config.tree?.disabled ? '' : this.type.value,
       icon: ({ config }) => config.tree?.disabled ? 'play' : 'stop',
@@ -178,7 +184,7 @@ export default class Manager extends Service {
   }
 
   get data(): Ref<Data> {
-    return this.ctx.$entry?.data
+    return this.ctx.$entry!.data
   }
 
   ensure(name: string, passive?: boolean) {
@@ -212,7 +218,7 @@ export default class Manager extends Service {
   }
 
   getStatus(tree: Node) {
-    switch (this.data.value.packages?.[tree.name]?.runtime?.forks?.[tree.path]?.status) {
+    switch (this.data.value.packages[tree.name]?.runtime?.forks?.[tree.path]?.status) {
       case ScopeStatus.PENDING: return 'pending'
       case ScopeStatus.LOADING: return 'loading'
       case ScopeStatus.ACTIVE: return 'active'
@@ -222,13 +228,14 @@ export default class Manager extends Service {
     }
   }
 
-  getEnvInfo(name: string) {
+  getEnvInfo(name?: string) {
     function setService(name: string, required: boolean) {
       if (services.has(name)) return
       if (name === 'console') return
       result.using[name] = { required }
     }
 
+    if (!name) return
     const local = this.data.value.packages[name]
     if (!local) return
 

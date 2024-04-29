@@ -31,14 +31,14 @@
       v-model="showRemove"
       title="确认移除"
       destroy-on-close
-      @closed="remove = null"
+      @closed="remove = undefined"
     >
       <template v-if="remove">
         确定要移除{{ remove.children ? `分组 ${remove.label || remove.path}` : `插件 ${remove.label || remove.name}` }} 吗？此操作不可撤销！
       </template>
       <template #footer>
         <el-button @click="showRemove = false">取消</el-button>
-        <el-button type="danger" @click="(showRemove = false, ctx.manager.remove(remove), tree?.activate())">确定</el-button>
+        <el-button type="danger" @click="(showRemove = false, ctx.manager.remove(remove!), tree?.activate())">确定</el-button>
       </template>
     </el-dialog>
 
@@ -47,27 +47,27 @@
       title="重命名"
       destroy-on-close
       @open="handleOpen"
-      @closed="rename = null"
+      @closed="rename = undefined"
     >
       <template v-if="rename">
         <el-input ref="inputEl" v-model="input" @keydown.enter.stop.prevent="renameItem(rename, input)"/>
       </template>
       <template #footer>
         <el-button @click="showRename = false">取消</el-button>
-        <el-button type="primary" @click="renameItem(rename, input)">确定</el-button>
+        <el-button type="primary" @click="renameItem(rename!, input)">确定</el-button>
       </template>
     </el-dialog>
 
     <el-dialog
-      :model-value="groupCreate !== null"
-      @update:model-value="groupCreate = null"
+      :model-value="groupCreate !== undefined"
+      @update:model-value="groupCreate = undefined"
       title="创建分组"
       destroy-on-close
       @open="handleOpen"
     >
       <el-input ref="inputEl" v-model="input" @keydown.enter.stop.prevent="createGroup(input)"/>
       <template #footer>
-        <el-button @click="groupCreate = null">取消</el-button>
+        <el-button @click="groupCreate = undefined">取消</el-button>
         <el-button type="primary" @click="createGroup(input)">确定</el-button>
       </template>
     </el-dialog>
@@ -86,6 +86,7 @@ import PluginSettings from './plugin.vue'
 
 const route = useRoute()
 const router = useRouter()
+const ctx = useContext()
 
 const current = computed(() => ctx.manager.current.value)
 const plugins = computed(() => ctx.manager.plugins.value)
@@ -121,7 +122,7 @@ const remove = ref<Node>()
 const showRemove = ref(false)
 const rename = ref<Node>()
 const showRename = ref(false)
-const groupCreate = ref<string>(null)
+const groupCreate = ref<string>()
 
 watch(remove, (value) => {
   if (value) showRemove.value = true
@@ -135,8 +136,6 @@ watch(() => plugins.value.paths[path.value], (value) => {
   ctx.manager.current.value = value
   if (value) config.value = clone(value.config)
 }, { immediate: true })
-
-const ctx = useContext()
 
 ctx.define('config.tree', ctx.manager.current)
 
@@ -159,7 +158,7 @@ async function createGroup(label: string) {
     label,
   })
   router.replace('/plugins/' + id)
-  groupCreate.value = null
+  groupCreate.value = undefined
 }
 
 ctx.action('config.tree.clone', {
@@ -201,7 +200,7 @@ ctx.action('config.tree.remove', {
 })
 
 function checkConfig(name: string) {
-  let schema = ctx.manager.data.value.packages[name]?.runtime.schema
+  let schema = ctx.manager.data.value.packages[name]?.runtime?.schema
   if (!schema) return true
   try {
     (new Schema(schema))(config.value)
@@ -214,7 +213,7 @@ function checkConfig(name: string) {
 
 ctx.action('config.tree.save', {
   shortcut: 'ctrl+s',
-  disabled: (scope) => !scope?.config?.tree || !['config'].includes(router.currentRoute.value?.meta?.activity.id),
+  disabled: (scope) => !scope?.config?.tree || !['config'].includes(router.currentRoute.value?.meta?.activity?.id!),
   action: async ({ config: { tree } }) => {
     const { disabled } = tree
     if (!disabled && !checkConfig(tree.name)) return

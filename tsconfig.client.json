@@ -10,7 +10,8 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "moduleResolution": "bundler",
-    "strictBindCallApply": true,
+    "strict": true,
+    "noImplicitAny": false,
     "types": [
       "@cordisjs/client/global",
     ],

@@ -149,10 +149,10 @@ export namespace Score {
   }
 }
 
-export interface SearchResult {
+export interface SearchResult<T = SearchObject> {
   total: number
   time: string
-  objects: SearchObject[]
+  objects: T[]
   version?: number
   forceTime?: number
 }

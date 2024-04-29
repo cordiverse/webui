@@ -36,10 +36,6 @@ export default class NodeManager extends Manager {
     this.packages = this.scanner.cache
   }
 
-  parsePackage(name: string) {
-    return this.scanner.loadPackage(name)
-  }
-
   async getPackages(forced: boolean) {
     await this.scanner.collect(forced)
     return this.scanner.objects

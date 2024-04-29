@@ -13,7 +13,9 @@ export interface BasePackage {
   description: string
 }
 
-export type DependencyKey = 'dependencies' | 'devDependencies' | 'peerDependencies' | 'optionalDependencies'
+export const DependencyKey = ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'] as const
+export type DependencyKey = typeof DependencyKey[number]
+
 export type DependencyMetaKey = 'deprecated' | 'peerDependencies' | 'peerDependenciesMeta'
 
 export interface PackageJson extends BasePackage, Partial<Record<DependencyKey, Record<string, string>>> {
@@ -55,7 +57,7 @@ export interface Manifest extends Manifest.Base {
   category?: string
   public?: string[]
   exports?: Dict<Manifest.Base | null | undefined>
-  ecosystem?: Manifest.Ecosystem
+  ecosystem?: Partial<Ecosystem>
 }
 
 export namespace Manifest {
@@ -71,12 +73,14 @@ export namespace Manifest {
     optional?: string[]
     implements?: string[]
   }
+}
 
-  export interface Ecosystem {
-    inject?: string[]
-    pattern?: string[]
-    keywords?: string[]
-  }
+export interface Ecosystem {
+  inject?: string[]
+  manifest: string
+  pattern: string[]
+  keywords: string[]
+  peerDependencies: Dict<string>
 }
 
 export interface RemotePackage extends PackageJson {

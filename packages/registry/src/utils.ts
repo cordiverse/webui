@@ -11,7 +11,7 @@ export namespace Ensure {
     return value.filter(x => typeof x === 'string')
   }
 
-  export const dict = <T>(value: any, callback?: (value: T) => T): Dict<T> | undefined => {
+  export function dict<T>(value: any, callback?: (value: T) => T): Dict<T> | undefined {
     if (typeof value !== 'object' || value === null) return
     return Object.entries(value).reduce((dict, [key, value]: [string, any]) => {
       value = callback ? callback(value) : value
@@ -20,7 +20,7 @@ export namespace Ensure {
     }, {})
   }
 
-  export const object = <T>(value: any, callback?: (value: T) => T): T | undefined => {
+  export function object<T>(value: any, callback?: (value: T) => T): T | undefined {
     if (typeof value !== 'object' || value === null) return
     return callback ? callback(value) : value
   }
@@ -62,20 +62,20 @@ function concludeBase(base?: Manifest.Base | null, description?: string) {
   return result
 }
 
-export function conclude(meta: PackageJson) {
+export function conclude(meta: PackageJson, prop = 'cordis') {
   const result: Manifest = {
-    ...concludeBase(meta.cordis, meta.description),
-    hidden: Ensure.boolean(meta.cordis?.hidden),
-    preview: Ensure.boolean(meta.cordis?.preview),
-    insecure: Ensure.boolean(meta.cordis?.insecure),
-    category: Ensure.string(meta.cordis?.category),
-    public: Ensure.array(meta.cordis?.public),
-    ecosystem: Ensure.object(meta.cordis?.ecosystem, (ecosystem) => ({
+    ...concludeBase(meta[prop], meta.description),
+    hidden: Ensure.boolean(meta[prop]?.hidden),
+    preview: Ensure.boolean(meta[prop]?.preview),
+    insecure: Ensure.boolean(meta[prop]?.insecure),
+    category: Ensure.string(meta[prop]?.category),
+    public: Ensure.array(meta[prop]?.public),
+    ecosystem: Ensure.object(meta[prop]?.ecosystem, (ecosystem) => ({
       inject: Ensure.array(ecosystem.inject),
       pattern: Ensure.array(ecosystem.pattern),
       keywords: Ensure.array(ecosystem.keywords),
     })),
-    exports: Ensure.dict(meta.cordis?.exports, concludeBase),
+    exports: Ensure.dict(meta[prop]?.exports, concludeBase),
   }
 
   return result

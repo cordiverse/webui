@@ -1,14 +1,13 @@
-/// <reference types="@types/node" />
-
-import { Awaitable, defineProperty, Dict, pick } from 'cosmokit'
+import { Awaitable, deduplicate, Dict, pick } from 'cosmokit'
 import { dirname } from 'node:path'
 import { createRequire } from 'node:module'
+import { Dirent } from 'node:fs'
 import { readdir, readFile } from 'node:fs/promises'
-import { PackageJson, SearchObject, SearchResult } from './types'
+import { DependencyKey, Ecosystem, PackageJson, SearchObject, SearchResult } from './types'
 import { conclude } from './utils'
 
-const LocalKeys = ['name', 'version', 'peerDependencies', 'peerDependenciesMeta'] as const
-type LocalKeys = typeof LocalKeys[number]
+const LocalKey = ['name', 'version', 'peerDependencies', 'peerDependenciesMeta'] as const
+type LocalKeys = typeof LocalKey[number]
 
 interface LocalObject extends Pick<SearchObject, 'shortname' | 'ecosystem' | 'workspace' | 'manifest'> {
   package: Pick<PackageJson, LocalKeys>
@@ -29,31 +28,72 @@ function clear(object: Dict) {
   }
 }
 
+interface Candidate {
+  meta: PackageJson
+  workspace: boolean
+}
+
 export class LocalScanner {
   public cache: Dict<LocalObject> = Object.create(null)
 
-  private subTasks: Dict<Promise<LocalObject | undefined>> = Object.create(null)
+  private ecosystems: Ecosystem[] = []
+  private candidates: Dict<Candidate> = Object.create(null)
+  private dependencies: Dict<string> = Object.create(null)
+  private pkgTasks: Dict<Promise<LocalObject | undefined>> = Object.create(null)
   private mainTask?: Promise<LocalObject[]>
   private require!: NodeRequire
 
   constructor(public baseDir: string, options: LocalScanner.Options = {}) {
-    defineProperty(this, 'require', createRequire(baseDir + '/package.json'))
+    this.require = createRequire(baseDir + '/package.json')
     Object.assign(this, options)
   }
 
   async _collect() {
     clear(this.cache)
-    clear(this.subTasks)
+    clear(this.pkgTasks)
+    clear(this.candidates)
+    clear(this.dependencies)
+    this.ecosystems.splice(0)
+    const meta = JSON.parse(await readFile(this.baseDir + '/package.json', 'utf8')) as PackageJson
+    for (const key of DependencyKey) {
+      Object.assign(this.dependencies, meta[key])
+    }
+
+    // scan for candidate packages (dependencies and symlinks)
     let root = this.baseDir
-    const directoryTasks: Promise<void>[] = []
+    const dirTasks: Promise<string[]>[] = []
     while (1) {
-      directoryTasks.push(this.loadDirectory(root))
+      dirTasks.push(this.loadDirectory(root))
       const parent = dirname(root)
       if (root === parent) break
       root = parent
     }
-    await Promise.all(directoryTasks)
-    await Promise.allSettled(Object.values(this.subTasks))
+    const names = deduplicate((await Promise.all(dirTasks)).flat(1))
+    const results = await Promise.all(names.map(async (name) => {
+      try {
+        return await this.loadMeta(name)
+      } catch (reason) {
+        this.onFailure?.(reason, name)
+      }
+    }))
+    for (const result of results) {
+      if (!result) continue
+      this.candidates[result.meta.name] = result
+    }
+
+    // check for candidates
+    this.ecosystems.push({
+      manifest: 'cordis',
+      pattern: ['cordis-plugin-*', '@cordisjs/plugin-*'],
+      keywords: ['cordis', 'plugin'],
+      peerDependencies: { cordis: '*' },
+    })
+    while (this.ecosystems.length) {
+      const ecosystem = this.ecosystems.shift()!
+      this.loadEcosystem(ecosystem)
+    }
+
+    await Promise.allSettled(Object.values(this.pkgTasks))
     return Object.values(this.cache)
   }
 
@@ -63,36 +103,70 @@ export class LocalScanner {
   }
 
   private async loadDirectory(baseDir: string) {
-    const base = baseDir + '/node_modules'
-    const files = await readdir(base).catch(() => [])
-    for (const name of files) {
-      if (name.startsWith('cordis-plugin-')) {
-        this.loadPackage(name)
-      } else if (name.startsWith('@')) {
-        const base2 = base + '/' + name
-        const files = await readdir(base2).catch(() => [])
-        for (const name2 of files) {
-          if (name === '@cordisjs' && name2.startsWith('plugin-') || name2.startsWith('cordis-plugin-')) {
-            this.loadPackage(name + '/' + name2)
-          }
-        }
+    const path = baseDir + '/node_modules'
+    const dirents = await readdir(path, { withFileTypes: true }).catch<Dirent[]>(() => [])
+    const results = await Promise.all(dirents.map(async (outer) => {
+      if (!outer.isDirectory() && !outer.isSymbolicLink()) return
+      if (outer.name.startsWith('@')) {
+        const dirents = await readdir(path + '/' + outer.name, { withFileTypes: true })
+        return Promise.all(dirents.map(async (inner) => {
+          const name = outer.name + '/' + inner.name
+          const isLink = inner.isSymbolicLink()
+          const isDep = !!this.dependencies[name]
+          if (isLink || isDep) return name
+        }))
+      } else {
+        const isLink = outer.isSymbolicLink()
+        const isDep = !!this.dependencies[outer.name]
+        if (isLink || isDep) return outer.name
       }
+    }))
+    return results.flat(1).filter((x): x is string => !!x)
+  }
+
+  checkEcosystem(meta: PackageJson, eco: Ecosystem) {
+    for (const peer in eco.peerDependencies) {
+      if (!meta.peerDependencies?.[peer]) return
+    }
+    for (const pattern of eco.pattern) {
+      const regexp = new RegExp('^' + pattern.replace('*', '.*') + '$')
+      let prefix = '', name = meta.name
+      if (!pattern.startsWith('@')) {
+        prefix = /^@.+\//.exec(meta.name)?.[0] || ''
+        name = name.slice(prefix.length)
+      }
+      if (!regexp.test(name)) continue
+      const index = pattern.indexOf('*')
+      return prefix + name.slice(index)
+    }
+    if (eco.manifest in meta) return meta.name
+  }
+
+  loadEcosystem(eco: Ecosystem) {
+    for (const [name, { meta, workspace }] of Object.entries(this.candidates)) {
+      const shortname = this.checkEcosystem(meta, eco)
+      if (!shortname) continue
+      delete this.candidates[name]
+      const manifest = conclude(meta, eco.manifest)
+      this.pkgTasks[name] ||= this.loadPackage(name, {
+        shortname,
+        workspace,
+        manifest,
+        package: pick(meta, LocalKey),
+      })
+      if (!manifest.ecosystem) continue
+      this.ecosystems.push({
+        inject: manifest.ecosystem.inject,
+        manifest: manifest.ecosystem.manifest || 'cordis',
+        pattern: manifest.ecosystem.pattern || [`${name}-plugin-`],
+        keywords: manifest.ecosystem.keywords || [name, 'plugin'],
+        peerDependencies: manifest.ecosystem.peerDependencies || { [name]: '*' },
+      })
     }
   }
 
-  async loadPackage(name: string) {
-    return this.subTasks[name] ||= this._loadPackage(name)
-  }
-
-  private async _loadPackage(name: string) {
+  private async loadPackage(name: string, object: LocalObject) {
     try {
-      const [meta, workspace] = await this.loadManifest(name)
-      const object: LocalObject = {
-        workspace,
-        manifest: conclude(meta),
-        shortname: meta.name.replace(/(cordis-|^@cordisjs\/)plugin-/, ''),
-        package: pick(meta, LocalKeys),
-      }
       this.cache[name] = object
       await this.onSuccess?.(object)
       return object
@@ -101,12 +175,12 @@ export class LocalScanner {
     }
   }
 
-  private async loadManifest(name: string) {
+  private async loadMeta(name: string): Promise<Candidate> {
     const filename = this.require.resolve(name + '/package.json')
     const meta: PackageJson = JSON.parse(await readFile(filename, 'utf8'))
     meta.peerDependencies ||= {}
     meta.peerDependenciesMeta ||= {}
-    return [meta, !filename.includes('node_modules')] as const
+    return { meta, workspace: !filename.includes('node_modules') }
   }
 
   toJSON(): SearchResult<LocalObject> {

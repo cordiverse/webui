@@ -149,11 +149,14 @@ export abstract class Manager extends Service {
       })
 
       ctx.webui.addListener('manager.package.runtime', async (name) => {
-        const object = await this.parsePackage(name)
-        if (!object) throw new Error('Package not found')
-        object.runtime = await this.parseExports(name)
-        this.flushPackage(name)
-        return object.runtime
+        let runtime = this.packages[name]?.runtime
+        if (runtime) return runtime
+        runtime = await this.parseExports(name)
+        if (this.packages[name]) {
+          this.packages[name].runtime = runtime
+          this.flushPackage(name)
+        }
+        return runtime
       })
 
       ctx.webui.addListener('manager.service.list', () => {
@@ -163,7 +166,6 @@ export abstract class Manager extends Service {
   }
 
   abstract getPackages(forced?: boolean): Promise<LocalObject[]>
-  abstract parsePackage(name: string): Promise<LocalObject | undefined>
 
   flushPackage(name: string) {
     this.pending.add(name)

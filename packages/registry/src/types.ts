@@ -23,7 +23,7 @@ export interface PackageJson extends BasePackage, Partial<Record<DependencyKey, 
   bin?: string | Dict<string>
   scripts?: Dict<string>
   exports?: PackageJson.Exports
-  cordis?: Partial<Manifest>
+  cordis?: Manifest
   keywords: string[]
   engines?: Dict<string>
   os?: string[]
@@ -47,25 +47,35 @@ export interface IconSvg {
   pathData: string
 }
 
-export interface Manifest {
+export interface Manifest extends Manifest.Base {
   icon?: IconSvg
   hidden?: boolean
   preview?: boolean
   insecure?: boolean
-  browser?: boolean
   category?: string
   public?: string[]
-  exports?: Dict<string>
-  description: string | Dict<string>
-  service: Manifest.Service
-  locales: string[]
+  exports?: Dict<Manifest.Base | null | undefined>
+  ecosystem?: Manifest.Ecosystem
 }
 
 export namespace Manifest {
+  export interface Base {
+    browser?: boolean
+    description?: string | Dict<string>
+    service?: Manifest.Service
+    resources?: Dict
+  }
+
   export interface Service {
-    required: string[]
-    optional: string[]
-    implements: string[]
+    required?: string[]
+    optional?: string[]
+    implements?: string[]
+  }
+
+  export interface Ecosystem {
+    inject?: string[]
+    pattern?: string[]
+    keywords?: string[]
   }
 }
 
@@ -115,6 +125,7 @@ export interface SearchPackage extends DatedPackage, Pick<RemotePackage, Depende
 
 export interface SearchObject {
   shortname: string
+  ecosystem?: string
   package: SearchPackage
   searchScore: number
   score: Score

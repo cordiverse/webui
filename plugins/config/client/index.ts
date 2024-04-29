@@ -255,8 +255,7 @@ export default class Manager extends Service {
     }
 
     // check implementations
-    for (const name of local.manifest.service.implements) {
-      if (name === 'adapter') continue
+    for (const name of local.manifest.service?.implements || []) {
       result.impl.push(name)
     }
 

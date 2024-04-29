@@ -7,8 +7,11 @@ import { readdir, readFile } from 'node:fs/promises'
 import { PackageJson, SearchObject, SearchResult } from './types'
 import { conclude } from './utils'
 
-interface LocalObject extends Pick<SearchObject, 'shortname' | 'workspace' | 'manifest'> {
-  package: Pick<PackageJson, 'name' | 'version' | 'peerDependencies' | 'peerDependenciesMeta'>
+const LocalKeys = ['name', 'version', 'peerDependencies', 'peerDependenciesMeta'] as const
+type LocalKeys = typeof LocalKeys[number]
+
+interface LocalObject extends Pick<SearchObject, 'shortname' | 'ecosystem' | 'workspace' | 'manifest'> {
+  package: Pick<PackageJson, LocalKeys>
 }
 
 export interface LocalScanner extends SearchResult<LocalObject>, LocalScanner.Options {}
@@ -88,12 +91,7 @@ export class LocalScanner {
         workspace,
         manifest: conclude(meta),
         shortname: meta.name.replace(/(cordis-|^@cordisjs\/)plugin-/, ''),
-        package: pick(meta, [
-          'name',
-          'version',
-          'peerDependencies',
-          'peerDependenciesMeta',
-        ]),
+        package: pick(meta, LocalKeys),
       }
       this.cache[name] = object
       await this.onSuccess?.(object)

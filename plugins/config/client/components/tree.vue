@@ -54,8 +54,8 @@ const plugins = computed(() => ctx.manager.plugins.value)
 
 const emit = defineEmits(['update:modelValue'])
 
-const root = ref<InstanceType<typeof ElScrollbar>>(null)
-const tree = ref<InstanceType<typeof ElTree>>(null)
+const root = ref<InstanceType<typeof ElScrollbar>>()
+const tree = ref<InstanceType<typeof ElTree>>()
 const keyword = ref('')
 
 function filterNode(value: string, data: Node) {
@@ -73,7 +73,7 @@ async function activate() {
   const rootEl = root.value?.$el
   const nodeEl = rootEl?.querySelector('.el-tree-node.is-active') as HTMLElement
   if (!nodeEl || !nodeEl.offsetTop && route.path.slice(9 /* /plugins/ */)) return
-  root.value['setScrollTop'](nodeEl.offsetTop - (rootEl.offsetHeight - nodeEl.offsetHeight) / 2)
+  root.value!['setScrollTop'](nodeEl.offsetTop - (rootEl.offsetHeight - nodeEl.offsetHeight) / 2)
 }
 
 defineExpose({ activate })
@@ -157,7 +157,7 @@ function getClass(tree: Node) {
 }
 
 watch(keyword, (val) => {
-  tree.value.filter(val)
+  tree.value?.filter(val)
 })
 
 </script>

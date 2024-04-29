@@ -22,6 +22,7 @@ export default class NodeManager extends Manager {
         this.ctx.logger.debug(error)
         object.runtime = { failed: true }
       }
+      this.flushPackage(name)
     },
 
     onFailure: (error, name) => {

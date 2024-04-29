@@ -74,8 +74,6 @@ export abstract class Manager extends Service {
     if (!ctx.loader?.writable) {
       throw new Error('@cordisjs/plugin-config is only available for json/yaml config file')
     }
-
-    this.installWebUI()
   }
 
   getConfig() {
@@ -95,7 +93,7 @@ export abstract class Manager extends Service {
     return result
   }
 
-  installWebUI() {
+  start() {
     this.ctx.inject(['webui'], (ctx) => {
       this.entry = ctx.webui.addEntry({
         dev: import.meta.resolve('../client/index.ts'),
@@ -229,4 +227,10 @@ export abstract class Manager extends Service {
       return { failed: true }
     }
   }
+}
+
+export namespace Manager {
+  export interface Config {}
+
+  export const Config: Schema<Config> = Schema.object({})
 }

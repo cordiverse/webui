@@ -1,7 +1,7 @@
 import * as cordis from 'cordis'
 import {
   App, Component, createApp, defineComponent, h, inject, InjectionKey,
-  markRaw, onBeforeUnmount, provide, Ref, resolveComponent,
+  markRaw, onBeforeUnmount, onErrorCaptured, provide, Ref, resolveComponent,
 } from 'vue'
 import ActionService from './plugins/action'
 import I18nService from './plugins/i18n'
@@ -22,15 +22,15 @@ export interface Context {
 const kContext = Symbol('context') as InjectionKey<Context>
 
 export function useContext() {
-  const parent = inject(kContext)
+  const parent = inject(kContext)!
   const fork = parent.plugin(() => {})
   onBeforeUnmount(() => fork.dispose())
   return fork.ctx
 }
 
 export function useRpc<T>(): Ref<T> {
-  const parent = inject(kContext)
-  return parent.$entry?.data
+  const parent = inject(kContext)!
+  return parent.$entry.data
 }
 
 export interface Internal {}
@@ -40,7 +40,6 @@ export class Context extends cordis.Context {
 
   constructor() {
     super()
-    this.$entry = null
     this.internal = {} as Internal
     this.app = createApp(defineComponent({
       setup: () => () => [
@@ -76,12 +75,15 @@ export class Context extends cordis.Context {
     })
   }
 
-  wrapComponent(component: Component) {
+  wrapComponent(component?: Component) {
     if (!component) return
     const caller = this[Context.current] || this
     if (!caller.$entry) return component
     return defineComponent((props, { slots }) => {
       provide(kContext, caller)
+      onErrorCaptured((e, instance, info) => {
+        return caller.scope.uid !== null
+      })
       return () => h(component, props, slots)
     })
   }

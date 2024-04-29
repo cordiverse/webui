@@ -99,11 +99,11 @@ export class Activity {
   }
 
   dispose() {
+    const { meta, fullPath } = this.ctx.$router.router.currentRoute.value
     this._disposables.forEach(dispose => dispose())
-    const current = this.ctx.$router.router.currentRoute.value
-    if (current?.meta?.activity === this) {
-      redirectTo.value = current.fullPath
-      this.ctx.$router.router.push(this.ctx.$router.cache['home'] || '/')
+    if (meta?.activity === this) {
+      redirectTo.value = fullPath
+      this.ctx.$router.router.replace(this.ctx.$router.cache['home'] || '/')
     }
     return delete this.ctx.$router.pages[this.id]
   }

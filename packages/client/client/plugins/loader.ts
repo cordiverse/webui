@@ -9,7 +9,7 @@ import { Entry } from '@cordisjs/plugin-webui'
 declare module '../context' {
   interface Context {
     $loader: LoaderService
-    $entry?: LoadState
+    $entry: LoadState
   }
 }
 
@@ -27,7 +27,7 @@ export function unwrapExports(module: any) {
 type LoaderFactory = (ctx: Context, url: string) => Promise<ForkScope>
 
 function jsLoader(ctx: Context, exports: {}) {
-  return ctx.plugin(unwrapExports(exports), ctx.$entry!.data)
+  return ctx.plugin(unwrapExports(exports), ctx.$entry.data)
 }
 
 function cssLoader(ctx: Context, link: HTMLLinkElement) {
@@ -99,23 +99,29 @@ export default class LoaderService extends Service {
       }
       this.id = _id
 
-      for (const key in this.entries) {
-        if (rest[key]) continue
-        for (const fork of this.entries[key].forks) {
-          fork?.dispose()
+      await Promise.all(Object.entries(rest).map(([key, body]) => {
+        if (this.entries[key]) {
+          if (body) return console.warn(`Entry ${key} already exists`)
+          for (const fork of this.entries[key].forks) {
+            fork.dispose()
+          }
+          delete this.entries[key]
+          return
         }
-        delete this.entries[key]
-      }
 
-      await Promise.all(Object.entries(rest).map(([key, { files, paths = [], data }]) => {
-        if (this.entries[key]) return
+        const { files, paths = [], data } = body
         const ctx = this.ctx.isolate('$entry')
-        ctx.$entry = this.entries[key] = { done: ref(false), paths, data: ref(data), forks: [] }
+        ctx.$entry = this.entries[key] = {
+          done: ref(false),
+          paths,
+          data: ref(data),
+          forks: [],
+        }
 
         const task = Promise.allSettled(files.map(async (url, index) => {
           for (const ext in loaders) {
             if (!url.endsWith(ext)) continue
-            ctx.$entry!.forks[index] = await loaders[ext](ctx, url)
+            ctx.$entry.forks[index] = await loaders[ext](ctx, url)
           }
         }))
         task.then(() => this.entries[key].done.value = true)

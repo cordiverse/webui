@@ -31,7 +31,7 @@ export abstract class WebUI<T = unknown> extends Service<T> {
   constructor(public ctx: Context, public config: T) {
     super(ctx, 'webui', true)
     this.listeners.ping = function () {
-      this.send(JSON.stringify({ type: 'pong' }))
+      this.send({ type: 'pong' })
     }
   }
 

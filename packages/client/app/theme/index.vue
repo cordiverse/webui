@@ -11,12 +11,8 @@
 
 <script lang="ts" setup>
 
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
 import ActivityBar from './activity/index.vue'
 import StatusBar from './status.vue'
 import MenuList from './menu/index.vue'
-
-const route = useRoute()
 
 </script>

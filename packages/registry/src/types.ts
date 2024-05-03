@@ -49,19 +49,19 @@ export interface IconSvg {
   pathData: string
 }
 
-export interface Manifest extends Manifest.Base {
+export interface Manifest extends Manifest.Export {
   icon?: IconSvg
   hidden?: boolean
   preview?: boolean
   insecure?: boolean
   category?: string
   public?: string[]
-  exports?: Dict<Manifest.Base | null | undefined>
+  exports?: Dict<Manifest.Export | null>
   ecosystem?: Partial<Ecosystem>
 }
 
 export namespace Manifest {
-  export interface Base {
+  export interface Export {
     browser?: boolean
     description?: string | Dict<string>
     service?: Manifest.Service

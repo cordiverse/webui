@@ -36,11 +36,12 @@ export namespace Ensure {
   export const string = primitive<string>('string')
 }
 
-function concludeBase(base?: Manifest.Base | null, description?: string) {
-  if (typeof base !== 'object') return
+function concludeExport(base?: Manifest.Export | null, description?: string) {
+  // undefined values are dropped during serialization
+  if (typeof base !== 'object') return undefined!
   if (!base) return null
 
-  const result: Manifest.Base = {
+  const result: Manifest.Export = {
     browser: Ensure.boolean(base.browser),
     description: Ensure.dict(base.description) ?? Ensure.string(description),
     service: Ensure.object(base.service, (service) => ({
@@ -64,7 +65,7 @@ function concludeBase(base?: Manifest.Base | null, description?: string) {
 
 export function conclude(meta: PackageJson, prop = 'cordis') {
   const result: Manifest = {
-    ...concludeBase(meta[prop], meta.description),
+    ...concludeExport(meta[prop], meta.description),
     hidden: Ensure.boolean(meta[prop]?.hidden),
     preview: Ensure.boolean(meta[prop]?.preview),
     insecure: Ensure.boolean(meta[prop]?.insecure),
@@ -75,7 +76,7 @@ export function conclude(meta: PackageJson, prop = 'cordis') {
       pattern: Ensure.array(ecosystem.pattern),
       keywords: Ensure.array(ecosystem.keywords),
     })),
-    exports: Ensure.dict(meta[prop]?.exports, concludeBase),
+    exports: Ensure.dict(meta[prop]?.exports, concludeExport),
   }
 
   return result

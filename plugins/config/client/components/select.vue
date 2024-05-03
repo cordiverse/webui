@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     :modelValue="!!dialogSelect"
-    @update:modelValue="dialogSelect = null"
+    @update:modelValue="dialogSelect = undefined"
     class="plugin-select"
   >
     <template #header>
@@ -15,10 +15,21 @@
     <slot name="tabs" :packages="packages"></slot>
     <div class="content">
       <el-scrollbar>
-        <div class="package" v-for="({ name, manifest }) in packages" :key="name" @click.stop="configure(name)">
-          <h3>{{ name }}</h3>
-          <k-markdown inline class="desc" :source="tt(manifest.description)"></k-markdown>
-        </div>
+        <template v-for="local in packages" :key="local.package.name">
+          <div
+            class="package"
+            v-if="local.manifest.exports?.['.'] !== null"
+            @click.stop="configure(local.package.name)">
+            <h3>{{ local.package.name }}</h3>
+            <k-markdown inline class="desc" :source="tt(local.manifest.description)"></k-markdown>
+          </div>
+          <template v-for="(manifest, name) in local.manifest.exports">
+            <div class="package" v-if="manifest">
+              <h3>{{ joinName(name, local.package.name) }}</h3>
+              <k-markdown inline class="desc" :source="tt(manifest.description)"></k-markdown>
+            </div>
+          </template>
+        </template>
       </el-scrollbar>
     </div>
   </el-dialog>
@@ -26,9 +37,9 @@
 
 <script lang="ts" setup>
 
-import { router, send, useContext, useI18nText } from '@cordisjs/client'
+import { router, Dict, send, useContext, useI18nText } from '@cordisjs/client'
 import { computed, inject, nextTick, ref, watch } from 'vue'
-import type { PackageData } from '../../src'
+import type { LocalObject } from '@cordisjs/registry'
 
 const ctx = useContext()
 const tt = useI18nText()
@@ -41,15 +52,20 @@ const dialogSelect = computed({
 const keyword = ref('')
 const input = ref()
 
-const filter = inject('plugin-select-filter', (data: PackageData) => true)
+const filter = inject('plugin-select-filter', (local: LocalObject) => true)
 
-const packages = computed(() => Object.values(ctx.manager.data.value.packages).filter(({ name, shortname }) => {
-  return name && shortname.includes(keyword.value.toLowerCase()) && filter(ctx.manager.data.value.packages[name])
+const packages = computed(() => Object.values(ctx.manager.data.value.packages).filter((local) => {
+  return local.package.name.includes(keyword.value.toLowerCase()) && filter(local)
 }))
 
+function joinName(name: string, base: string) {
+  if (name.startsWith('./')) name = name.slice(2)
+  return base + '/' + name
+}
+
 async function configure(name: string) {
-  const parent = dialogSelect.value.path
-  dialogSelect.value = null
+  const parent = dialogSelect.value!.path
+  dialogSelect.value = undefined
   keyword.value = ''
   const id = await send('manager.config.create', {
     name,

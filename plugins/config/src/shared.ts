@@ -8,8 +8,8 @@ import {} from '@cordisjs/plugin-hmr'
 declare module '@cordisjs/loader' {
   namespace Entry {
     interface Options {
-      label?: string | Dict<string>
-      collapse?: boolean
+      label?: string | Dict<string> | null
+      collapse?: boolean | null
     }
   }
 }

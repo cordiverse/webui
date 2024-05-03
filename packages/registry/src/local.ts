@@ -124,7 +124,7 @@ export class LocalScanner {
     return results.flat(1).filter((x): x is string => !!x)
   }
 
-  checkEcosystem(meta: PackageJson, eco: Ecosystem) {
+  private checkEcosystem(meta: PackageJson, eco: Ecosystem) {
     for (const peer in eco.peerDependencies) {
       if (!meta.peerDependencies?.[peer]) return
     }
@@ -142,7 +142,7 @@ export class LocalScanner {
     if (eco.manifest in meta) return meta.name
   }
 
-  loadEcosystem(eco: Ecosystem) {
+  private loadEcosystem(eco: Ecosystem) {
     for (const [name, { meta, workspace }] of Object.entries(this.candidates)) {
       const shortname = this.checkEcosystem(meta, eco)
       if (!shortname) continue

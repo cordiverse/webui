@@ -72,7 +72,7 @@ export abstract class Manager extends Service {
     super(ctx, 'manager', true)
 
     if (!ctx.loader?.writable) {
-      throw new Error('@cordisjs/plugin-config is only available for json/yaml config file')
+      throw new Error('@cordisjs/plugin-manager is only available for json/yaml config file')
     }
   }
 

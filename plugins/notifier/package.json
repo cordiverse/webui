@@ -1,14 +1,12 @@
 {
   "name": "@cordisjs/plugin-notifier",
-  "description": "Notifier service for Koishi",
+  "description": "Notifier service for Cordis",
   "version": "0.1.0",
-  "main": "lib/index.cjs",
-  "types": "lib/index.d.ts",
+  "type": "module",
   "exports": {
     ".": {
-      "import": "./lib/index.mjs",
-      "require": "./lib/index.cjs",
-      "types": "./lib/index.d.ts"
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.mjs"
     },
     "./src/*": "./src/*",
     "./client": "./client/index.ts",
@@ -16,8 +14,7 @@
   },
   "files": [
     "lib",
-    "dist",
-    "src"
+    "dist"
   ],
   "author": "Shigma <shigma10826@gmail.com>",
   "license": "MIT",
@@ -62,7 +59,7 @@
   },
   "devDependencies": {
     "@cordisjs/client": "^0.1.1",
-    "@cordisjs/plugin-config": "^2.8.6"
+    "@cordisjs/plugin-manager": "^0.1.0"
   },
   "dependencies": {
     "@cordisjs/element": "^0.1.0",

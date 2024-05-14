@@ -1,7 +1,7 @@
 {
-  "name": "@cordisjs/plugin-config",
+  "name": "@cordisjs/plugin-manager",
   "description": "Manage your bots and plugins with console",
-  "version": "2.8.6",
+  "version": "0.1.0",
   "type": "module",
   "exports": {
     ".": {
@@ -14,6 +14,7 @@
       "default": "./lib/shared.js"
     },
     "./src/*": "./src/*",
+    "./client": "./client/index.ts",
     "./package.json": "./package.json"
   },
   "files": [
@@ -42,7 +43,7 @@
       "dist"
     ],
     "description": {
-      "en": "Configure your plugins with WebUI",
+      "en": "Manage your plugins with WebUI",
       "zh": "使用控制台查看、配置你的插件"
     },
     "service": {
@@ -55,12 +56,12 @@
     }
   },
   "peerDependencies": {
-    "@cordisjs/loader": "^0.9.0",
-    "@cordisjs/plugin-webui": "^0.1.0",
-    "cordis": "^3.14.0"
+    "@cordisjs/loader": "^0.10.0",
+    "@cordisjs/plugin-webui": "^0.1.1",
+    "cordis": "^3.15.0"
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.1.0",
+    "@cordisjs/client": "^0.1.1",
     "@cordisjs/plugin-hmr": "^0.2.1"
   },
   "dependencies": {

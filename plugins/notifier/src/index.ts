@@ -2,7 +2,6 @@ import { Context, Schema, Service } from 'cordis'
 import { Dict, isNullable, remove } from 'cosmokit'
 import { h } from '@cordisjs/element'
 import type { Entry } from '@cordisjs/plugin-webui'
-import { resolve } from 'path'
 
 declare module 'cordis' {
   interface Context {
@@ -105,15 +104,12 @@ class NotifierService extends Service {
     ctx.inject(['webui'], (ctx) => {
       ctx.on('dispose', () => this.entry = undefined)
 
-      this.entry = ctx.webui.addEntry(process.env.KOISHI_BASE ? [
-        process.env.KOISHI_BASE + '/dist/index.js',
-        process.env.KOISHI_BASE + '/dist/style.css',
-      ] : process.env.KOISHI_ENV === 'browser' ? [
-        // @ts-ignore
-        import.meta.url.replace(/\/src\/[^/]+$/, '/client/index.ts'),
-      ] : {
-        dev: resolve(__dirname, '../client/index.ts'),
-        prod: resolve(__dirname, '../dist'),
+      this.entry = ctx.webui.addEntry({
+        dev: import.meta.resolve('../client/index.ts'),
+        prod: [
+          import.meta.resolve('../dist/index.js'),
+          import.meta.resolve('../dist/style.css'),
+        ],
       }, () => ({
         notifiers: this.store.map(notifier => notifier.toJSON()),
       }))

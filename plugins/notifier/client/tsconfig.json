@@ -1,0 +1,11 @@
+{
+  "extends": "../../../tsconfig.client",
+  "include": [
+    ".",
+  ],
+  "references": [
+    {
+      "path": "../tsconfig.json",
+    },
+  ],
+}

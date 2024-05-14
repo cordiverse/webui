@@ -10,6 +10,7 @@
 
 ### Official plugins
 
-- @cordisjs/plugin-config
 - @cordisjs/plugin-insight
+- @cordisjs/plugin-manager
+- @cordisjs/plugin-notifier
 - @cordisjs/plugin-webui

@@ -1,0 +1,71 @@
+{
+  "name": "@cordisjs/plugin-notifier",
+  "description": "Notifier service for Koishi",
+  "version": "0.1.0",
+  "main": "lib/index.cjs",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./lib/index.mjs",
+      "require": "./lib/index.cjs",
+      "types": "./lib/index.d.ts"
+    },
+    "./src/*": "./src/*",
+    "./client": "./client/index.ts",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "dist",
+    "src"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint src --ext .ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cordiverse/webui.git",
+    "directory": "plugins/notifier"
+  },
+  "bugs": {
+    "url": "https://github.com/cordiverse/webui/issues"
+  },
+  "keywords": [
+    "cordis",
+    "plugin",
+    "notifier",
+    "webui"
+  ],
+  "cordis": {
+    "public": [
+      "dist"
+    ],
+    "description": {
+      "en": "Notifier service for Cordis WebUI",
+      "zh": "Cordis WebUI 通知服务"
+    },
+    "service": {
+      "implements": [
+        "notifier"
+      ],
+      "optional": [
+        "manager",
+        "webui"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "@cordisjs/plugin-webui": "^0.1.1",
+    "cordis": "^3.15.0"
+  },
+  "devDependencies": {
+    "@cordisjs/client": "^0.1.1",
+    "@cordisjs/plugin-config": "^2.8.6"
+  },
+  "dependencies": {
+    "@cordisjs/element": "^0.1.0",
+    "cosmokit": "^1.6.2"
+  }
+}

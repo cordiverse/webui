@@ -1,6 +1,5 @@
 import { Context } from 'cordis'
 import { LocalScanner } from '@cordisjs/registry'
-import {} from 'cordis/worker'
 import { Manager } from './shared'
 import { pathToFileURL } from 'url'
 

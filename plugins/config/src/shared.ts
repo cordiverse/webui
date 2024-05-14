@@ -20,9 +20,9 @@ declare module '@cordisjs/plugin-webui' {
     'manager.config.create'(options: Omit<LoaderEntry.Options, 'id'> & EntryLocation): Promise<string>
     'manager.config.update'(options: Omit<LoaderEntry.Options, 'name'>): void
     'manager.config.remove'(options: { id: string }): void
-    'manager.config.teleport'(options: { id: string } & EntryLocation): void
+    'manager.config.transfer'(options: { id: string } & EntryLocation): void
     'manager.package.list'(): Promise<LocalObject[]>
-    'manager.package.runtime'(name: string): Promise<RuntimeData>
+    'manager.package.runtime'(options: { name: string }): Promise<RuntimeData>
     'manager.service.list'(): Dict<string[]>
   }
 }
@@ -55,7 +55,7 @@ export interface RuntimeData {
 
 interface EntryLocation {
   parent?: string
-  position?: number
+  index?: number
 }
 
 export abstract class Manager extends Service {
@@ -128,33 +128,35 @@ export abstract class Manager extends Service {
       })
 
       ctx.webui.addListener('manager.config.create', (options) => {
-        const { parent, position, ...rest } = options
-        return ctx.loader.create(rest, parent, position)
+        const { parent, index, ...rest } = options
+        return ctx.loader.create(rest, parent, index)
       })
 
       ctx.webui.addListener('manager.config.update', (options) => {
-        throw new Error('Not implemented')
+        const { id, ...rest } = options
+        return ctx.loader.update(id, rest)
       })
 
       ctx.webui.addListener('manager.config.remove', (options) => {
         return ctx.loader.remove(options.id)
       })
 
-      ctx.webui.addListener('manager.config.teleport', (options) => {
-        throw new Error('Not implemented')
+      ctx.webui.addListener('manager.config.transfer', (options) => {
+        const { id, parent, index } = options
+        return ctx.loader.transfer(id, parent ?? '', index)
       })
 
       ctx.webui.addListener('manager.package.list', async () => {
         return await this.getPackages()
       })
 
-      ctx.webui.addListener('manager.package.runtime', async (name) => {
-        let runtime = this.packages[name]?.runtime
+      ctx.webui.addListener('manager.package.runtime', async (options) => {
+        let runtime = this.packages[options.name]?.runtime
         if (runtime) return runtime
-        runtime = await this.parseExports(name)
-        if (this.packages[name]) {
-          this.packages[name].runtime = runtime
-          this.flushPackage(name)
+        runtime = await this.parseExports(options.name)
+        if (this.packages[options.name]) {
+          this.packages[options.name].runtime = runtime
+          this.flushPackage(options.name)
         }
         return runtime
       })
@@ -200,13 +202,14 @@ export abstract class Manager extends Service {
 
   async parseExports(name: string) {
     try {
-      const exports = this.ctx.loader.unwrapExports(await this.ctx.loader.import(name))
-      if (exports) this.plugins.set(exports, name)
+      const exports = await this.ctx.loader.import(name)
+      const plugin = this.ctx.loader.unwrapExports(exports)
+      if (plugin) this.plugins.set(plugin, name)
       const result: RuntimeData = { id: null }
-      result.schema = exports?.Config || exports?.schema
-      result.usage = exports?.usage
-      result.filter = exports?.filter
-      const inject = exports?.using || exports?.inject || []
+      result.schema = plugin?.Config || plugin?.schema
+      result.usage = plugin?.usage
+      result.filter = plugin?.filter
+      const inject = plugin?.using || plugin?.inject || []
       if (Array.isArray(inject)) {
         result.required = inject
         result.optional = []
@@ -218,8 +221,8 @@ export abstract class Manager extends Service {
       // make sure that result can be serialized into json
       JSON.stringify(result)
 
-      if (exports) {
-        const runtime = this.ctx.registry.get(exports)
+      if (plugin) {
+        const runtime = this.ctx.registry.get(plugin)
         if (runtime) this.parseRuntime(runtime, result)
       }
       return result

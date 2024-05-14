@@ -73,10 +73,7 @@
 
       <!-- config -->
       <k-slot-item :order="-1000">
-        <k-comment v-if="!local.runtime.schema" type="warning">
-          <p>此插件未声明配置项，这可能并非预期行为。{{ hint }}</p>
-        </k-comment>
-        <k-form v-else :schema="local.runtime.schema" :initial="current.config" v-model="config">
+        <k-form v-if="local.runtime.schema" :schema="local.runtime.schema" :initial="current!.config" v-model="config">
           <template #hint>{{ hint }}</template>
         </k-form>
       </k-slot-item>
@@ -126,7 +123,7 @@ const hint = computed(() => local.value.workspace ? '请检查插件源代码。
 
 watch(local, (value) => {
   if (!value || value.runtime) return
-  send('manager.package.runtime', value.package.name)
+  send('manager.package.runtime', { name: value.package.name })
 }, { immediate: true })
 
 provide('plugin:name', name)

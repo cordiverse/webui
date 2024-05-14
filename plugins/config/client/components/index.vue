@@ -164,16 +164,16 @@ async function createGroup(label: string) {
 ctx.action('config.tree.clone', {
   hidden: ({ config }) => !config.tree || !!config.tree.children,
   action: async ({ config }) => {
-    const children = config.tree.parent.path
-      ? config.tree.parent.children
+    const children = config.tree.parent!.path
+      ? config.tree.parent!.children
       : plugins.value.data.slice(1)
     const index = children.findIndex(tree => tree.path === config.tree.path)
     const id = await send('manager.config.create', {
       name: config.tree.name,
       config: config.tree.config,
       disabled: true,
-      parent: config.tree.parent.id,
-      position: index + 1,
+      parent: config.tree.parent!.id,
+      index: index + 1,
     })
     router.replace(`/plugins/${id}`)
   },

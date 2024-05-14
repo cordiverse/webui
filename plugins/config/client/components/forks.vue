@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     :model-value="!!dialogFork"
-    @update:model-value="dialogFork = null"
+    @update:model-value="dialogFork = undefined"
     class="dialog-config-fork"
     destroy-on-close>
     <template #header="{ titleId, titleClass }">
@@ -10,7 +10,7 @@
       </span>
     </template>
     <table>
-      <tr v-for="id in plugins.forks[dialogFork]" :key="id">
+      <tr v-for="id in plugins.forks[dialogFork!]" :key="id">
         <td class="text-left">
           <span class="status-light" :class="ctx.manager.getStatus(plugins.paths[id])"></span>
           <span class="path">{{ getFullPath(plugins.paths[id]) }}</span>
@@ -25,8 +25,8 @@
     </table>
     <template #footer>
       <div class="left">
-        <template v-if="plugins.forks[dialogFork]?.length">
-          此插件目前存在 {{ plugins.forks[dialogFork]?.length }} 份配置。
+        <template v-if="plugins.forks[dialogFork!]?.length">
+          此插件目前存在 {{ plugins.forks[dialogFork!]?.length }} 份配置。
         </template>
         <template v-else>
           此插件尚未被配置。
@@ -52,7 +52,7 @@ const dialogFork = computed({
   set: (value) => ctx.manager.dialogFork.value = value,
 })
 
-const local = computed(() => ctx.manager.data.value.packages[dialogFork.value])
+const local = computed(() => ctx.manager.data.value.packages[dialogFork.value!])
 
 function getLabel(tree: Node) {
   return `${tree.label ? `${tree.label} ` : ''}[${tree.path}]`
@@ -64,19 +64,18 @@ function getFullPath(tree: Node) {
     tree = tree.parent
     path.unshift(getLabel(tree))
   }
-  path.shift()
   return path.join(' > ')
 }
 
 async function configure(id?: string) {
   if (!id) {
     id = await send('manager.config.create', {
-      name: dialogFork.value,
+      name: dialogFork.value!,
       disabled: true,
     })
   }
   await router.push('/plugins/' + id)
-  dialogFork.value = null
+  dialogFork.value = undefined
 }
 
 </script>

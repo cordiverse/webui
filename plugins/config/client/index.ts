@@ -249,7 +249,7 @@ export default class Manager extends Service {
       const required = !local.package.peerDependenciesMeta?.[name]?.optional
       const active = !!this.data.value.packages[name]?.runtime?.id
       result.peer[name] = { required, active }
-      for (const service of this.data.value.packages[name]?.manifest?.service.implements ?? []) {
+      for (const service of this.data.value.packages[name]?.manifest?.service?.implements ?? []) {
         services.add(service)
       }
     }

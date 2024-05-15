@@ -31,9 +31,13 @@ function jsLoader(ctx: Context, exports: {}) {
 }
 
 function cssLoader(ctx: Context, link: HTMLLinkElement) {
-  ctx.effect(() => {
-    document.head.appendChild(link)
-    return () => document.head.removeChild(link)
+  document.head.appendChild(link)
+  ctx.on('dispose', () => {
+    document.head.removeChild(link)
+  })
+  return new Promise((resolve, reject) => {
+    link.onload = resolve
+    link.onerror = reject
   })
 }
 
@@ -45,10 +49,6 @@ const loaders: Dict<LoaderFactory> = {
     const link = document.createElement('link')
     link.rel = 'stylesheet'
     link.href = url
-    await new Promise((resolve, reject) => {
-      link.onload = resolve
-      link.onerror = reject
-    })
     return ctx.plugin(cssLoader, link)
   },
   async [``](ctx, url) {
@@ -126,6 +126,7 @@ export default class LoaderService extends Service {
             } catch (e) {
               console.error(e)
             }
+            return
           }
         }))
         task.then(() => this.entries[key].done.value = true)

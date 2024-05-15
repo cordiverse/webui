@@ -1,29 +1,31 @@
-import type { ClientConfig, DataService, Events, WebSocket, WebUI } from '@cordisjs/plugin-webui'
+import type { ClientConfig, Events, WebSocket } from '@cordisjs/plugin-webui'
 import type { Promisify } from 'cosmokit'
 import { markRaw, ref } from 'vue'
 import { Context } from './context'
-
-export type Store = {
-  [K in keyof WebUI.Services]?: WebUI.Services[K] extends DataService<infer T> ? T : never
-}
+import { root } from '.'
 
 declare const KOISHI_CONFIG: ClientConfig
 export const global = KOISHI_CONFIG
-
-export function withProxy(url: string) {
-  return (global.proxyBase || '') + url
-}
 
 export const socket = ref<WebSocket>()
 const listeners: Record<string, (data: any) => void> = {}
 
 export function send<T extends keyof Events>(type: T, ...args: Parameters<Events[T]>): Promisify<ReturnType<Events[T]>>
 export async function send(type: string, ...args: any[]) {
+  if (global.static) {
+    console.debug('[request]', type, ...args)
+    const result = root.webui.listeners[type]?.(...args)
+    console.debug('[response]', result)
+    return result
+  }
   if (!socket.value) return
-  console.debug('[request]', type, args)
+  console.debug('[request]', type, ...args)
   const response = await fetch(`${global.endpoint}/${type}`, {
     method: 'POST',
     body: JSON.stringify(args[0]),
+    headers: new Headers({
+      'Content-Type': 'application/json',
+    }),
   })
   const result = await response.json()
   console.debug('[response]', result)

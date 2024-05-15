@@ -24,7 +24,6 @@ export abstract class WebUI<T = unknown> extends Service<T> {
   public id = Math.random().toString(36).slice(2)
 
   readonly entries: Dict<Entry> = Object.create(null)
-  readonly apis: Dict<SocketListener> = Object.create(null)
   readonly listeners: Dict<(args?: any) => any> = Object.create(null)
   readonly clients: Dict<Client> = Object.create(null)
 
@@ -46,23 +45,10 @@ export abstract class WebUI<T = unknown> extends Service<T> {
   }
 
   abstract resolveEntry(files: Entry.Files, key: string): string[]
+  abstract addListener<K extends keyof Events>(event: K, callback: Events[K]): void
 
   addEntry<T>(files: Entry.Files, data?: () => T) {
     return new Entry(this[Context.origin], files, data)
-  }
-
-  addListener<K extends keyof Events>(event: K, callback: Events[K]) {
-    this.apis[event] = callback
-    this.ctx.server.post(`/${event}`, async (koa) => {
-      const { body } = koa.request
-      try {
-        koa.body = await (callback as any)(body)
-        koa.status = 200
-      } catch (error) {
-        this.ctx.logger.warn(error)
-        koa.status = 500
-      }
-    })
   }
 
   async broadcast(type: string, body: any) {

@@ -21,9 +21,7 @@ declare module '../context' {
     page(options: Activity.Options): () => void
   }
 
-  // https://github.com/typescript-eslint/typescript-eslint/issues/6720
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  interface Events<C> {
+  interface Events {
     'activity'(activity: Activity): boolean
   }
 }
@@ -40,8 +38,6 @@ export namespace Activity {
     order?: number
     authority?: number
     position?: 'top' | 'bottom'
-    /** @deprecated */
-    when?: () => boolean
     disabled?: () => boolean | undefined
   }
 }
@@ -126,7 +122,7 @@ export default class RouterService extends Service {
     const initialTitle = document.title
     ctx.effect(() => this.router.afterEach((route) => {
       const { name, fullPath } = this.router.currentRoute.value
-      this.cache[name] = fullPath
+      this.cache[name!] = fullPath
       if (route.meta.activity) {
         document.title = `${route.meta.activity.name}`
         if (initialTitle) document.title += ` | ${initialTitle}`
@@ -136,7 +132,7 @@ export default class RouterService extends Service {
     this.router.beforeEach(async (to, from) => {
       if (to.matched.length) {
         if (to.matched[0].path !== '/') {
-          redirectTo.value = null
+          redirectTo.value = undefined
         }
         return
       }
@@ -163,7 +159,6 @@ export default class RouterService extends Service {
     const caller = this[Context.current]
     options.order ??= 0
     options.component = caller.wrapComponent(options.component)
-    if (options.when) options.disabled = () => !options.when()
     return caller.effect(() => {
       const list = this.views[options.type] ||= []
       insert(list, options)

@@ -6,7 +6,7 @@ import { extname, resolve } from 'node:path'
 import { createReadStream, existsSync, Stats } from 'node:fs'
 import { readFile, stat } from 'node:fs/promises'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { Entry, WebUI } from './shared'
+import { Entry, Events, WebUI } from './shared'
 import open from 'open'
 
 declare module 'cordis' {
@@ -52,8 +52,7 @@ class NodeWebUI extends WebUI<NodeWebUI.Config> {
     super(ctx, config)
 
     this.layer = ctx.server.ws(config.apiPath, (socket, request) => {
-      // @types/ws does not provide typings for `dispatchEvent`
-      this.accept(socket as any, request)
+      this.accept(socket, request)
     })
 
     ctx.on('webui/connection', () => {
@@ -89,6 +88,19 @@ class NodeWebUI extends WebUI<NodeWebUI.Config> {
         open(target)
       }
       this.ctx.logger.info('webui is available at %c', target)
+    })
+  }
+
+  addListener<K extends keyof Events>(event: K, callback: Events[K]) {
+    this.ctx.server.post(`${this.config.apiPath}/${event}`, async (koa) => {
+      const { body } = koa.request
+      try {
+        koa.body = await (callback as any)(body)
+        koa.status = 200
+      } catch (error) {
+        this.ctx.logger.warn(error)
+        koa.status = 500
+      }
     })
   }
 
@@ -210,7 +222,7 @@ class NodeWebUI extends WebUI<NodeWebUI.Config> {
                 '  import.meta.hot.accept(async (module) => {',
                 '    const { root } = await import("@cordisjs/client");',
                 `    const fork = root.$loader.entries["${key}"]?.forks[${index}];`,
-                '    fork?.update(module, true);',
+                '    return fork?.update(module, true);',
                 '  });',
                 '}',
               ].join('\n') + '\n',
@@ -310,7 +322,7 @@ namespace NodeWebUI {
   export const Config: Schema<Config> = Schema.intersect([
     Schema.object({
       uiPath: Schema.string().default(''),
-      apiPath: Schema.string().default('/status'),
+      apiPath: Schema.string().default('/api'),
       selfUrl: Schema.string().role('link').default(''),
       open: Schema.boolean(),
       head: Schema.array(Head),

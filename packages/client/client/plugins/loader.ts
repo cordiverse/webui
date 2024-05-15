@@ -118,10 +118,14 @@ export default class LoaderService extends Service {
           forks: [],
         }
 
-        const task = Promise.allSettled(files.map(async (url, index) => {
+        const task = Promise.all(files.map(async (url, index) => {
           for (const ext in loaders) {
             if (!url.endsWith(ext)) continue
-            ctx.$entry.forks[index] = await loaders[ext](ctx, url)
+            try {
+              ctx.$entry.forks[index] = await loaders[ext](ctx, url)
+            } catch (e) {
+              console.error(e)
+            }
           }
         }))
         task.then(() => this.entries[key].done.value = true)

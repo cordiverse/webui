@@ -83,10 +83,11 @@ export class LocalScanner {
 
     // check for candidates
     this.ecosystems.push({
-      manifest: 'cordis',
+      property: 'cordis',
       pattern: ['cordis-plugin-*', '@cordisjs/plugin-*'],
       keywords: ['cordis', 'plugin'],
       peerDependencies: { cordis: '*' },
+      inject: [],
     })
     while (this.ecosystems.length) {
       const ecosystem = this.ecosystems.shift()!
@@ -124,30 +125,12 @@ export class LocalScanner {
     return results.flat(1).filter((x): x is string => !!x)
   }
 
-  private checkEcosystem(meta: PackageJson, eco: Ecosystem) {
-    for (const peer in eco.peerDependencies) {
-      if (!meta.peerDependencies?.[peer]) return
-    }
-    for (const pattern of eco.pattern) {
-      const regexp = new RegExp('^' + pattern.replace('*', '.*') + '$')
-      let prefix = '', name = meta.name
-      if (!pattern.startsWith('@')) {
-        prefix = /^@.+\//.exec(meta.name)?.[0] || ''
-        name = name.slice(prefix.length)
-      }
-      if (!regexp.test(name)) continue
-      const index = pattern.indexOf('*')
-      return prefix + name.slice(index)
-    }
-    if (eco.manifest in meta) return meta.name
-  }
-
   private loadEcosystem(eco: Ecosystem) {
     for (const [name, { meta, workspace }] of Object.entries(this.candidates)) {
-      const shortname = this.checkEcosystem(meta, eco)
+      const shortname = Ecosystem.check(eco, meta)
       if (!shortname) continue
       delete this.candidates[name]
-      const manifest = conclude(meta, eco.manifest)
+      const manifest = conclude(meta, eco.property)
       this.pkgTasks[name] ||= this.loadPackage(name, {
         shortname,
         workspace,
@@ -156,8 +139,8 @@ export class LocalScanner {
       })
       if (!manifest.ecosystem) continue
       this.ecosystems.push({
-        inject: manifest.ecosystem.inject,
-        manifest: manifest.ecosystem.manifest || 'cordis',
+        property: manifest.ecosystem.property || 'cordis',
+        inject: manifest.service?.implements || [],
         pattern: manifest.ecosystem.pattern || [`${name}-plugin-`],
         keywords: manifest.ecosystem.keywords || [name, 'plugin'],
         peerDependencies: manifest.ecosystem.peerDependencies || { [name]: '*' },

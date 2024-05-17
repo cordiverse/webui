@@ -63,8 +63,8 @@ function concludeExport(base?: Manifest.Export | null, description?: string) {
   return result
 }
 
-export function conclude(meta: PackageJson, prop = 'cordis') {
-  const result: Manifest = {
+export function conclude(meta: PackageJson, prop = 'cordis'): Manifest {
+  return {
     ...concludeExport(meta[prop], meta.description),
     hidden: Ensure.boolean(meta[prop]?.hidden),
     preview: Ensure.boolean(meta[prop]?.preview),
@@ -72,12 +72,12 @@ export function conclude(meta: PackageJson, prop = 'cordis') {
     category: Ensure.string(meta[prop]?.category),
     public: Ensure.array(meta[prop]?.public),
     ecosystem: Ensure.object(meta[prop]?.ecosystem, (ecosystem) => ({
+      property: Ensure.string(ecosystem.property),
       inject: Ensure.array(ecosystem.inject),
       pattern: Ensure.array(ecosystem.pattern),
       keywords: Ensure.array(ecosystem.keywords),
+      peerDependencies: Ensure.dict(ecosystem.peerDependencies),
     })),
     exports: Ensure.dict(meta[prop]?.exports, concludeExport),
   }
-
-  return result
 }

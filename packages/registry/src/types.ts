@@ -76,11 +76,31 @@ export namespace Manifest {
 }
 
 export interface Ecosystem {
-  inject?: string[]
-  manifest: string
+  property: string
+  inject: string[]
   pattern: string[]
   keywords: string[]
   peerDependencies: Dict<string>
+}
+
+export namespace Ecosystem {
+  export function check(eco: Ecosystem, meta: PackageJson) {
+    for (const peer in eco.peerDependencies) {
+      if (!meta.peerDependencies?.[peer]) return
+    }
+    for (const pattern of eco.pattern) {
+      const regexp = new RegExp('^' + pattern.replace('*', '.*') + '$')
+      let prefix = '', name = meta.name
+      if (!pattern.startsWith('@')) {
+        prefix = /^@.+\//.exec(meta.name)?.[0] || ''
+        name = name.slice(prefix.length)
+      }
+      if (!regexp.test(name)) continue
+      const index = pattern.indexOf('*')
+      return prefix + name.slice(index)
+    }
+    if (eco.property in meta) return meta.name
+  }
 }
 
 export interface RemotePackage extends PackageJson {

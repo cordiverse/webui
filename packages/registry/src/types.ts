@@ -1,4 +1,5 @@
 import { Dict } from 'cosmokit'
+import { Manifest } from './manifest'
 
 export interface User {
   name?: string
@@ -40,66 +41,6 @@ export namespace PackageJson {
 
   export interface PeerMeta {
     optional?: boolean
-  }
-}
-
-export interface IconSvg {
-  type: 'svg'
-  viewBox: string
-  pathData: string
-}
-
-export interface Manifest extends Manifest.Export {
-  icon?: IconSvg
-  hidden?: boolean
-  preview?: boolean
-  insecure?: boolean
-  category?: string
-  public?: string[]
-  exports?: Dict<Manifest.Export | null>
-  ecosystem?: Partial<Ecosystem>
-}
-
-export namespace Manifest {
-  export interface Export {
-    browser?: boolean
-    description?: string | Dict<string>
-    service?: Manifest.Service
-    resources?: Dict
-  }
-
-  export interface Service {
-    required?: string[]
-    optional?: string[]
-    implements?: string[]
-  }
-}
-
-export interface Ecosystem {
-  property: string
-  inject: string[]
-  pattern: string[]
-  keywords: string[]
-  peerDependencies: Dict<string>
-}
-
-export namespace Ecosystem {
-  export function check(eco: Ecosystem, meta: PackageJson) {
-    for (const peer in eco.peerDependencies) {
-      if (!meta.peerDependencies?.[peer]) return
-    }
-    for (const pattern of eco.pattern) {
-      const regexp = new RegExp('^' + pattern.replace('*', '.*') + '$')
-      let prefix = '', name = meta.name
-      if (!pattern.startsWith('@')) {
-        prefix = /^@.+\//.exec(meta.name)?.[0] || ''
-        name = name.slice(prefix.length)
-      }
-      if (!regexp.test(name)) continue
-      const index = pattern.indexOf('*')
-      return prefix + name.slice(index)
-    }
-    if (eco.property in meta) return meta.name
   }
 }
 

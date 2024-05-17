@@ -1,5 +1,5 @@
 import { Dict } from 'cosmokit'
-import { Manifest, PackageJson } from './types'
+import { PackageJson } from './types'
 
 interface Ensure<T> {
   (value: any): T | undefined
@@ -36,6 +36,32 @@ export namespace Ensure {
   export const string = primitive<string>('string')
 }
 
+export interface Ecosystem {
+  name: string
+  property: string
+  inject: string[]
+  pattern: string[]
+  keywords: string[]
+}
+
+export namespace Ecosystem {
+  export function check(ecosystem: Ecosystem, meta: PackageJson) {
+    if (!meta.peerDependencies?.[ecosystem.name]) return
+    for (const pattern of ecosystem.pattern) {
+      const regexp = new RegExp('^' + pattern.replace('*', '.*') + '$')
+      let prefix = '', name = meta.name
+      if (!pattern.startsWith('@')) {
+        prefix = /^@.+\//.exec(meta.name)?.[0] || ''
+        name = name.slice(prefix.length)
+      }
+      if (!regexp.test(name)) continue
+      const index = pattern.indexOf('*')
+      return prefix + name.slice(index)
+    }
+    if (ecosystem.property in meta) return meta.name
+  }
+}
+
 function concludeExport(base?: Manifest.Export | null, description?: string) {
   // undefined values are dropped during serialization
   if (typeof base !== 'object') return undefined!
@@ -63,8 +89,31 @@ function concludeExport(base?: Manifest.Export | null, description?: string) {
   return result
 }
 
-export function conclude(meta: PackageJson, prop = 'cordis'): Manifest {
-  return {
+export interface Manifest extends Manifest.Export {
+  hidden?: boolean
+  preview?: boolean
+  insecure?: boolean
+  category?: string
+  public?: string[]
+  exports?: Dict<Manifest.Export | null>
+  ecosystem?: Partial<Ecosystem>
+}
+
+export namespace Manifest {
+  export interface Export {
+    browser?: boolean
+    description?: string | Dict<string>
+    service?: Manifest.Service
+    resources?: Dict
+  }
+
+  export interface Service {
+    required?: string[]
+    optional?: string[]
+    implements?: string[]
+  }
+
+  export const conclude = (meta: PackageJson, prop = 'cordis'): Manifest => ({
     ...concludeExport(meta[prop], meta.description),
     hidden: Ensure.boolean(meta[prop]?.hidden),
     preview: Ensure.boolean(meta[prop]?.preview),
@@ -76,8 +125,7 @@ export function conclude(meta: PackageJson, prop = 'cordis'): Manifest {
       inject: Ensure.array(ecosystem.inject),
       pattern: Ensure.array(ecosystem.pattern),
       keywords: Ensure.array(ecosystem.keywords),
-      peerDependencies: Ensure.dict(ecosystem.peerDependencies),
     })),
     exports: Ensure.dict(meta[prop]?.exports, concludeExport),
-  }
+  })
 }

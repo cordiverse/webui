@@ -1,6 +1,6 @@
 import { Awaitable, Dict, Time } from 'cosmokit'
-import { Ecosystem, Registry, RemotePackage, SearchObject, SearchResult } from './types'
-import { conclude } from './utils'
+import { Registry, RemotePackage, SearchObject, SearchResult } from './types'
+import { Ecosystem, Manifest } from './manifest'
 import { compare } from 'semver'
 import pMap from 'p-map'
 
@@ -47,11 +47,11 @@ export class RemoteScanner {
 
   constructor(public options: RemoteScanner.Options) {
     this.ecosystems.cordis = {
+      name: 'cordis',
       property: 'cordis',
       inject: [],
       pattern: ['cordis-plugin-*', '@cordisjs/plugin-*'],
       keywords: ['cordis', 'plugin'],
-      peerDependencies: { cordis: '*' },
     }
   }
 
@@ -66,32 +66,31 @@ export class RemoteScanner {
     return await response.json() as T
   }
 
-  private async search(name: string, offset: number, config: RemoteScanner.CollectOptions = {}) {
+  private async search(eco: string, offset: number, config: RemoteScanner.CollectOptions = {}) {
     const { step = 250, timeout = Time.second * 30 } = config
-    const { keywords } = this.ecosystems[name]
+    const { keywords } = this.ecosystems[eco]
     const result = await this.request<SearchResult>(`/-/v1/search?text=${keywords.join('+')}&size=${step}&from=${offset}`, { timeout })
     this.version = result.version
     for (const object of result.objects) {
-      this.cache[name][object.package.name] = object
+      this.cache[eco][object.package.name] = object
     }
     return result.total
   }
 
-  public async collect(name: string, config: RemoteScanner.CollectOptions = {}) {
+  public async collect(eco: string, config: RemoteScanner.CollectOptions = {}) {
     const { step = 250, margin = 25 } = config
-    this.cache[name] = Object.create(null)
+    this.cache[eco] = Object.create(null)
     this.time = new Date().toUTCString()
-    const total = await this.search(name, 0, config)
+    const total = await this.search(eco, 0, config)
     for (let offset = Object.values(this.cache).length; offset < total; offset += step - margin) {
-      await this.search(name, offset - margin, config)
+      await this.search(eco, offset - margin, config)
     }
-    this.objects = Object.values(this.cache[name])
+    this.objects = Object.values(this.cache[eco])
     this.total = this.objects.length
   }
 
-  public async process(object: SearchObject, options: RemoteScanner.AnalyzeConfig) {
-    const { name } = object.package
-    const registry = await this.request<Registry>(`/${name}`)
+  public async process(eco: string, object: SearchObject, options: RemoteScanner.AnalyzeConfig) {
+    const registry = await this.request<Registry>(`/${object.package.name}`)
     const compatible = Object.values(registry.versions).sort((a, b) => compare(b.version, a.version))
 
     await options?.onRegistry?.(registry, compatible)
@@ -99,10 +98,14 @@ export class RemoteScanner {
     if (!versions.length) return
 
     const latest = registry.versions[versions[0].version]
-    const manifest = conclude(latest)
+    const shortname = Ecosystem.check(this.ecosystems[eco], latest)
+    if (!shortname) return
+
+    const manifest = Manifest.conclude(latest, this.ecosystems[eco].property)
     const times = compatible.map(item => registry.time[item.version]).sort()
 
-    object.shortname = name.replace(/(cordis-|^@cordisjs\/)plugin-/, '')
+    object.ecosystem = eco
+    object.shortname = shortname
     object.manifest = manifest
     object.insecure = manifest.insecure
     object.category = manifest.category
@@ -113,25 +116,24 @@ export class RemoteScanner {
     return versions
   }
 
-  public async analyze(config: RemoteScanner.AnalyzeConfig) {
+  public async analyze(eco: string, config: RemoteScanner.AnalyzeConfig) {
     const { concurrency = 5, before, onSuccess, onFailure, onSkipped, after } = config
 
     const result = await pMap(this.objects, async (object) => {
       if (object.ignored) return
       before?.(object)
-      const { name } = object.package
       try {
-        const versions = await this.process(object, config)
+        const versions = await this.process(eco, object, config)
         if (versions) {
           await onSuccess?.(object, versions)
           return versions
         } else {
           object.ignored = true
-          await onSkipped?.(name)
+          await onSkipped?.(object.package.name)
         }
       } catch (error) {
         object.ignored = true
-        await onFailure?.(name, error)
+        await onFailure?.(object.package.name, error)
       } finally {
         after?.(object)
       }

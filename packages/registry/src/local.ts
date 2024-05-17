@@ -3,8 +3,8 @@ import { dirname } from 'node:path'
 import { createRequire } from 'node:module'
 import { Dirent } from 'node:fs'
 import { readdir, readFile } from 'node:fs/promises'
-import { DependencyKey, Ecosystem, PackageJson, SearchObject, SearchResult } from './types'
-import { conclude } from './utils'
+import { DependencyKey, PackageJson, SearchObject, SearchResult } from './types'
+import { Ecosystem, Manifest } from './manifest'
 
 const LocalKey = ['name', 'version', 'peerDependencies', 'peerDependenciesMeta'] as const
 type LocalKeys = typeof LocalKey[number]
@@ -83,11 +83,11 @@ export class LocalScanner {
 
     // check for candidates
     this.ecosystems.push({
+      name: 'cordis',
       property: 'cordis',
+      inject: [],
       pattern: ['cordis-plugin-*', '@cordisjs/plugin-*'],
       keywords: ['cordis', 'plugin'],
-      peerDependencies: { cordis: '*' },
-      inject: [],
     })
     while (this.ecosystems.length) {
       const ecosystem = this.ecosystems.shift()!
@@ -125,12 +125,12 @@ export class LocalScanner {
     return results.flat(1).filter((x): x is string => !!x)
   }
 
-  private loadEcosystem(eco: Ecosystem) {
+  private loadEcosystem(ecosystem: Ecosystem) {
     for (const [name, { meta, workspace }] of Object.entries(this.candidates)) {
-      const shortname = Ecosystem.check(eco, meta)
+      const shortname = Ecosystem.check(ecosystem, meta)
       if (!shortname) continue
       delete this.candidates[name]
-      const manifest = conclude(meta, eco.property)
+      const manifest = Manifest.conclude(meta, ecosystem.property)
       this.pkgTasks[name] ||= this.loadPackage(name, {
         shortname,
         workspace,
@@ -139,11 +139,11 @@ export class LocalScanner {
       })
       if (!manifest.ecosystem) continue
       this.ecosystems.push({
+        name,
         property: manifest.ecosystem.property || 'cordis',
         inject: manifest.service?.implements || [],
         pattern: manifest.ecosystem.pattern || [`${name}-plugin-`],
         keywords: manifest.ecosystem.keywords || [name, 'plugin'],
-        peerDependencies: manifest.ecosystem.peerDependencies || { [name]: '*' },
       })
     }
   }

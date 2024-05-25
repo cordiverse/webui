@@ -193,7 +193,7 @@ class NodeWebUI extends WebUI<NodeWebUI.Config> {
     } else {
       template = template.replace(/(href|src)="(?=\/)/g, (_, $1) => `${$1}="${uiPath}`)
     }
-    let headInjection = `<script>KOISHI_CONFIG = ${JSON.stringify(this.createGlobal())}</script>`
+    let headInjection = `<script>CLIENT_CONFIG = ${JSON.stringify(this.createGlobal())}</script>`
     for (const { tag, attrs = {}, content } of head) {
       const attrString = Object.entries(attrs).map(([key, value]) => ` ${key}="${escapeHTML(value ?? '', true)}"`).join('')
       headInjection += `<${tag}${attrString}>${content ?? ''}</${tag}>`
@@ -216,18 +216,16 @@ class NodeWebUI extends WebUI<NodeWebUI.Config> {
           for (const [key, { files }] of Object.entries(this.entries)) {
             const index = makeArray(this.getFiles(files)).indexOf(pathToFileURL(id).href)
             if (index < 0) continue
-            return {
-              code: code + [
-                'if (import.meta.hot) {',
-                '  import.meta.hot.accept(async (module) => {',
-                '    const { root } = await import("@cordisjs/client");',
-                `    const fork = root.$loader.entries["${key}"]?.forks[${index}];`,
-                '    return fork?.update(module, true);',
-                '  });',
-                '}',
-              ].join('\n') + '\n',
-              map: null,
-            }
+            code += [
+              'if (import.meta.hot) {',
+              '  import.meta.hot.accept(async (module) => {',
+              '    const { root } = await import("@cordisjs/client");',
+              `    const fork = root.$loader.entries["${key}"]?.forks[${index}];`,
+              '    return fork?.update(module, true);',
+              '  });',
+              '}',
+            ].join('\n') + '\n'
+            return { code }
           }
         },
       }],

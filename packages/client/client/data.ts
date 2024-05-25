@@ -4,8 +4,8 @@ import { markRaw, ref } from 'vue'
 import { Context } from './context'
 import { root } from '.'
 
-declare const KOISHI_CONFIG: ClientConfig
-export const global = KOISHI_CONFIG
+declare const CLIENT_CONFIG: ClientConfig
+export const global = CLIENT_CONFIG
 
 export const socket = ref<WebSocket>()
 const listeners: Record<string, (data: any) => void> = {}

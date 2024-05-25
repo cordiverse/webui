@@ -6,6 +6,7 @@ import { extname, resolve } from 'node:path'
 import { createReadStream, existsSync, Stats } from 'node:fs'
 import { readFile, stat } from 'node:fs/promises'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { parse } from 'es-module-lexer'
 import { Entry, Events, WebUI } from './shared'
 import open from 'open'
 
@@ -95,7 +96,7 @@ class NodeWebUI extends WebUI<NodeWebUI.Config> {
     this.ctx.server.post(`${this.config.apiPath}/${event}`, async (koa) => {
       const { body } = koa.request
       try {
-        koa.body = await (callback as any)(body)
+        koa.body = await (callback as any)(body) ?? {}
         koa.status = 200
       } catch (error) {
         this.ctx.logger.warn(error)
@@ -170,20 +171,27 @@ class NodeWebUI extends WebUI<NodeWebUI.Config> {
     })
   }
 
-  private async transformImport(source: string) {
-    let output = ''
-    let cap: RegExpExecArray | null
-    while ((cap = /((?:^|;)import\b[^'"]+\bfrom\s*)(['"])([^'"]+)\2;/m.exec(source))) {
-      const [stmt, left, quote, path] = cap
-      output += source.slice(0, cap.index) + left + quote + ({
-        'vue': this.config.uiPath + '/vue.js',
-        'vue-router': this.config.uiPath + '/vue-router.js',
-        '@vueuse/core': this.config.uiPath + '/vueuse.js',
-        '@cordisjs/client': this.config.uiPath + '/client.js',
-      }[path] ?? path) + quote + ';'
-      source = source.slice(cap.index + stmt.length)
+  private resolveImport(name?: string) {
+    if (!name) {
+      this.ctx.logger.warn('cannot transform dynamic import names')
+      return name
     }
-    return output + source
+    return ({
+      'vue': this.config.uiPath + '/vue.js',
+      'vue-router': this.config.uiPath + '/vue-router.js',
+      '@vueuse/core': this.config.uiPath + '/vueuse.js',
+      '@cordisjs/client': this.config.uiPath + '/client.js',
+    })[name] ?? name
+  }
+
+  private async transformImport(source: string) {
+    let output = '', lastIndex = 0
+    const [imports] = parse(source)
+    for (const { s, e, n } of imports) {
+      output += source.slice(lastIndex, s) + this.resolveImport(n)
+      lastIndex = e
+    }
+    return output + source.slice(lastIndex)
   }
 
   private async transformHtml(template: string) {

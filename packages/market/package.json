@@ -1,0 +1,39 @@
+{
+  "name": "@cordisjs/market",
+  "description": "Market UI for Cordis",
+  "version": "4.2.5",
+  "main": "client/index.ts",
+  "files": [
+    "client"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cordiverse/webui.git",
+    "directory": "packages/market"
+  },
+  "bugs": {
+    "url": "https://github.com/cordiverse/webui/issues"
+  },
+  "keywords": [
+    "cordis",
+    "market",
+    "registry",
+    "client",
+    "utilities"
+  ],
+  "devDependencies": {
+    "@cordisjs/registry": "^7.0.3",
+    "@types/spark-md5": "^3.0.4"
+  },
+  "peerDependencies": {
+    "vue": "^3",
+    "vue-i18n": "^9"
+  },
+  "dependencies": {
+    "@cordisjs/components": "^0.1.0",
+    "cosmokit": "^1.6.2",
+    "spark-md5": "^3.0.2"
+  }
+}

@@ -1,7 +1,6 @@
 import { Context } from 'cordis'
 import { LocalScanner } from '@cordisjs/registry'
 import { Manager } from './shared'
-import { pathToFileURL } from 'url'
 
 export * from './shared'
 
@@ -9,10 +8,10 @@ export default class NodeManager extends Manager {
   scanner = new LocalScanner(this.ctx.baseDir, {
     onSuccess: async (object) => {
       const { name } = object.package
-      const { internal, filename } = this.ctx.loader
+      const { internal, url: parentURL } = this.ctx.loader
       if (!internal) return
       try {
-        const { url } = await internal!.resolve(name, pathToFileURL(filename).href, {})
+        const { url } = await internal!.resolve(name, parentURL, {})
         if (internal?.loadCache.has(url)) {
           object.runtime = await this.parseExports(name)
         }

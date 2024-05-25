@@ -8,7 +8,7 @@ env:
 
 globals:
   NodeJS: true
-  KOISHI_CONFIG: true
+  CLIENT_CONFIG: true
 
 extends:
   - '@cordisjs/eslint-config'

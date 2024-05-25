@@ -51,7 +51,7 @@ export class Entry<T = any> {
   toJSON(): Entry.Data {
     return {
       files: this.ctx.webui.resolveEntry(this.files, this.id),
-      paths: this.ctx.get('loader')?.paths(this.ctx.scope),
+      paths: this.ctx.get('loader')?.locate(),
       data: this.data?.(),
     }
   }

@@ -12,13 +12,13 @@
     <table>
       <tr v-for="id in plugins.forks[dialogFork!]" :key="id">
         <td class="text-left">
-          <span class="status-light" :class="ctx.manager.getStatus(plugins.paths[id])"></span>
-          <span class="path">{{ getFullPath(plugins.paths[id]) }}</span>
+          <span class="status-light" :class="ctx.manager.getStatus(plugins.entries[id])"></span>
+          <span class="path">{{ getFullPath(plugins.entries[id]) }}</span>
         </td>
         <td class="text-right">
           <span class="actions">
             <span class="action" @click.stop="configure(id)"><k-icon name="arrow-right"></k-icon></span>
-            <span class="action" @click.stop="ctx.manager.remove(plugins.paths[id])"><k-icon name="delete"></k-icon></span>
+            <span class="action" @click.stop="ctx.manager.remove(plugins.entries[id])"><k-icon name="delete"></k-icon></span>
           </span>
         </td>
       </tr>
@@ -43,7 +43,7 @@
 
 import { computed } from 'vue'
 import { send, router, useContext } from '@cordisjs/client'
-import { Node } from '..'
+import { EntryData } from '../../src'
 
 const ctx = useContext()
 const plugins = computed(() => ctx.manager.plugins.value)
@@ -54,15 +54,15 @@ const dialogFork = computed({
 
 const local = computed(() => ctx.manager.data.value.packages[dialogFork.value!])
 
-function getLabel(tree: Node) {
-  return `${tree.label ? `${tree.label} ` : ''}[${tree.path}]`
+function getLabel(data: EntryData) {
+  return `${data.label ? `${data.label} ` : ''}[${data.id}]`
 }
 
-function getFullPath(tree: Node) {
-  const path = [getLabel(tree)]
-  while (tree.parent) {
-    tree = tree.parent
-    path.unshift(getLabel(tree))
+function getFullPath(data: EntryData) {
+  const path = [getLabel(data)]
+  while (data.parent) {
+    data = ctx.manager.plugins.value.entries[data.parent]
+    path.unshift(getLabel(data))
   }
   return path.join(' > ')
 }

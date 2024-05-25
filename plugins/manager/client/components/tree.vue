@@ -7,14 +7,13 @@
     </div>
     <el-tree
       ref="tree"
-      node-key="path"
+      node-key="id"
       :data="plugins.data"
       :draggable="true"
-      :auto-expand-parent="false"
       :default-expanded-keys="plugins.expanded"
       :expand-on-click-node="false"
       :filter-node-method="filterNode"
-      :props="{ class: getClass }"
+      :props="optionProps"
       :allow-drag="allowDrag"
       :allow-drop="allowDrop"
       @node-click="handleClick"
@@ -37,11 +36,13 @@
 
 <script lang="ts" setup>
 
-import { computed, ref, onActivated, nextTick, watch } from 'vue'
+import { computed, ref, onActivated, nextTick, watch, VNodeRef } from 'vue'
 import { useRoute } from 'vue-router'
 import type { ElScrollbar, ElTree } from 'element-plus'
+import type { FilterNodeMethodFunction, TreeOptionProps } from 'element-plus/es/components/tree/src/tree.type'
+import type TreeNode from 'element-plus/es/components/tree/src/model/node'
 import { send, useContext, useMenu } from '@cordisjs/client'
-import { Node } from '..'
+import { EntryData } from '../../src'
 
 const props = defineProps<{
   modelValue: string
@@ -58,7 +59,8 @@ const root = ref<InstanceType<typeof ElScrollbar>>()
 const tree = ref<InstanceType<typeof ElTree>>()
 const keyword = ref('')
 
-function filterNode(value: string, data: Node) {
+const filterNode: FilterNodeMethodFunction = (value, data, node) => {
+  console.log('filter', value, data, node)
   return data.name.toLowerCase().includes(keyword.value.toLowerCase())
 }
 
@@ -83,77 +85,75 @@ onActivated(async () => {
   isActivating.value = false
 })
 
-function handleItemMount(itemEl: HTMLElement) {
+const handleItemMount: VNodeRef = (itemEl) => {
   if (!itemEl || isActivating.value) return
   activate()
 }
 
-interface TreeNode {
-  data: Node
-  label?: string
-  parent: TreeNode
-  expanded: boolean
-  isLeaf: boolean
-  childNodes: TreeNode[]
+interface EntryNode extends Omit<TreeNode, 'data'> {
+  data: EntryData
+  parent: EntryNode
+  childNodes: EntryNode[]
 }
 
-function getLabel(node: TreeNode) {
-  if (node.data.name === 'group') {
-    return '分组：' + (node.label || node.data.path)
+function getLabel(node: EntryNode) {
+  if (node.data.isGroup) {
+    return '分组：' + (node.data.label || node.data.id)
   } else {
-    return node.label || node.data.name || '待添加'
+    return node.data.label || node.data.name || '待添加'
   }
 }
 
-function allowDrag(node: TreeNode) {
-  return node.data.path !== ''
+function allowDrag(node: EntryNode) {
+  return !!node.data.id
 }
 
-function allowDrop(source: TreeNode, target: TreeNode, type: 'inner' | 'prev' | 'next') {
-  if (type !== 'inner') {
-    return target.data.path !== '' || type === 'next'
-  }
-  return target.data.id.startsWith('group:')
+function allowDrop(source: EntryNode, target: EntryNode, type: 'inner' | 'prev' | 'next') {
+  if (type !== 'inner') return true
+  return target.data.isGroup
 }
 
-function handleClick(tree: Node, target: TreeNode, instance: any, event: MouseEvent) {
-  emit('update:modelValue', tree.path)
+function handleClick(tree: EntryData, target: EntryNode, instance: any, event: MouseEvent) {
+  emit('update:modelValue', tree.id)
   // el-tree will stop propagation,
   // so we need to manually trigger the event
   // so that context menu can be closed.
   window.dispatchEvent(new MouseEvent(event.type, event))
 }
 
-function handleExpand(data: Node, target: TreeNode, instance) {
+function handleExpand(data: EntryData, target: EntryNode, instance: any) {
   send('manager.config.update', {
-    id: data.path,
+    id: data.id,
     collapse: null,
   })
 }
 
-function handleCollapse(data: Node, target: TreeNode, instance) {
+function handleCollapse(data: EntryData, target: EntryNode, instance: any) {
   send('manager.config.update', {
-    id: data.path,
+    id: data.id,
     collapse: true,
   })
 }
 
-function handleDrop(source: TreeNode, target: TreeNode, position: 'before' | 'after' | 'inner', event: DragEvent) {
+function handleDrop(source: EntryNode, target: EntryNode, position: 'before' | 'after' | 'inner', event: DragEvent) {
   const parent = position === 'inner' ? target : target.parent
-  const index = parent.childNodes.findIndex(node => node.data.path === source.data.path)
+  const index = parent.childNodes.findIndex(node => node.data.id === source.data.id)
   send('manager.config.transfer', {
     id: source.data.id,
-    parent: parent.data.path,
-    index,
+    parent: parent.data.id,
+    position: index,
   })
 }
 
-function getClass(tree: Node) {
-  const words: string[] = []
-  if (tree.children) words.push('is-group')
-  if (!tree.children && !(tree.name in ctx.manager.data.value.packages)) words.push('is-disabled')
-  if (tree.path === props.modelValue) words.push('is-active')
-  return words.join(' ')
+const optionProps: TreeOptionProps = {
+  class(tree: any, node) {
+    const data = tree as EntryData
+    const words: string[] = []
+    if (data.isGroup) words.push('is-group')
+    if (!data.isGroup && !(data.name in ctx.manager.data.value.packages)) words.push('is-disabled')
+    if (data.id === props.modelValue) words.push('is-active')
+    return words.join(' ')
+  },
 }
 
 watch(keyword, (val) => {

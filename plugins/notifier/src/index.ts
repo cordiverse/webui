@@ -1,6 +1,7 @@
 import { Context, Schema, Service } from 'cordis'
 import { Dict, isNullable, remove } from 'cosmokit'
 import { h } from '@cordisjs/element'
+import {} from '@cordisjs/loader'
 import type { Entry } from '@cordisjs/plugin-webui'
 
 declare module 'cordis' {
@@ -70,7 +71,7 @@ export class Notifier {
     return {
       ...this.options,
       content: this.options.content.join(''),
-      paths: this.ctx.get('loader')?.paths(this.ctx.scope),
+      paths: this.ctx.get('loader')?.locate(),
     }
   }
 }

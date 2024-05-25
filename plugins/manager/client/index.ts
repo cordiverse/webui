@@ -1,10 +1,9 @@
 import { Context, Dict, router, ScopeStatus, send, Service } from '@cordisjs/client'
 import { computed, defineComponent, h, Ref, ref, resolveComponent } from 'vue'
-import type { Entry } from '@cordisjs/loader'
+import type { Data, EntryData } from '../src'
 import Settings from './components/index.vue'
 import Forks from './components/forks.vue'
 import Select from './components/select.vue'
-import type { Data } from '../src'
 
 import './index.scss'
 import './icons'
@@ -15,7 +14,7 @@ declare module '@cordisjs/client' {
   }
 
   interface ActionContext {
-    'config.tree': Node
+    'config.tree': EntryData
   }
 }
 
@@ -25,14 +24,7 @@ export const coreDeps = [
   '@cordisjs/plugin-server',
 ]
 
-export interface Node {
-  id: string
-  name: string
-  path: string
-  label?: string
-  config?: any
-  parent?: Node
-  disabled?: boolean
+export interface Node extends EntryData {
   children?: Node[]
 }
 
@@ -57,36 +49,30 @@ export default class Manager extends Service {
     optional: ['manager'],
   }
 
-  current = ref<Node>()
+  current = ref<EntryData>()
   dialogFork = ref<string>()
-  dialogSelect = ref<Node>()
+  dialogSelect = ref<EntryData>()
 
   plugins = computed(() => {
     const expanded: string[] = []
     const forks: Dict<string[]> = {}
-    const paths: Dict<Node> = {}
-    const handle = (config: Entry.Options[]) => {
-      return config.map(options => {
+    const entries: Dict<EntryData> = Object.fromEntries(this.data.value.entries.map(options => [options.id, options]))
+    const buildChildren = (parent: string | null) => this.data.value.entries
+      .filter(entry => entry.parent === parent)
+      .map((options) => {
         const node: Node = {
-          id: options.id,
-          name: options.name,
-          path: options.id,
-          config: options.config,
+          ...options,
+          children: buildChildren(options.id),
         }
-        if (options.name === 'cordis/group') {
-          node.children = handle(options.config)
+        forks[options.name] ||= []
+        forks[options.name].push(options.id)
+        if (options.isGroup && !options.collapse) {
+          expanded.push(options.id)
         }
-        if (!options.collapse && node.children) {
-          expanded.push(node.path)
-        }
-        forks[node.name] ||= []
-        forks[node.name].push(node.path)
-        paths[node.path] = node
         return node
       })
-    }
-    const data = handle(this.data.value.config)
-    return { data, forks, paths, expanded }
+    const data = buildChildren(null)
+    return { data, forks, entries, expanded }
   })
 
   type = computed(() => {
@@ -161,7 +147,7 @@ export default class Manager extends Service {
       id: '.remove',
       type: 'danger',
       icon: 'delete',
-      label: ({ config }) => config.tree?.children ? '移除分组' : '移除插件',
+      label: ({ config }) => config.tree?.isGroup ? '移除分组' : '移除插件',
     }, {
       id: '@separator',
     }, {
@@ -200,25 +186,25 @@ export default class Manager extends Service {
     }
   }
 
-  async remove(tree: string | Node) {
-    if (typeof tree === 'string') {
-      const forks = this.plugins.value.forks[tree]
+  async remove(options: string | EntryData) {
+    if (typeof options === 'string') {
+      const forks = this.plugins.value.forks[options]
       for (const id of forks) {
-        const tree = this.plugins.value.paths[id]
-        await send('manager.config.remove', { id: tree.id })
+        const options = this.plugins.value.entries[id]
+        await send('manager.config.remove', { id: options.id })
       }
     } else {
-      await router.replace('/plugins/' + tree.parent!.path)
-      await send('manager.config.remove', { id: tree.id })
+      await router.replace('/plugins/' + (options.parent ?? ''))
+      await send('manager.config.remove', { id: options.id })
     }
   }
 
   get(name: string) {
-    return this.plugins.value.forks[name]?.map(id => this.plugins.value.paths[id])
+    return this.plugins.value.forks[name]?.map(id => this.plugins.value.entries[id])
   }
 
-  getStatus(tree: Node) {
-    switch (this.data.value.packages[tree.name]?.runtime?.forks?.[tree.path]?.status) {
+  getStatus(data: EntryData) {
+    switch (this.data.value.packages[data.name]?.runtime?.forks?.[data.id]?.status) {
       case ScopeStatus.PENDING: return 'pending'
       case ScopeStatus.LOADING: return 'loading'
       case ScopeStatus.ACTIVE: return 'active'
@@ -244,6 +230,7 @@ export default class Manager extends Service {
 
     // check peer dependencies
     for (const name in local.package.peerDependencies ?? {}) {
+      // FIXME
       if (!name.includes('@cordisjs/plugin-') && !name.includes('cordis-plugin-')) continue
       if (coreDeps.includes(name)) continue
       const required = !local.package.peerDependenciesMeta?.[name]?.optional
@@ -280,8 +267,8 @@ export default class Manager extends Service {
     return result
   }
 
-  hasCoreDeps(tree: Node) {
-    if (coreDeps.includes(tree.name)) return true
-    if (tree.children) return tree.children.some(node => this.hasCoreDeps(node))
+  hasCoreDeps(data: EntryData) {
+    if (coreDeps.includes(data.name)) return true
+    return this.data.value.entries.some(entry => entry.parent === data.id && this.hasCoreDeps(entry))
   }
 }

@@ -8,7 +8,7 @@ import {} from '@cordisjs/plugin-hmr'
 declare module '@cordisjs/loader' {
   namespace Entry {
     interface Options {
-      label?: string | Dict<string> | null
+      label?: string | null
       collapse?: boolean | null
     }
   }
@@ -16,7 +16,7 @@ declare module '@cordisjs/loader' {
 
 declare module '@cordisjs/plugin-webui' {
   interface Events {
-    'manager.config.list'(): LoaderEntry.Options[]
+    'manager.config.list'(): EntryData[]
     'manager.config.create'(options: Omit<LoaderEntry.Options, 'id'> & EntryLocation): Promise<string>
     'manager.config.update'(options: Omit<LoaderEntry.Options, 'name'>): void
     'manager.config.remove'(options: { id: string }): void
@@ -33,8 +33,12 @@ declare module '@cordisjs/registry' {
   }
 }
 
+export interface EntryData extends LoaderEntry.Options, Required<EntryLocation> {
+  isGroup?: boolean
+}
+
 export interface Data {
-  config: LoaderEntry.Options[]
+  entries: EntryData[]
   packages: Dict<LocalObject>
   services: Dict<string[]>
 }
@@ -53,9 +57,9 @@ export interface RuntimeData {
   }>
 }
 
-interface EntryLocation {
-  parent?: string
-  index?: number
+export interface EntryLocation {
+  parent?: string | null
+  position?: number
 }
 
 export abstract class Manager extends Service {
@@ -70,14 +74,16 @@ export abstract class Manager extends Service {
 
   constructor(public ctx: Context) {
     super(ctx, 'manager', true)
-
-    if (!ctx.loader?.writable) {
-      throw new Error('@cordisjs/plugin-manager is only available for json/yaml config file')
-    }
   }
 
-  getConfig() {
-    return this.ctx.loader.config
+  getEntries() {
+    return Object.values(this.ctx.loader.entries).map<EntryData>((entry) => ({
+      ...entry.options,
+      config: entry.children?.data === entry.options.config ? undefined : entry.options.config,
+      parent: entry.parent.ctx.scope.entry?.options.id ?? null,
+      position: entry.parent.data.indexOf(entry.options),
+      isGroup: !!entry.children,
+    }))
   }
 
   getServices() {
@@ -88,7 +94,7 @@ export abstract class Manager extends Service {
       if (!(instance instanceof Object)) continue
       const ctx: Context = Reflect.getOwnPropertyDescriptor(instance, Context.current)?.value
       if (!ctx) continue
-      result[name] = this.ctx.loader.paths(ctx.scope)
+      result[name] = this.ctx.loader.locate(ctx)
     }
     return result
   }
@@ -102,13 +108,13 @@ export abstract class Manager extends Service {
           import.meta.resolve('../dist/style.css'),
         ],
       }, () => (this.getPackages(), {
-        config: this.getConfig(),
+        entries: this.getEntries(),
         packages: this.packages,
         services: this.getServices(),
       }))
 
       ctx.on('config', ctx.debounce(() => {
-        this.entry?.patch({ config: this.getConfig() })
+        this.entry?.patch({ entries: this.getEntries() })
       }, 0))
 
       ctx.on('internal/service', ctx.debounce(() => {
@@ -124,12 +130,12 @@ export abstract class Manager extends Service {
       })
 
       ctx.webui.addListener('manager.config.list', () => {
-        return this.getConfig()
+        return this.getEntries()
       })
 
       ctx.webui.addListener('manager.config.create', (options) => {
-        const { parent, index, ...rest } = options
-        return ctx.loader.create(rest, parent, index)
+        const { parent, position, ...rest } = options
+        return ctx.loader.create(rest, parent, position)
       })
 
       ctx.webui.addListener('manager.config.update', (options) => {
@@ -142,8 +148,8 @@ export abstract class Manager extends Service {
       })
 
       ctx.webui.addListener('manager.config.transfer', (options) => {
-        const { id, parent, index } = options
-        return ctx.loader.transfer(id, parent ?? '', index)
+        const { id, parent, position } = options
+        return ctx.loader.transfer(id, parent ?? '', position)
       })
 
       ctx.webui.addListener('manager.package.list', async () => {

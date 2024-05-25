@@ -52,10 +52,8 @@ const dialogSelect = computed({
 const keyword = ref('')
 const input = ref()
 
-const filter = inject('plugin-select-filter', (local: LocalObject) => true)
-
 const packages = computed(() => Object.values(ctx.manager.data.value.packages).filter((local) => {
-  return local.package.name.includes(keyword.value.toLowerCase()) && filter(local)
+  return local.package.name.includes(keyword.value.toLowerCase())
 }))
 
 function joinName(name: string, base: string) {
@@ -64,7 +62,7 @@ function joinName(name: string, base: string) {
 }
 
 async function configure(name: string) {
-  const parent = dialogSelect.value!.path
+  const parent = dialogSelect.value!.id
   dialogSelect.value = undefined
   keyword.value = ''
   const id = await send('manager.config.create', {

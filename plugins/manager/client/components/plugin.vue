@@ -1,5 +1,5 @@
 <template>
-  <template v-if="current?.name in data.packages">
+  <template v-if="current && current.name in data.packages">
     <k-comment v-if="!local.runtime">
       <p>正在加载插件配置……</p>
     </k-comment>
@@ -53,7 +53,7 @@
       <!-- implements -->
       <k-slot-item :order="300">
         <template v-for="(activity, key) in ctx.$router.pages" :key="key">
-          <k-comment type="success" v-if="activity.ctx.$entry?.paths.includes(current.path) && !activity.disabled()">
+          <k-comment type="success" v-if="activity.ctx.$entry?.paths.includes(current.id) && !activity.disabled()">
             <p>
               <span>此插件提供了页面：</span>
               <k-activity-link :id="activity.id" />
@@ -117,7 +117,7 @@ const config = computed({
   set: value => emit('update:modelValue', value),
 })
 
-const env = computed(() => ctx.manager.getEnvInfo(current.value?.name))
+const env = computed(() => ctx.manager.getEnvInfo(current.value?.name)!)
 const local = computed(() => data.value.packages[current.value?.name!])
 const hint = computed(() => local.value.workspace ? '请检查插件源代码。' : '请联系插件作者并反馈此问题。')
 

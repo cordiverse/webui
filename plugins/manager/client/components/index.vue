@@ -5,13 +5,13 @@
       <template v-if="!current">插件配置</template>
 
       <!-- group -->
-      <template v-else-if="current.children">
+      <template v-else-if="current.isGroup">
         分组：{{ current.label || current.id }}
       </template>
 
       <!-- plugin -->
       <template v-else>
-        {{ current.label || current.name }} [{{ current.path }}]
+        {{ current.label || current.name }} [{{ current.id }}]
       </template>
     </template>
 
@@ -23,7 +23,7 @@
       <div>请在左侧选择插件</div>
     </k-empty>
     <k-content v-else class="plugin-view" :key="path">
-      <group-settings v-if="current.children" v-model="config"></group-settings>
+      <group-settings v-if="current.isGroup" v-model="config"></group-settings>
       <plugin-settings v-else v-model="config"></plugin-settings>
     </k-content>
 
@@ -34,7 +34,7 @@
       @closed="remove = undefined"
     >
       <template v-if="remove">
-        确定要移除{{ remove.children ? `分组 ${remove.label || remove.path}` : `插件 ${remove.label || remove.name}` }} 吗？此操作不可撤销！
+        确定要移除{{ remove.isGroup ? `分组 ${remove.label || remove.id}` : `插件 ${remove.label || remove.name}` }} 吗？此操作不可撤销！
       </template>
       <template #footer>
         <el-button @click="showRemove = false">取消</el-button>
@@ -83,6 +83,7 @@ import { Node } from '..'
 import GroupSettings from './group.vue'
 import TreeView from './tree.vue'
 import PluginSettings from './plugin.vue'
+import { EntryData } from '../../src'
 
 const route = useRoute()
 const router = useRouter()
@@ -99,10 +100,10 @@ const dialogFork = computed({
 const path = computed<string>({
   get() {
     const name = route.path.slice(9)
-    return name in plugins.value.paths ? name : ''
+    return name in plugins.value.entries ? name : ''
   },
   set(name) {
-    if (!(name in plugins.value.paths)) name = ''
+    if (!(name in plugins.value.entries)) name = ''
     router.replace('/plugins/' + name)
   },
 })
@@ -118,9 +119,9 @@ async function handleOpen() {
   inputEl.value?.focus()
 }
 
-const remove = ref<Node>()
+const remove = ref<EntryData>()
 const showRemove = ref(false)
-const rename = ref<Node>()
+const rename = ref<EntryData>()
 const showRename = ref(false)
 const groupCreate = ref<string>()
 
@@ -132,7 +133,7 @@ watch(rename, (value) => {
   if (value) showRename.value = true
 })
 
-watch(() => plugins.value.paths[path.value], (value) => {
+watch(() => plugins.value.entries[path.value], (value) => {
   ctx.manager.current.value = value
   if (value) config.value = clone(value.config)
 }, { immediate: true })
@@ -140,14 +141,14 @@ watch(() => plugins.value.paths[path.value], (value) => {
 ctx.define('config.tree', ctx.manager.current)
 
 ctx.action('config.tree.add-plugin', {
-  hidden: ({ config }) => config.tree && !config.tree.children,
+  hidden: ({ config }) => config.tree && !config.tree.isGroup,
   action: ({ config }) => ctx.manager.dialogSelect.value = config.tree,
 })
 
 ctx.action('config.tree.add-group', {
-  hidden: ({ config }) => config.tree && !config.tree.children,
+  hidden: ({ config }) => config.tree && !config.tree.isGroup,
   action: ({ config }) => {
-    groupCreate.value = config.tree.path
+    groupCreate.value = config.tree.id
   },
 })
 
@@ -162,25 +163,21 @@ async function createGroup(label: string) {
 }
 
 ctx.action('config.tree.clone', {
-  hidden: ({ config }) => !config.tree || !!config.tree.children,
+  hidden: ({ config }) => !config.tree || !!config.tree.isGroup,
   action: async ({ config }) => {
-    const children = config.tree.parent!.path
-      ? config.tree.parent!.children
-      : plugins.value.data.slice(1)
-    const index = children.findIndex(tree => tree.path === config.tree.path)
     const id = await send('manager.config.create', {
       name: config.tree.name,
       config: config.tree.config,
       disabled: true,
-      parent: config.tree.parent!.id,
-      index: index + 1,
+      parent: config.tree.parent,
+      position: config.tree.position + 1,
     })
     router.replace(`/plugins/${id}`)
   },
 })
 
 ctx.action('config.tree.manage', {
-  hidden: ({ config }) => !config.tree || !!config.tree.children,
+  hidden: ({ config }) => !config.tree || !!config.tree.isGroup,
   action: async ({ config }) => {
     dialogFork.value = config.tree.name
   },
@@ -189,7 +186,7 @@ ctx.action('config.tree.manage', {
 ctx.action('config.tree.rename', {
   disabled: ({ config }) => !config.tree,
   action: ({ config }) => {
-    input.value = config.tree.label || (config.tree.name === 'group' ? config.tree.path : config.tree.name)
+    input.value = config.tree.label || (config.tree.name === 'group' ? config.tree.id : config.tree.name)
     rename.value = config.tree
   },
 })
@@ -240,18 +237,19 @@ ctx.action('config.tree.toggle', {
   },
 })
 
-async function execute(tree: Node, disabled: true | null) {
+async function execute(data: EntryData, disabled: true | null) {
   await send('manager.config.update', {
-    id: tree.id,
+    id: data.id,
     disabled,
+    config: config.value,
   })
 }
 
-async function renameItem(tree: Node, name: string) {
+async function renameItem(data: EntryData, name: string) {
   showRename.value = false
-  tree.label = name
+  data.label = name
   await send('manager.config.update', {
-    id: tree.path,
+    id: data.id,
     label: name || null,
   })
 }

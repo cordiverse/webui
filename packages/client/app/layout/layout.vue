@@ -1,6 +1,6 @@
 <template>
-  <div class="layout-container" :class="[container, styles]">
-    <aside class="layout-aside layout-left" :class="left" v-if="$slots.left">
+  <div class="k-layout layout-container" :class="[container, styles]">
+    <aside class="layout-aside layout-left flex flex-col" :class="left" v-if="$slots.left">
       <slot name="left"></slot>
     </aside>
 
@@ -9,7 +9,7 @@
       <layout-header
         v-model:isLeftAsideOpen="isLeftAsideOpen"
         v-model:isRightAsideOpen="isRightAsideOpen"
-        :menu-key="typeof menu === 'string' ? menu : null"
+        :menu-key="typeof menu === 'string' ? menu : undefined"
         :menu-data="menuData">
         <template #left>
           <slot name="header">{{ route.meta.activity?.name }}</slot>

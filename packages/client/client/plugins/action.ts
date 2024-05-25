@@ -7,9 +7,9 @@ import { ActionContext } from '..'
 declare module '../context' {
   interface Context {
     $action: ActionService
-    action(id: string, options: ActionOptions): () => void
+    action(id: string, options: ActionOptions | ActionOptions['action']): () => void
     menu(id: string, items: MenuItem[]): () => void
-    define<K extends keyof ActionContext>(key: K, value: MaybeRefOrGetter<ActionContext[K]>): () => void
+    define<K extends keyof ActionContext>(key: K, value: MaybeRefOrGetter<ActionContext[K] | undefined>): () => void
   }
 
   interface Internal {
@@ -116,7 +116,8 @@ export default class ActionService extends Service {
     })
   }
 
-  action(id: string, options: ActionOptions) {
+  action(id: string, options: ActionOptions | ActionOptions['action']) {
+    if (typeof options === 'function') options = { action: options }
     markRaw(options)
     return this[Context.current].effect(() => {
       this.ctx.internal.actions[id] = options

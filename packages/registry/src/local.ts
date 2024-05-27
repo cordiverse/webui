@@ -104,17 +104,24 @@ export class LocalScanner {
 
   async loadPlugAndPlay(pnp: PnP) {
     const locators: Dict<[string, boolean]> = Object.create(null)
-    for (const locator of pnp.getDependencyTreeRoots()) {
-      if (!locator.name) continue
-      const info = pnp.getPackageInformation(locator)
-      locators[locator.name] = [info.packageLocation, true]
+
+    // workspaces
+    if (pnp.getDependencyTreeRoots) {
+      for (const locator of pnp.getDependencyTreeRoots()) {
+        if (!locator.name) continue
+        const info = pnp.getPackageInformation(locator)
+        locators[locator.name] = [info.packageLocation, true]
+      }
     }
+
+    // dependencies
     for (const name in this.dependencies) {
       if (name in locators) continue
       const path = pnp.resolveToUnqualified(name, this.baseDir)
       if (!path) continue
       locators[name] = [path, false]
     }
+
     await Promise.all(Object.entries(locators).map(async ([name, [path, workspace]]) => {
       try {
         this.candidates[name] = {

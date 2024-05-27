@@ -1,7 +1,7 @@
 {
   "name": "@cordisjs/registry",
   "description": "Scan Package Manager for Koishi Plugins",
-  "version": "7.1.1",
+  "version": "7.1.2",
   "type": "module",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",

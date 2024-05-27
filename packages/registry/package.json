@@ -1,7 +1,7 @@
 {
   "name": "@cordisjs/registry",
   "description": "Scan Package Manager for Koishi Plugins",
-  "version": "7.0.3",
+  "version": "7.1.1",
   "type": "module",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
@@ -27,6 +27,7 @@
     "search"
   ],
   "devDependencies": {
+    "@types/pnpapi": "^0.0.5",
     "@types/semver": "^7.5.8"
   },
   "dependencies": {

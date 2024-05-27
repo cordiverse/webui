@@ -65,7 +65,7 @@
     "@cordisjs/plugin-hmr": "^0.2.2"
   },
   "dependencies": {
-    "@cordisjs/registry": "^7.0.3",
+    "@cordisjs/registry": "^7.1.1",
     "cosmokit": "^1.6.2"
   }
 }

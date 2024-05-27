@@ -1,10 +1,25 @@
 import { Awaitable, deduplicate, Dict, pick } from 'cosmokit'
-import { dirname } from 'node:path'
+import { dirname, join } from 'node:path'
 import { createRequire } from 'node:module'
 import { Dirent } from 'node:fs'
 import { readdir, readFile } from 'node:fs/promises'
 import { DependencyKey, PackageJson, SearchObject, SearchResult } from './types'
 import { Ecosystem, Manifest } from './manifest'
+
+type PnP = typeof import('pnpapi')
+
+let pnp: PnP | undefined
+
+if (process.versions.pnp) {
+  try {
+    pnp = createRequire(import.meta.url)('pnpapi')
+  } catch {}
+}
+
+declare module 'pnpapi' {
+  function getDependencyTreeRoots(): PackageLocator[]
+  function getAllLocators(): PackageLocator[]
+}
 
 const LocalKey = ['name', 'version', 'peerDependencies', 'peerDependenciesMeta'] as const
 type LocalKeys = typeof LocalKey[number]
@@ -48,6 +63,11 @@ export class LocalScanner {
     Object.assign(this, options)
   }
 
+  async collect(forced = false) {
+    if (forced) delete this.mainTask
+    this.objects = await (this.mainTask ||= this._collect())
+  }
+
   async _collect() {
     clear(this.cache)
     clear(this.pkgTasks)
@@ -59,26 +79,10 @@ export class LocalScanner {
       Object.assign(this.dependencies, meta[key])
     }
 
-    // scan for candidate packages (dependencies and symlinks)
-    let root = this.baseDir
-    const dirTasks: Promise<string[]>[] = []
-    while (1) {
-      dirTasks.push(this.loadDirectory(root))
-      const parent = dirname(root)
-      if (root === parent) break
-      root = parent
-    }
-    const names = deduplicate((await Promise.all(dirTasks)).flat(1))
-    const results = await Promise.all(names.map(async (name) => {
-      try {
-        return await this.loadMeta(name)
-      } catch (reason) {
-        this.onFailure?.(reason, name)
-      }
-    }))
-    for (const result of results) {
-      if (!result) continue
-      this.candidates[result.meta.name] = result
+    if (pnp) {
+      await this.loadPlugAndPlay(pnp)
+    } else {
+      await this.loadNodeModules()
     }
 
     // check for candidates
@@ -98,9 +102,58 @@ export class LocalScanner {
     return Object.values(this.cache)
   }
 
-  async collect(forced = false) {
-    if (forced) delete this.mainTask
-    this.objects = await (this.mainTask ||= this._collect())
+  async loadPlugAndPlay(pnp: PnP) {
+    const locators: Dict<[string, boolean]> = Object.create(null)
+    for (const locator of pnp.getDependencyTreeRoots()) {
+      if (!locator.name) continue
+      const info = pnp.getPackageInformation(locator)
+      locators[locator.name] = [info.packageLocation, true]
+    }
+    for (const name in this.dependencies) {
+      if (name in locators) continue
+      const path = pnp.resolveToUnqualified(name, this.baseDir)
+      if (!path) continue
+      locators[name] = [path, false]
+    }
+    await Promise.all(Object.entries(locators).map(async ([name, [path, workspace]]) => {
+      try {
+        this.candidates[name] = {
+          meta: await this.loadMeta(join(path, 'package.json')),
+          workspace,
+        }
+      } catch (reason) {
+        this.onFailure?.(reason, name)
+      }
+    }))
+  }
+
+  async loadNodeModules() {
+    // scan for candidate packages (dependencies and symlinks)
+    let root = this.baseDir
+    const dirTasks: Promise<string[]>[] = []
+    while (1) {
+      dirTasks.push(this.loadDirectory(root))
+      const parent = dirname(root)
+      if (root === parent) break
+      root = parent
+    }
+    const names = deduplicate((await Promise.all(dirTasks)).flat(1))
+    const results = await Promise.all(names.map(async (name) => {
+      try {
+        const filename = this.require.resolve(name + '/package.json')
+        const workspace = !filename.includes('node_modules')
+        return {
+          meta: await this.loadMeta(filename),
+          workspace,
+        } as Candidate
+      } catch (reason) {
+        this.onFailure?.(reason, name)
+      }
+    }))
+    for (const result of results) {
+      if (!result) continue
+      this.candidates[result.meta.name] = result
+    }
   }
 
   private async loadDirectory(baseDir: string) {
@@ -123,6 +176,13 @@ export class LocalScanner {
       }
     }))
     return results.flat(1).filter((x): x is string => !!x)
+  }
+
+  private async loadMeta(filename: string) {
+    const meta: PackageJson = JSON.parse(await readFile(filename, 'utf8'))
+    meta.peerDependencies ||= {}
+    meta.peerDependenciesMeta ||= {}
+    return meta
   }
 
   private loadEcosystem(ecosystem: Ecosystem) {
@@ -156,14 +216,6 @@ export class LocalScanner {
     } catch (error) {
       this.onFailure?.(error, name)
     }
-  }
-
-  private async loadMeta(name: string): Promise<Candidate> {
-    const filename = this.require.resolve(name + '/package.json')
-    const meta: PackageJson = JSON.parse(await readFile(filename, 'utf8'))
-    meta.peerDependencies ||= {}
-    meta.peerDependenciesMeta ||= {}
-    return { meta, workspace: !filename.includes('node_modules') }
   }
 
   toJSON(): SearchResult<LocalObject> {

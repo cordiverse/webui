@@ -2,9 +2,8 @@ import { Context } from 'cordis'
 import { Client } from './index.ts'
 
 export namespace Entry {
-  export type Files = string | string[] | EntryOptions
-
-  export interface EntryOptions {
+  export interface Files {
+    base?: string
     dev: string
     prod: string | string[]
   }

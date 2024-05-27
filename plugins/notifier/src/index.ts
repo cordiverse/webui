@@ -106,10 +106,11 @@ class NotifierService extends Service {
       ctx.on('dispose', () => this.entry = undefined)
 
       this.entry = ctx.webui.addEntry({
-        dev: import.meta.resolve('../client/index.ts'),
+        base: import.meta.url,
+        dev: '../client/index.ts',
         prod: [
-          import.meta.resolve('../dist/index.js'),
-          import.meta.resolve('../dist/style.css'),
+          '../dist/index.js',
+          '../dist/style.css',
         ],
       }, () => ({
         notifiers: this.store.map(notifier => notifier.toJSON()),

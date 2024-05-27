@@ -54,10 +54,11 @@ export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context) {
   const entry = ctx.webui.addEntry({
-    dev: import.meta.resolve('../client/index.ts'),
+    base: import.meta.url,
+    dev: '../client/index.ts',
     prod: [
-      import.meta.resolve('../dist/index.js'),
-      import.meta.resolve('../dist/style.css'),
+      '../dist/index.js',
+      '../dist/style.css',
     ],
   }, getGraph)
 

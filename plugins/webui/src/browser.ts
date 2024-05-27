@@ -15,8 +15,7 @@ class BrowserWebUI extends WebUI {
   }
 
   resolveEntry(files: Entry.Files) {
-    if (typeof files === 'string' || Array.isArray(files)) return makeArray(files)
-    return makeArray(files.prod)
+    return makeArray(files.prod).map(url => new URL(url, files.base).href)
   }
 }
 

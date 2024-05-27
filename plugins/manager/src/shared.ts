@@ -102,10 +102,11 @@ export abstract class Manager extends Service {
   start() {
     this.ctx.inject(['webui'], (ctx) => {
       this.entry = ctx.webui.addEntry({
-        dev: import.meta.resolve('../client/index.ts'),
+        base: import.meta.url,
+        dev: '../client/index.ts',
         prod: [
-          import.meta.resolve('../dist/index.js'),
-          import.meta.resolve('../dist/style.css'),
+          '../dist/index.js',
+          '../dist/style.css',
         ],
       }, () => (this.getPackages(), {
         entries: this.getEntries(),

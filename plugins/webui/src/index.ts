@@ -5,7 +5,7 @@ import { FileSystemServeOptions, ViteDevServer } from 'vite'
 import { extname, resolve } from 'node:path'
 import { createReadStream, existsSync, Stats } from 'node:fs'
 import { readFile, stat } from 'node:fs/promises'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import { fileURLToPath } from 'node:url'
 import { parse } from 'es-module-lexer'
 import { Entry, Events, WebUI } from './shared'
 import open from 'open'
@@ -105,19 +105,20 @@ class NodeWebUI extends WebUI<NodeWebUI.Config> {
     })
   }
 
-  private getFiles(files: Entry.Files) {
-    if (typeof files === 'string' || Array.isArray(files)) return files
-    if (!this.config.devMode) return files.prod
-    if (!existsSync(fileURLToPath(files.dev))) return files.prod
-    return files.dev
+  private getPaths(files: Entry.Files) {
+    if (this.config.devMode && files.dev) {
+      const filename = fileURLToPath(new URL(files.dev, files.base))
+      if (existsSync(filename)) return [filename]
+    }
+    return makeArray(files.prod).map(url => fileURLToPath(new URL(url, files.base)))
   }
 
   resolveEntry(files: Entry.Files, key: string) {
-    return makeArray(this.getFiles(files)).map((url, index) => {
+    return this.getPaths(files).map((path, index) => {
       if (this.config.devMode) {
-        return `/vite/@fs/${fileURLToPath(url)}`
+        return `/vite/@fs/${path}`
       } else {
-        return `${this.config.uiPath}/@vendor/${key}/${index}${extname(url)}`
+        return `${this.config.uiPath}/@vendor/${key}/${index}${extname(path)}`
       }
     })
   }
@@ -143,11 +144,11 @@ class NodeWebUI extends WebUI<NodeWebUI.Config> {
       if (name.startsWith('@vendor/')) {
         const [key, value] = name.slice(8).split('/')
         if (!this.entries[key]) return ctx.status = 404
-        const files = makeArray(this.getFiles(this.entries[key].files))
+        const paths = this.getPaths(this.entries[key].files)
         const type = extname(value)
         const index = value.slice(0, -type.length)
-        if (!files[index]) return ctx.status = 404
-        const filename = fileURLToPath(files[index])
+        if (!paths[index]) return ctx.status = 404
+        const filename = paths[index]
         ctx.type = type
         if (this.config.devMode || ctx.type !== 'application/javascript') {
           return sendFile(filename)
@@ -222,7 +223,7 @@ class NodeWebUI extends WebUI<NodeWebUI.Config> {
         name: 'cordis-hmr',
         transform: (code, id, options) => {
           for (const [key, { files }] of Object.entries(this.entries)) {
-            const index = makeArray(this.getFiles(files)).indexOf(pathToFileURL(id).href)
+            const index = this.getPaths(files).indexOf(id)
             if (index < 0) continue
             code += [
               'if (import.meta.hot) {',

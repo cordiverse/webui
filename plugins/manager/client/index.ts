@@ -1,4 +1,4 @@
-import { Context, Dict, router, ScopeStatus, send, Service } from '@cordisjs/client'
+import { Context, Dict, router, send, Service } from '@cordisjs/client'
 import { computed, defineComponent, h, Ref, ref, resolveComponent } from 'vue'
 import type { Data, EntryData } from '../src'
 import Settings from './components/index.vue'
@@ -59,6 +59,7 @@ export default class Manager extends Service {
     const entries: Dict<EntryData> = Object.fromEntries(this.data.value.entries.map(options => [options.id, options]))
     const buildChildren = (parent: string | null) => this.data.value.entries
       .filter(entry => entry.parent === parent)
+      .sort((a, b) => a.position - b.position)
       .map((options) => {
         const node: Node = {
           ...options,
@@ -201,17 +202,6 @@ export default class Manager extends Service {
 
   get(name: string) {
     return this.plugins.value.forks[name]?.map(id => this.plugins.value.entries[id])
-  }
-
-  getStatus(data: EntryData) {
-    switch (this.data.value.packages[data.name]?.runtime?.forks?.[data.id]?.status) {
-      case ScopeStatus.PENDING: return 'pending'
-      case ScopeStatus.LOADING: return 'loading'
-      case ScopeStatus.ACTIVE: return 'active'
-      case ScopeStatus.FAILED: return 'failed'
-      case ScopeStatus.DISPOSED: return 'disposed'
-      default: return 'disabled'
-    }
   }
 
   getEnvInfo(name?: string) {

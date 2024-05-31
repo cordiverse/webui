@@ -1,26 +1,23 @@
 import { Context, MainScope, Plugin, Schema, ScopeStatus, Service } from 'cordis'
 import { Dict, pick } from 'cosmokit'
-import { Entry as LoaderEntry } from '@cordisjs/loader'
+import { EntryOptions } from '@cordisjs/loader'
 import { Entry as ClientEntry } from '@cordisjs/plugin-webui'
 import { LocalObject } from '@cordisjs/registry'
 import {} from '@cordisjs/plugin-hmr'
 
 declare module '@cordisjs/loader' {
-  namespace Entry {
-    interface Options {
-      label?: string | null
-      collapse?: boolean | null
-    }
+  interface EntryOptions {
+    label?: string | null
+    collapse?: boolean | null
   }
 }
 
 declare module '@cordisjs/plugin-webui' {
   interface Events {
     'manager.config.list'(): EntryData[]
-    'manager.config.create'(options: Omit<LoaderEntry.Options, 'id'> & EntryLocation): Promise<string>
-    'manager.config.update'(options: Omit<LoaderEntry.Options, 'name'>): void
+    'manager.config.create'(options: Omit<EntryOptions, 'id'> & EntryLocation): Promise<string>
+    'manager.config.update'(options: Omit<EntryOptions, 'name'> & EntryLocation): void
     'manager.config.remove'(options: { id: string }): void
-    'manager.config.transfer'(options: { id: string } & EntryLocation): void
     'manager.package.list'(): Promise<LocalObject[]>
     'manager.package.runtime'(options: { name: string }): Promise<RuntimeData>
     'manager.service.list'(): Dict<string[]>
@@ -33,8 +30,9 @@ declare module '@cordisjs/registry' {
   }
 }
 
-export interface EntryData extends LoaderEntry.Options, Required<EntryLocation> {
+export interface EntryData extends EntryOptions, Required<EntryLocation> {
   isGroup?: boolean
+  status?: ScopeStatus
 }
 
 export interface Data {
@@ -52,9 +50,6 @@ export interface RuntimeData {
   required?: string[]
   optional?: string[]
   failed?: boolean
-  forks?: Dict<{
-    status?: ScopeStatus
-  }>
 }
 
 export interface EntryLocation {
@@ -77,12 +72,14 @@ export abstract class Manager extends Service {
   }
 
   getEntries() {
-    return Object.values(this.ctx.loader.entries).map<EntryData>((entry) => ({
+    return [...this.ctx.loader.entries()].map<EntryData>((entry) => ({
       ...entry.options,
-      config: entry.children?.data === entry.options.config ? undefined : entry.options.config,
-      parent: entry.parent.ctx.scope.entry?.options.id ?? null,
+      id: entry.id,
+      config: entry.subgroup?.data === entry.options.config ? undefined : entry.options.config,
+      parent: entry.parent.ctx.scope.entry?.id ?? null,
       position: entry.parent.data.indexOf(entry.options),
-      isGroup: !!entry.children,
+      isGroup: !!entry.subgroup,
+      status: entry.fork?.status,
     }))
   }
 
@@ -114,7 +111,7 @@ export abstract class Manager extends Service {
         services: this.getServices(),
       }))
 
-      ctx.on('config', ctx.debounce(() => {
+      ctx.on('loader/config-update', ctx.debounce(() => {
         this.entry?.patch({ entries: this.getEntries() })
       }, 0))
 
@@ -140,17 +137,12 @@ export abstract class Manager extends Service {
       })
 
       ctx.webui.addListener('manager.config.update', (options) => {
-        const { id, ...rest } = options
-        return ctx.loader.update(id, rest)
+        const { id, parent, position, ...rest } = options
+        return ctx.loader.update(id, rest, parent, position)
       })
 
       ctx.webui.addListener('manager.config.remove', (options) => {
         return ctx.loader.remove(options.id)
-      })
-
-      ctx.webui.addListener('manager.config.transfer', (options) => {
-        const { id, parent, position } = options
-        return ctx.loader.transfer(id, parent ?? '', position)
       })
 
       ctx.webui.addListener('manager.package.list', async () => {
@@ -202,9 +194,6 @@ export abstract class Manager extends Service {
   parseRuntime(main: MainScope, runtime: RuntimeData) {
     runtime.id = main.uid
     runtime.forkable = main.isForkable
-    runtime.forks = Object.fromEntries(main.children
-      .filter(fork => fork.entry)
-      .map(fork => [fork.entry!.options.id, { status: fork.status }]))
   }
 
   async parseExports(name: string) {

@@ -26,8 +26,9 @@
         <div class="label" :title="getLabel(node)">
           {{ getLabel(node) }}
         </div>
+        <!-- FIXME: subpath, relative, etc. -->
         <div class="right">
-          <span v-if="node.data.name" class="status-light" :class="ctx.manager.getStatus(node.data)"></span>
+          <span class="status-light" :class="getStatusClass(node.data.status)"></span>
         </div>
       </div>
     </el-tree>
@@ -41,13 +42,15 @@ import { useRoute } from 'vue-router'
 import type { ElScrollbar, ElTree } from 'element-plus'
 import type { FilterNodeMethodFunction, TreeOptionProps } from 'element-plus/es/components/tree/src/tree.type'
 import type TreeNode from 'element-plus/es/components/tree/src/model/node'
-import { send, useContext, useMenu } from '@cordisjs/client'
-import { EntryData } from '../../src'
+import { send, useContext, useMenu, useRpc } from '@cordisjs/client'
+import { getStatusClass } from './utils'
+import { Data, EntryData } from '../../src'
 
 const props = defineProps<{
   modelValue: string
 }>()
 
+const data = useRpc<Data>()
 const ctx = useContext()
 const route = useRoute()
 const trigger = useMenu('config.tree')
@@ -138,9 +141,9 @@ function handleCollapse(data: EntryData, target: EntryNode, instance: any) {
 function handleDrop(source: EntryNode, target: EntryNode, position: 'before' | 'after' | 'inner', event: DragEvent) {
   const parent = position === 'inner' ? target : target.parent
   const index = parent.childNodes.findIndex(node => node.data.id === source.data.id)
-  send('manager.config.transfer', {
+  send('manager.config.update', {
     id: source.data.id,
-    parent: parent.data.id,
+    parent: parent.parent ? parent.data.id : null,
     position: index,
   })
 }
@@ -185,6 +188,12 @@ watch(keyword, (val) => {
   .el-tree-node {
     &.is-group > .el-tree-node__content {
       font-weight: bold;
+    }
+
+    &.is-disabled {
+      .el-tree-node__content .status-light {
+        display: none;
+      }
     }
   }
 

@@ -79,7 +79,6 @@
 import { computed, ref, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { clone, message, send, useContext, Schema } from '@cordisjs/client'
-import { Node } from '..'
 import GroupSettings from './group.vue'
 import TreeView from './tree.vue'
 import PluginSettings from './plugin.vue'

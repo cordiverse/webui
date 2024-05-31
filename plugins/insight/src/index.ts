@@ -83,6 +83,24 @@ export function apply(ctx: Context) {
       }
     }
 
+    function addNode(scope: EffectScope) {
+      const { uid, entry, disposables, status, runtime } = scope
+      assert(uid !== null)
+      const weight = disposables.length
+      const isGroup = !!runtime.plugin?.[Symbol.for('cordis.group')]
+      const isRoot = uid === 0
+      const name = getName(runtime.plugin)
+      const node = { uid, name, weight, status, isGroup, isRoot, services: services[uid!] }
+      if (entry) node.name += ` [${entry.options.id}]`
+      nodes.push(node)
+    }
+
+    function addEdge(type: 'dashed' | 'solid', source: number | null, target: number | null) {
+      assert(source !== null)
+      assert(target !== null)
+      edges.push({ type, source, target })
+    }
+
     for (const runtime of ctx.registry.values()) {
       // Suppose we have the following types of nodes:
       // - A, B: parent plugin scopes
@@ -102,25 +120,6 @@ export function apply(ctx: Context) {
         // exclude plugins that don't work due to missing dependencies
         // return runtime.using.every(name => scope.ctx[name])
         return true
-      }
-
-      const name = getName(runtime.plugin)
-
-      function addNode(scope: EffectScope) {
-        const { uid, entry, disposables, status, runtime } = scope
-        assert(uid !== null)
-        const weight = disposables.length
-        const isGroup = !!runtime.plugin?.[Symbol.for('cordis.group')]
-        const isRoot = uid === 0
-        const node = { uid, name, weight, status, isGroup, isRoot, services: services[uid!] }
-        if (entry) node.name += ` [${entry.options.id}]`
-        nodes.push(node)
-      }
-
-      function addEdge(type: 'dashed' | 'solid', source: number | null, target: number | null) {
-        assert(source !== null)
-        assert(target !== null)
-        edges.push({ type, source, target })
       }
 
       const addDeps = (scope: EffectScope) => {

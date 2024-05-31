@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory, START_LOCATION } from 'vue-router'
-import Overlay from '../components/chat/overlay.vue'
 import { Context } from '../context'
 import { insert, Service } from '../utils'
 import { Component, MaybeRefOrGetter, reactive, ref, toValue } from 'vue'
@@ -90,7 +89,6 @@ export class Activity {
 
   disabled() {
     if (this.ctx.bail('activity', this)) return true
-    if (this.when && !this.when()) return true
     if (this.options.disabled?.()) return true
   }
 
@@ -147,11 +145,6 @@ export default class RouterService extends Service {
       const result = this.cache['home'] || '/'
       if (result === to.fullPath) return
       return result
-    })
-
-    this.slot({
-      type: 'global',
-      component: Overlay,
     })
   }
 

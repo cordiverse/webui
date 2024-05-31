@@ -75,8 +75,8 @@ export class Context extends cordis.Context {
     })
   }
 
-  wrapComponent(component?: Component) {
-    if (!component) return
+  wrapComponent(component: Component) {
+    if (!component) return null!
     const caller = this[Context.current] || this
     if (!caller.$entry) return component
     return defineComponent((props, { slots }) => {

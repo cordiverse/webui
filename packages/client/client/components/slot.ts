@@ -1,9 +1,9 @@
 import { useContext } from '../context'
-import { App, Component, defineComponent, h } from 'vue'
+import { App, Component, DefineComponent, defineComponent, h } from 'vue'
 
 export interface SlotItem {
   order?: number
-  component: Component
+  component: Component | DefineComponent
 }
 
 export interface SlotOptions extends SlotItem {
@@ -15,7 +15,10 @@ export interface SlotOptions extends SlotItem {
 
 export const KSlot = defineComponent({
   props: {
-    name: String,
+    name: {
+      type: String,
+      required: true,
+    },
     data: Object,
     single: Boolean,
   },

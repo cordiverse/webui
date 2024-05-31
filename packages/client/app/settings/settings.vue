@@ -41,7 +41,7 @@ const ctx = useContext()
 
 interface Tree {
   id: string
-  label: string
+  label?: string
   children?: Tree[]
 }
 

@@ -4,7 +4,6 @@ import components from '@cordisjs/components'
 import Element, { ElLoading, ElMessage, ElMessageBox } from 'element-plus'
 
 import common from './common'
-import ChatImage from './chat/image.vue'
 import * as icons from './icons'
 import layout from './layout'
 import link from './link'
@@ -24,7 +23,7 @@ export * from './slot'
 export * from 'vue-i18n'
 export * from '@cordisjs/components'
 
-export { icons, ChatImage }
+export { icons }
 
 export default function (app: App) {
   app.use(Element)

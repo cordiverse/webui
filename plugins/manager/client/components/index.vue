@@ -23,8 +23,7 @@
       <div>请在左侧选择插件</div>
     </k-empty>
     <k-content v-else class="plugin-view" :key="path">
-      <group-settings v-if="current.isGroup" v-model="config"></group-settings>
-      <plugin-settings v-else v-model="config"></plugin-settings>
+      <plugin-settings v-model="config"></plugin-settings>
     </k-content>
 
     <el-dialog
@@ -79,7 +78,6 @@
 import { computed, ref, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { clone, message, send, useContext, Schema } from '@cordisjs/client'
-import GroupSettings from './group.vue'
 import TreeView from './tree.vue'
 import PluginSettings from './plugin.vue'
 import { EntryData } from '../../src'

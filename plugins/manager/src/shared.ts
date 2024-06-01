@@ -20,7 +20,7 @@ declare module '@cordisjs/plugin-webui' {
     'manager.config.remove'(options: { id: string }): void
     'manager.package.list'(): Promise<LocalObject[]>
     'manager.package.runtime'(options: { name: string }): Promise<RuntimeData>
-    'manager.service.list'(): Dict<string[]>
+    'manager.service.list'(): Promise<Dict<RealmData>>
   }
 }
 
@@ -35,10 +35,16 @@ export interface EntryData extends EntryOptions, Required<EntryLocation> {
   status?: ScopeStatus
 }
 
+export interface RealmData {
+  root?: string[]
+  local: Dict<string[]>
+  global: Dict<string[]>
+}
+
 export interface Data {
   entries: EntryData[]
   packages: Dict<LocalObject>
-  services: Dict<string[]>
+  services: Dict<RealmData>
 }
 
 export interface RuntimeData {
@@ -83,15 +89,34 @@ export abstract class Manager extends Service {
     }))
   }
 
+  locateService(ctx: Context, name: string) {
+    const instance = ctx.get(name)
+    if (!(instance instanceof Object)) return
+    const origin: Context = Reflect.getOwnPropertyDescriptor(instance, Context.current)?.value
+    if (!origin) return
+    return this.ctx.loader.locate(origin)
+  }
+
   getServices() {
-    const result = {} as Dict<string[]>
+    const result = {} as Dict<RealmData>
     for (const [name, { type }] of Object.entries(this.ctx.root[Context.internal])) {
       if (type !== 'service') continue
-      const instance = this.ctx.get(name)
-      if (!(instance instanceof Object)) continue
-      const ctx: Context = Reflect.getOwnPropertyDescriptor(instance, Context.current)?.value
-      if (!ctx) continue
-      result[name] = this.ctx.loader.locate(ctx)
+      result[name] = {
+        root: this.locateService(this.ctx.root, name),
+        local: {},
+        global: {},
+      }
+    }
+    for (const entry of this.ctx.loader.entries()) {
+      if (!entry.options.isolate) continue
+      for (const [name, value] of Object.entries(entry.options.isolate)) {
+        if (!result[name]) continue
+        if (value === true) {
+          result[name].local[entry.id] = this.locateService(entry.ctx, name)!
+        } else {
+          result[name].global[value] = this.locateService(entry.ctx, name)!
+        }
+      }
     }
     return result
   }
@@ -160,7 +185,7 @@ export abstract class Manager extends Service {
         return runtime
       })
 
-      ctx.webui.addListener('manager.service.list', () => {
+      ctx.webui.addListener('manager.service.list', async () => {
         return this.getServices()
       })
     })

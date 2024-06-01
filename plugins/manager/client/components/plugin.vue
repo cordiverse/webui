@@ -12,17 +12,14 @@
       <k-slot-item :order="800">
         <k-slot name="plugin-dependency" single>
           <k-comment
-            v-for="({ required, active }, name) in env.peer" :key="name"
-            :type="active ? 'success' : required ? 'warning' : 'primary'">
+            v-for="({ required, provider }, name) in env.using" :key="name"
+            :type="provider ? 'success' : required ? 'warning' : 'primary'">
             <p>
-              {{ required ? '必需' : '可选' }}依赖：{{ name }} ({{ active ? '已加载' : '未加载' }})
-            </p>
-          </k-comment>
-          <k-comment
-            v-for="({ required }, name) in env.using" :key="name"
-            :type="name in data.services ? 'success' : required ? 'warning' : 'primary'">
-            <p>
-              {{ required ? '必需' : '可选' }}服务：{{ name }} ({{ name in data.services ? '已加载' : '未加载' }})
+              {{ required ? '必需' : '可选' }}服务：{{ name }}
+              <template v-if="provider">
+                (<span :class="{ 'k-link': provider.length }" @click="gotoProvider(provider)">已加载</span>)
+              </template>
+              <template v-else>(未加载)</template>
             </p>
           </k-comment>
         </k-slot>
@@ -91,7 +88,7 @@
 
 <script lang="ts" setup>
 
-import { send, useContext, useRpc } from '@cordisjs/client'
+import { send, router, useContext, useRpc } from '@cordisjs/client'
 import { computed, provide, watch } from 'vue'
 import { Data } from '../../src'
 
@@ -117,7 +114,7 @@ const config = computed({
   set: value => emit('update:modelValue', value),
 })
 
-const env = computed(() => ctx.manager.getEnvInfo(current.value?.name)!)
+const env = computed(() => ctx.manager.getEnvInfo(current.value)!)
 const local = computed(() => data.value.packages[current.value?.name!])
 const hint = computed(() => local.value.workspace ? '请检查插件源代码。' : '请联系插件作者并反馈此问题。')
 
@@ -126,11 +123,14 @@ watch(local, (value) => {
   send('manager.package.runtime', { name: value.package.name })
 }, { immediate: true })
 
-provide('plugin:name', name)
-provide('plugin:env', env)
 provide('manager.settings.local', local)
 provide('manager.settings.config', config)
 provide('manager.settings.current', current)
+
+function gotoProvider(provider: string[]) {
+  if (!provider.length) return
+  router.push('/plugins/' + provider[0])
+}
 
 </script>
 

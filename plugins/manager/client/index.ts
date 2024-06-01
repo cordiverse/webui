@@ -30,17 +30,12 @@ export interface Node extends EntryData {
 
 interface DepInfo {
   required: boolean
-}
-
-interface PeerInfo {
-  required: boolean
-  active: boolean
+  provider?: string[]
 }
 
 export interface EnvInfo {
   impl: string[]
   using: Dict<DepInfo>
-  peer: Dict<PeerInfo>
   warning?: boolean
 }
 
@@ -77,7 +72,7 @@ export default class Manager extends Service {
   })
 
   type = computed(() => {
-    const env = this.getEnvInfo(this.current.value?.name)
+    const env = this.getEnvInfo(this.current.value)
     if (!env) return
     if (env.warning && this.current.value!.disabled) return 'warning'
     for (const name in env.using) {
@@ -89,7 +84,7 @@ export default class Manager extends Service {
     }
   })
 
-  constructor(ctx: Context) {
+  constructor(ctx: Context, public data: Ref<Data>) {
     super(ctx, 'manager', true)
   }
 
@@ -170,10 +165,6 @@ export default class Manager extends Service {
     }])
   }
 
-  get data(): Ref<Data> {
-    return this.ctx.$entry!.data
-  }
-
   ensure(name: string, passive?: boolean) {
     const forks = this.plugins.value.forks[name]
     if (!forks?.length) {
@@ -204,32 +195,12 @@ export default class Manager extends Service {
     return this.plugins.value.forks[name]?.map(id => this.plugins.value.entries[id])
   }
 
-  getEnvInfo(name?: string) {
-    function setService(name: string, required: boolean) {
-      if (services.has(name)) return
-      if (name === 'console') return
-      result.using[name] = { required }
-    }
+  getEnvInfo(entry?: EntryData) {
+    if (!entry) return
+    const local = this.data.value.packages[entry.name]
+    if (!local?.runtime) return
 
-    if (!name) return
-    const local = this.data.value.packages[name]
-    if (!local) return
-
-    const result: EnvInfo = { impl: [], using: {}, peer: {} }
-    const services = new Set<string>()
-
-    // check peer dependencies
-    for (const name in local.package.peerDependencies ?? {}) {
-      // FIXME
-      if (!name.includes('@cordisjs/plugin-') && !name.includes('cordis-plugin-')) continue
-      if (coreDeps.includes(name)) continue
-      const required = !local.package.peerDependenciesMeta?.[name]?.optional
-      const active = !!this.data.value.packages[name]?.runtime?.id
-      result.peer[name] = { required, active }
-      for (const service of this.data.value.packages[name]?.manifest?.service?.implements ?? []) {
-        services.add(service)
-      }
-    }
+    const result: EnvInfo = { impl: [], using: {} }
 
     // check implementations
     for (const name of local.manifest.service?.implements || []) {
@@ -237,7 +208,24 @@ export default class Manager extends Service {
     }
 
     // check services
-    for (const name of local.runtime?.required ?? []) {
+    const setService = (name: string, required: boolean) => {
+      let provider = this.data.value.services[name]?.root
+      let node = entry
+      while (node) {
+        const label = node.isolate?.[name]
+        if (label === true) {
+          provider = this.data.value.services[name]?.local[node.id]
+        } else if (label) {
+          provider = this.data.value.services[name]?.global[node.id]
+        } else if (node.parent) {
+          node = this.plugins.value.entries[node.parent]
+          continue
+        }
+        break
+      }
+      result.using[name] = { required, provider }
+    }
+    for (const name of local.runtime.required ?? []) {
       setService(name, true)
     }
     for (const name of local.runtime?.optional ?? []) {

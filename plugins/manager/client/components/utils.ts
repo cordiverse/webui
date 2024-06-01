@@ -1,6 +1,6 @@
 import { ScopeStatus } from '@cordisjs/client'
 
-export function getStatusClass(status: ScopeStatus) {
+export function getStatusClass(status?: ScopeStatus) {
   switch (status) {
     case ScopeStatus.PENDING: return 'pending'
     case ScopeStatus.LOADING: return 'loading'

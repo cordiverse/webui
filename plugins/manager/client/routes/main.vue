@@ -1,5 +1,5 @@
 <template>
-  <template v-if="current && local.runtime">
+  <k-content v-if="current && local.runtime">
     <k-slot name="plugin-details">
       <!-- dependency -->
       <k-slot-item :order="800">
@@ -57,7 +57,7 @@
         <k-markdown unsafe class="usage" :source="local.runtime?.usage"></k-markdown>
       </k-slot-item>
     </k-slot>
-  </template>
+  </k-content>
 </template>
 
 <script lang="ts" setup>

@@ -1,17 +1,33 @@
 <template>
   <k-layout menu="config.tree" :menu-data="currentEntry">
     <template #header>
-      <!-- root -->
-      <template v-if="!currentEntry">插件配置</template>
+      <template v-if="!currentEntry">插件管理</template>
 
-      <!-- group -->
-      <template v-else-if="currentEntry.isGroup">
-        分组：{{ currentEntry.label || currentEntry.id }}
-      </template>
-
-      <!-- plugin -->
       <template v-else>
-        {{ currentEntry.label || currentEntry.name }}
+        <span class="label">
+          {{ currentEntry.label || currentEntry.name }}
+        </span>
+        <span class="divider"></span>
+        <el-popover popper-class="k-menu">
+          <template #reference>
+            <span class="nav-button">
+              <span>{{ currentRoute!.name }}</span>
+              <svg class="h-4 ml-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+                <path fill="currentColor" d="M384 192v640l384-320.064z"></path>
+              </svg>
+            </span>
+          </template>
+          <div
+            v-for="route in ctx.manager.routes"
+            class="k-menu-item pl-8"
+            @click="gotoRoute(route)"
+          >
+            <span class="absolute left-3 top-0 bottom-0 flex items-center" v-if="route === currentRoute">
+              <span class="w-6px h-6px rounded bg-current"></span>
+            </span>
+            <span>{{ route.name }}</span>
+          </div>
+        </el-popover>
       </template>
     </template>
 
@@ -22,56 +38,102 @@
     <k-empty v-if="!currentEntry">
       <div>请在左侧选择插件</div>
     </k-empty>
-    <k-content v-else class="plugin-view" :key="path">
-      <plugin-settings></plugin-settings>
+    <template v-else-if="currentEntry.name in ctx.manager.data.value.packages">
+      <k-content v-if="!local.runtime">
+        <k-comment>
+          <p>正在加载插件信息……</p>
+        </k-comment>
+      </k-content>
+      <k-content v-else-if="local.runtime.failed">
+        <k-comment type="danger">
+          <p>插件信息失败，这可能是插件本身的问题所致。</p>
+        </k-comment>
+      </k-content>
+      <template v-else>
+        <component :is="currentRoute?.component"></component>
+      </template>
+    </template>
+    <k-content v-else>
+      <k-slot name="plugin-missing" single>
+        <k-comment type="danger">
+          <p>此插件尚未安装。</p>
+        </k-comment>
+      </k-slot>
     </k-content>
   </k-layout>
 </template>
 
 <script setup lang="ts">
 
-import { computed, ref } from 'vue'
-import { useRoute } from 'vue-router'
-import { useContext } from '@cordisjs/client'
+import { computed, ref, watch } from 'vue'
+import { useContext, router, send } from '@cordisjs/client'
 import TreeView from './tree.vue'
-import PluginSettings from './plugin.vue'
+import type { SubRoute } from '..'
 
-const route = useRoute()
 const ctx = useContext()
 
 const currentEntry = computed(() => ctx.manager.currentEntry)
-const plugins = computed(() => ctx.manager.plugins.value)
-
-const path = computed<string>(() => {
-  if (!route.path.startsWith('/plugins/')) return ''
-  if (typeof route.params.id !== 'string') return ''
-  return route.params.id in plugins.value.entries ? route.params.id : ''
-})
+const currentRoute = computed(() => ctx.manager.currentRoute)
+const local = computed(() => ctx.manager.data.value.packages[ctx.manager.currentEntry?.name!])
 
 const tree = ref<InstanceType<typeof TreeView>>()
 
 ctx.define('config.tree', currentEntry)
 
-</script>
+watch(local, (value) => {
+  if (!value || value.runtime) return
+  send('manager.package.runtime', { name: value.package.name })
+}, { immediate: true })
 
-<style lang="scss">
-
-.end {
-  margin-right: 0.5rem;
+function gotoRoute(route: SubRoute) {
+  router.replace('/plugins/' + currentEntry.value!.id + '/' + route.path)
 }
 
-.config-header {
-  font-size: 1.375rem;
-  margin: 0 0 2rem;
-  line-height: 2rem;
+</script>
 
-  .k-button {
-    float: right;
+<style lang="scss" scoped>
+
+.divider {
+  position: relative;
+  display: inline-block;
+  height: 100%;
+  width: 20px;
+  margin: 0 0.75rem;
+  overflow: hidden;
+
+  &::before, &::after {
+    content: '';
+    display: block;
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 50%;
+    border-right: 1px solid var(--k-color-divider);
+  }
+
+  &::before {
+    top: 0;
+    transform: skewX(30deg) translateX(-50%);
+  }
+
+  &::after {
+    bottom: 0;
+    transform: skewX(-30deg) translateX(-50%);
   }
 }
 
-.plugin-view .k-content > *:first-child {
-  margin-top: 0;
+.nav-button {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  height: 100%;
+}
+
+.nav-menu-item {
+  transition: all 0.3s ease;
+  &:hover {
+    background-color: var(--k-hover-bg);
+  }
 }
 
 </style>

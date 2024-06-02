@@ -113,7 +113,7 @@ export default class Manager extends Service {
     if (!entry) return
     const { path } = router.currentRoute.value
     const rest = path.slice(9 + entry.id.length + 1)
-    return this.routes.find(route => route.path === rest)
+    return this.routes.find(route => route.path === rest) ?? this.routes[0]
   }
 
   plugins = computed(() => {
@@ -186,8 +186,8 @@ export default class Manager extends Service {
 
     this.ctx.page({
       id: 'plugins',
-      path: '/plugins/:id?',
-      name: '插件配置',
+      path: '/plugins/:id*',
+      name: '插件管理',
       icon: 'activity:plugin',
       order: 800,
       authority: 4,

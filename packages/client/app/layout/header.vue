@@ -124,6 +124,9 @@ const route = useRoute()
   font-weight: bolder;
 
   .left {
+    display: flex;
+    align-items: center;
+    height: 100%;
     margin-left: var(--header-height);
     padding-left: 0.5rem;
   }

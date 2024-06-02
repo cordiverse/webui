@@ -1,8 +1,8 @@
 <template>
-  <template v-if="currentEntry && local.runtime?.schema">
+  <k-content v-if="currentEntry && local.runtime?.schema">
     <k-form :schema="local.runtime.schema" :initial="currentEntry.config" v-model="config">
     </k-form>
-  </template>
+  </k-content>
   <k-empty v-else>
     当前插件未声明配置。
   </k-empty>

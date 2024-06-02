@@ -79,13 +79,13 @@ export class Context extends cordis.Context {
     if (!component) return null!
     const caller = this[Context.current] || this
     if (!caller.$entry) return component
-    return defineComponent((props, { slots }) => {
+    return markRaw(defineComponent((props, { slots }) => {
       provide(kContext, caller)
       onErrorCaptured((e, instance, info) => {
         return caller.scope.uid !== null
       })
       return () => h(component, props, slots)
-    })
+    }))
   }
 }
 

@@ -4,7 +4,7 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as vite from 'vite'
 import unocss from 'unocss/vite'
-import mini from 'unocss/preset-mini'
+import uno from 'unocss/preset-uno'
 import vue from '@vitejs/plugin-vue'
 import yaml from '@maikolib/vite-plugin-yaml'
 
@@ -72,7 +72,7 @@ export default async function () {
     plugins: [
       unocss({
         presets: [
-          mini({
+          uno({
             preflight: false,
           }),
         ],

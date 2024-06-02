@@ -4,7 +4,7 @@ import { existsSync, promises as fs } from 'node:fs'
 import { resolve } from 'path'
 import { Context } from 'yakumo'
 import unocss from 'unocss/vite'
-import mini from 'unocss/preset-mini'
+import uno from 'unocss/preset-uno'
 import vue from '@vitejs/plugin-vue'
 import yaml from '@maikolib/vite-plugin-yaml'
 import { fileURLToPath } from 'node:url'
@@ -58,7 +58,7 @@ export async function build(root: string, config: vite.UserConfig = {}) {
       yaml(),
       unocss({
         presets: [
-          mini({
+          uno({
             preflight: false,
           }),
         ],
@@ -116,7 +116,7 @@ export async function createServer(baseDir: string, config: InlineConfig = {}) {
       yaml(),
       unocss({
         presets: [
-          mini({
+          uno({
             preflight: false,
           }),
         ],

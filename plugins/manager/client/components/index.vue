@@ -25,65 +25,18 @@
     <k-content v-else class="plugin-view" :key="path">
       <plugin-settings></plugin-settings>
     </k-content>
-
-    <el-dialog
-      v-model="showRemove"
-      title="确认移除"
-      destroy-on-close
-      @closed="remove = undefined"
-    >
-      <template v-if="remove">
-        确定要移除{{ remove.isGroup ? `分组 ${remove.label || remove.id}` : `插件 ${remove.label || remove.name}` }} 吗？此操作不可撤销！
-      </template>
-      <template #footer>
-        <el-button @click="showRemove = false">取消</el-button>
-        <el-button type="danger" @click="(showRemove = false, ctx.manager.remove(remove!), tree?.activate())">确定</el-button>
-      </template>
-    </el-dialog>
-
-    <el-dialog
-      v-model="showRename"
-      title="重命名"
-      destroy-on-close
-      @open="handleOpen"
-      @closed="rename = undefined"
-    >
-      <template v-if="rename">
-        <el-input ref="inputEl" v-model="input" @keydown.enter.stop.prevent="renameItem(rename, input)"/>
-      </template>
-      <template #footer>
-        <el-button @click="showRename = false">取消</el-button>
-        <el-button type="primary" @click="renameItem(rename!, input)">确定</el-button>
-      </template>
-    </el-dialog>
-
-    <el-dialog
-      :model-value="groupCreate !== undefined"
-      @update:model-value="groupCreate = undefined"
-      title="创建分组"
-      destroy-on-close
-      @open="handleOpen"
-    >
-      <el-input ref="inputEl" v-model="input" @keydown.enter.stop.prevent="createGroup(input)"/>
-      <template #footer>
-        <el-button @click="groupCreate = undefined">取消</el-button>
-        <el-button type="primary" @click="createGroup(input)">确定</el-button>
-      </template>
-    </el-dialog>
   </k-layout>
 </template>
 
 <script setup lang="ts">
 
-import { computed, ref, watch, nextTick } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { message, send, useContext, Schema } from '@cordisjs/client'
+import { computed, ref } from 'vue'
+import { useRoute } from 'vue-router'
+import { useContext } from '@cordisjs/client'
 import TreeView from './tree.vue'
 import PluginSettings from './plugin.vue'
-import { EntryData } from '../../src'
 
 const route = useRoute()
-const router = useRouter()
 const ctx = useContext()
 
 const currentEntry = computed(() => ctx.manager.currentEntry)
@@ -95,145 +48,9 @@ const path = computed<string>(() => {
   return route.params.id in plugins.value.entries ? route.params.id : ''
 })
 
-const input = ref('')
-const inputEl = ref()
 const tree = ref<InstanceType<typeof TreeView>>()
 
-async function handleOpen() {
-  // https://github.com/element-plus/element-plus/issues/15250
-  await nextTick()
-  inputEl.value?.focus()
-}
-
-const remove = ref<EntryData>()
-const showRemove = ref(false)
-const rename = ref<EntryData>()
-const showRename = ref(false)
-const groupCreate = ref<string>()
-
-watch(remove, (value) => {
-  if (value) showRemove.value = true
-})
-
-watch(rename, (value) => {
-  if (value) showRename.value = true
-})
-
-ctx.define('config.tree', currentEntry.value)
-
-ctx.action('config.tree.add-plugin', {
-  hidden: ({ config }) => config.tree && !config.tree.isGroup,
-  action: ({ config }) => ctx.manager.dialogSelect = config.tree,
-})
-
-ctx.action('config.tree.add-group', {
-  hidden: ({ config }) => config.tree && !config.tree.isGroup,
-  action: ({ config }) => {
-    groupCreate.value = config.tree.id
-  },
-})
-
-async function createGroup(label: string) {
-  const id = await send('manager.config.create', {
-    name: 'cordis/group',
-    parent: groupCreate.value,
-    label,
-  })
-  router.replace('/plugins/' + id)
-  groupCreate.value = undefined
-}
-
-ctx.action('config.tree.clone', {
-  hidden: ({ config }) => !config.tree || !!config.tree.isGroup,
-  action: async ({ config }) => {
-    const id = await send('manager.config.create', {
-      name: config.tree.name,
-      config: config.tree.config,
-      disabled: true,
-      parent: config.tree.parent,
-      position: config.tree.position + 1,
-    })
-    router.replace(`/plugins/${id}`)
-  },
-})
-
-ctx.action('config.tree.manage', {
-  hidden: ({ config }) => !config.tree || !!config.tree.isGroup,
-  action: async ({ config }) => {
-    ctx.manager.dialogFork = config.tree.name
-  },
-})
-
-ctx.action('config.tree.rename', {
-  disabled: ({ config }) => !config.tree,
-  action: ({ config }) => {
-    input.value = config.tree.label || (config.tree.name === 'group' ? config.tree.id : config.tree.name)
-    rename.value = config.tree
-  },
-})
-
-ctx.action('config.tree.remove', {
-  disabled: ({ config }) => !config.tree || ctx.manager.hasCoreDeps(config.tree),
-  action: ({ config }) => remove.value = config.tree,
-})
-
-function checkConfig(name: string) {
-  let schema = ctx.manager.data.value.packages[name]?.runtime?.schema
-  if (!schema) return true
-  try {
-    (new Schema(schema))(config.value)
-    return true
-  } catch {
-    message.error('当前配置项不满足约束，请检查配置！')
-    return false
-  }
-}
-
-ctx.action('config.tree.save', {
-  shortcut: 'ctrl+s',
-  disabled: (scope) => !scope?.config?.tree || !['config'].includes(router.currentRoute.value?.meta?.activity?.id!),
-  action: async ({ config: { tree } }) => {
-    const { disabled } = tree
-    if (!disabled && !checkConfig(tree.name)) return
-    try {
-      await execute(tree, disabled || null)
-      message.success(disabled ? '配置已保存。' : '配置已重载。')
-    } catch (error) {
-      message.error('操作失败，请检查日志！')
-    }
-  },
-})
-
-ctx.action('config.tree.toggle', {
-  disabled: ({ config }) => !config.tree || ctx.manager.hasCoreDeps(config.tree),
-  action: async ({ config: { tree } }) => {
-    const { disabled, name } = tree
-    if (disabled && !checkConfig(tree.name)) return
-    try {
-      await execute(tree, !disabled || null)
-      message.success((name === 'group' ? '分组' : '插件') + (disabled ? '已启用。' : '已停用。'))
-    } catch (error) {
-      message.error('操作失败，请检查日志！')
-    }
-  },
-})
-
-async function execute(data: EntryData, disabled: true | null) {
-  await send('manager.config.update', {
-    id: data.id,
-    disabled,
-    config: config.value,
-  })
-}
-
-async function renameItem(data: EntryData, name: string) {
-  showRename.value = false
-  data.label = name
-  await send('manager.config.update', {
-    id: data.id,
-    label: name || null,
-  })
-}
+ctx.define('config.tree', currentEntry)
 
 </script>
 

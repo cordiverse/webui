@@ -109,6 +109,7 @@ export default class ActionService extends Service {
         if (shiftKey !== event.shiftKey) continue
         if (metaKey !== event.metaKey) continue
         if (code !== event.key.toLowerCase()) continue
+        if (action.hidden?.(scope)) continue
         if (action.disabled?.(scope)) continue
         event.preventDefault()
         action.action(scope)

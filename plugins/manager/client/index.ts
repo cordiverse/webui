@@ -1,14 +1,17 @@
-import { Context, Dict, remove, router, send, Service } from '@cordisjs/client'
+import { Context, Dict, message, remove, router, Schema, send, Service } from '@cordisjs/client'
 import { computed, reactive, ref, Ref } from 'vue'
 import type { Data, EntryData } from '../src'
 import Settings from './components/index.vue'
 import Forks from './dialogs/forks.vue'
 import Select from './dialogs/select.vue'
+import Rename from './dialogs/rename.vue'
+import Group from './dialogs/group.vue'
 import Main from './routes/main.vue'
 import Config from './routes/config.vue'
 
 import './index.scss'
 import './icons'
+import Remove from './dialogs/remove.vue'
 
 declare module '@cordisjs/client' {
   interface Context {
@@ -54,6 +57,9 @@ export default class Manager extends Service {
 
   _dialogFork = ref<string>()
   _dialogSelect = ref<EntryData>()
+  _dialogRemove = ref<EntryData>()
+  _dialogRename = ref<EntryData>()
+  _dialogCreateGroup = ref<EntryData>()
 
   get dialogFork() {
     return this._dialogFork.value
@@ -69,6 +75,30 @@ export default class Manager extends Service {
 
   set dialogSelect(value) {
     this._dialogSelect.value = value
+  }
+
+  get dialogRemove() {
+    return this._dialogRemove.value
+  }
+
+  set dialogRemove(value) {
+    this._dialogRemove.value = value
+  }
+
+  get dialogRename() {
+    return this._dialogRename.value
+  }
+
+  set dialogRename(value) {
+    this._dialogRename.value = value
+  }
+
+  get dialogCreateGroup() {
+    return this._dialogCreateGroup.value
+  }
+
+  set dialogCreateGroup(value) {
+    this._dialogCreateGroup.value = value
   }
 
   get currentEntry() {
@@ -139,6 +169,21 @@ export default class Manager extends Service {
       component: Forks,
     })
 
+    this.ctx.slot({
+      type: 'global',
+      component: Rename,
+    })
+
+    this.ctx.slot({
+      type: 'global',
+      component: Remove,
+    })
+
+    this.ctx.slot({
+      type: 'global',
+      component: Group,
+    })
+
     this.ctx.page({
       id: 'plugins',
       path: '/plugins/:id?',
@@ -201,6 +246,102 @@ export default class Manager extends Service {
       icon: 'add-group',
       label: '添加分组',
     }])
+
+    this.ctx.action('config.tree.rename', {
+      disabled: ({ config }) => !config.tree,
+      action: ({ config }) => {
+        this.dialogRename = config.tree
+      },
+    })
+
+    this.ctx.action('config.tree.remove', {
+      disabled: ({ config }) => !config.tree || this.hasCoreDeps(config.tree),
+      action: ({ config }) => {
+        this.dialogRemove = config.tree
+      },
+    })
+
+    this.ctx.action('config.tree.manage', {
+      hidden: ({ config }) => !config.tree || !!config.tree.isGroup,
+      action: async ({ config }) => {
+        this.dialogFork = config.tree.name
+      },
+    })
+
+    this.ctx.action('config.tree.clone', {
+      hidden: ({ config }) => !config.tree || !!config.tree.isGroup,
+      action: async ({ config }) => {
+        const id = await send('manager.config.create', {
+          name: config.tree.name,
+          config: config.tree.config,
+          disabled: true,
+          parent: config.tree.parent,
+          position: config.tree.position + 1,
+        })
+        router.replace(`/plugins/${id}`)
+      },
+    })
+
+    this.ctx.action('config.tree.add-plugin', {
+      hidden: ({ config }) => config.tree && !config.tree.isGroup,
+      action: ({ config }) => this.dialogSelect = config.tree,
+    })
+
+    this.ctx.action('config.tree.add-group', {
+      hidden: ({ config }) => config.tree && !config.tree.isGroup,
+      action: ({ config }) => {
+        this.dialogCreateGroup = config.tree
+      },
+    })
+
+    const checkConfig = (name: string) => {
+      const schema = this.data.value.packages[name]?.runtime?.schema
+      if (!schema) return true
+      try {
+        (new Schema(schema))(config.value)
+        return true
+      } catch {
+        message.error('当前配置项不满足约束，请检查配置！')
+        return false
+      }
+    }
+
+    this.ctx.action('config.tree.save', {
+      shortcut: 'ctrl+s',
+      disabled: (scope) => !scope?.config?.tree || !['config'].includes(router.currentRoute.value?.meta?.activity?.id!),
+      action: async ({ config: { tree } }) => {
+        const { disabled } = tree
+        if (!disabled && !checkConfig(tree.name)) return
+        try {
+          await execute(tree, disabled || null)
+          message.success(disabled ? '配置已保存。' : '配置已重载。')
+        } catch (error) {
+          message.error('操作失败，请检查日志！')
+        }
+      },
+    })
+
+    this.ctx.action('config.tree.toggle', {
+      disabled: ({ config }) => !config.tree || this.hasCoreDeps(config.tree),
+      action: async ({ config: { tree } }) => {
+        const { disabled, name } = tree
+        if (disabled && !checkConfig(tree.name)) return
+        try {
+          await execute(tree, !disabled || null)
+          message.success((name === 'group' ? '分组' : '插件') + (disabled ? '已启用。' : '已停用。'))
+        } catch (error) {
+          message.error('操作失败，请检查日志！')
+        }
+      },
+    })
+
+    async function execute(data: EntryData, disabled: true | null) {
+      await send('manager.config.update', {
+        id: data.id,
+        disabled,
+        config: config.value,
+      })
+    }
   }
 
   subroute(options: SubRoute) {

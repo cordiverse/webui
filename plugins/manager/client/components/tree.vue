@@ -96,7 +96,7 @@ function getLabel(node: EntryNode) {
   if (node.data.isGroup) {
     return '分组：' + (node.data.label || node.data.id)
   } else {
-    return node.data.label || node.data.name || '待添加'
+    return node.data.label || node.data.name
   }
 }
 

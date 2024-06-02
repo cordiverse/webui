@@ -1,4 +1,5 @@
 import { ScopeStatus } from '@cordisjs/client'
+import { nextTick, Ref } from 'vue'
 
 export function getStatusClass(status?: ScopeStatus) {
   switch (status) {
@@ -8,5 +9,13 @@ export function getStatusClass(status?: ScopeStatus) {
     case ScopeStatus.FAILED: return 'failed'
     case ScopeStatus.DISPOSED: return 'disposed'
     default: return 'disabled'
+  }
+}
+
+export function useAutoFocus(el: Ref<HTMLInputElement>) {
+  return async () => {
+    // https://github.com/element-plus/element-plus/issues/15250
+    await nextTick()
+    el.value?.focus()
   }
 }

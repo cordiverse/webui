@@ -11,7 +11,7 @@
 
       <!-- plugin -->
       <template v-else>
-        {{ current.label || current.name }} [{{ current.id }}]
+        {{ current.label || current.name }}
       </template>
     </template>
 
@@ -89,15 +89,11 @@ const ctx = useContext()
 const current = computed(() => ctx.manager.current.value)
 const plugins = computed(() => ctx.manager.plugins.value)
 
-const dialogFork = computed({
-  get: () => ctx.manager.dialogFork.value,
-  set: (value) => ctx.manager.dialogFork.value = value,
-})
-
 const path = computed<string>({
   get() {
-    const name = route.path.slice(9)
-    return name in plugins.value.entries ? name : ''
+    if (!route.path.startsWith('/plugins/')) return ''
+    if (typeof route.params.id !== 'string') return ''
+    return route.params.id in plugins.value.entries ? route.params.id : ''
   },
   set(name) {
     if (!(name in plugins.value.entries)) name = ''
@@ -139,7 +135,7 @@ ctx.define('config.tree', ctx.manager.current)
 
 ctx.action('config.tree.add-plugin', {
   hidden: ({ config }) => config.tree && !config.tree.isGroup,
-  action: ({ config }) => ctx.manager.dialogSelect.value = config.tree,
+  action: ({ config }) => ctx.manager.dialogSelect = config.tree,
 })
 
 ctx.action('config.tree.add-group', {
@@ -176,7 +172,7 @@ ctx.action('config.tree.clone', {
 ctx.action('config.tree.manage', {
   hidden: ({ config }) => !config.tree || !!config.tree.isGroup,
   action: async ({ config }) => {
-    dialogFork.value = config.tree.name
+    ctx.manager.dialogFork = config.tree.name
   },
 })
 

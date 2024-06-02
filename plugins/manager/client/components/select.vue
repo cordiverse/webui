@@ -1,7 +1,7 @@
 <template>
   <el-dialog
-    :modelValue="!!dialogSelect"
-    @update:modelValue="dialogSelect = undefined"
+    :modelValue="!!ctx.manager.dialogSelect"
+    @update:modelValue="ctx.manager.dialogSelect = undefined"
     class="plugin-select"
   >
     <template #header>
@@ -44,11 +44,6 @@ import type { LocalObject } from '@cordisjs/registry'
 const ctx = useContext()
 const tt = useI18nText()
 
-const dialogSelect = computed({
-  get: () => ctx.manager.dialogSelect.value,
-  set: (value) => ctx.manager.dialogSelect.value = value,
-})
-
 const keyword = ref('')
 const input = ref()
 
@@ -62,8 +57,8 @@ function joinName(name: string, base: string) {
 }
 
 async function configure(name: string) {
-  const parent = dialogSelect.value!.id
-  dialogSelect.value = undefined
+  const parent = ctx.manager.dialogSelect!.id
+  ctx.manager.dialogSelect = undefined
   keyword.value = ''
   const id = await send('manager.config.create', {
     name,
@@ -73,7 +68,7 @@ async function configure(name: string) {
   router.push('/plugins/' + id)
 }
 
-watch(dialogSelect, async (value) => {
+watch(() => ctx.manager.dialogSelect, async (value) => {
   if (!value) return
   await nextTick()
   await input.value.focus()

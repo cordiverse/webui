@@ -1,16 +1,16 @@
 <template>
   <el-dialog
-    :model-value="!!dialogFork"
-    @update:model-value="dialogFork = undefined"
+    :model-value="!!ctx.manager.dialogFork"
+    @update:model-value="ctx.manager.dialogFork = undefined"
     class="dialog-config-fork"
     destroy-on-close>
     <template #header="{ titleId, titleClass }">
       <span :id="titleId" :class="titleClass">
-        {{ dialogFork + (local?.workspace ? ' (工作区)' : '') }}
+        {{ ctx.manager.dialogFork + (local?.workspace ? ' (工作区)' : '') }}
       </span>
     </template>
     <table>
-      <tr v-for="id in plugins.forks[dialogFork!]" :key="id">
+      <tr v-for="id in plugins.forks[ctx.manager.dialogFork!]" :key="id">
         <td class="text-left">
           <span class="status-light" :class="getStatusClass(plugins.entries[id].status)"></span>
           <span class="path">{{ getFullPath(plugins.entries[id]) }}</span>
@@ -25,8 +25,8 @@
     </table>
     <template #footer>
       <div class="left">
-        <template v-if="plugins.forks[dialogFork!]?.length">
-          此插件目前存在 {{ plugins.forks[dialogFork!]?.length }} 份配置。
+        <template v-if="plugins.forks[ctx.manager.dialogFork!]?.length">
+          此插件目前存在 {{ plugins.forks[ctx.manager.dialogFork!]?.length }} 份配置。
         </template>
         <template v-else>
           此插件尚未被配置。
@@ -48,12 +48,8 @@ import { EntryData } from '../../src'
 
 const ctx = useContext()
 const plugins = computed(() => ctx.manager.plugins.value)
-const dialogFork = computed({
-  get: () => ctx.manager.dialogFork.value,
-  set: (value) => ctx.manager.dialogFork.value = value,
-})
 
-const local = computed(() => ctx.manager.data.value.packages[dialogFork.value!])
+const local = computed(() => ctx.manager.data.value.packages[ctx.manager.dialogFork!])
 
 function getLabel(data: EntryData) {
   return `${data.label ? `${data.label} ` : ''}[${data.id}]`
@@ -71,12 +67,12 @@ function getFullPath(data: EntryData) {
 async function configure(id?: string) {
   if (!id) {
     id = await send('manager.config.create', {
-      name: dialogFork.value!,
+      name: ctx.manager.dialogFork!,
       disabled: true,
     })
   }
   await router.push('/plugins/' + id)
-  dialogFork.value = undefined
+  ctx.manager.dialogFork = undefined
 }
 
 </script>

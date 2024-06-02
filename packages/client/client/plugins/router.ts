@@ -17,7 +17,7 @@ declare module '../context' {
   interface Context {
     $router: RouterService
     slot(options: SlotOptions): () => void
-    page(options: Activity.Options): () => void
+    page(options: Activity.Options): Activity
   }
 
   interface Events {
@@ -166,8 +166,7 @@ export default class RouterService extends Service {
     const caller = this[Context.current]
     options.component = caller.wrapComponent(options.component)
     return caller.effect(() => {
-      const activity = new Activity(caller, options)
-      return () => activity.dispose()
+      return new Activity(caller, options)
     })
   }
 }

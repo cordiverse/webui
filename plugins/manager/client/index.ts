@@ -4,6 +4,8 @@ import type { Data, EntryData } from '../src'
 import Settings from './components/index.vue'
 import Forks from './components/forks.vue'
 import Select from './components/select.vue'
+import Main from './routes/main.vue'
+import Config from './routes/config.vue'
 
 import './index.scss'
 import './icons'
@@ -44,9 +46,26 @@ export default class Manager extends Service {
     optional: ['manager'],
   }
 
+  #dialogFork = ref<string>()
+  #dialogSelect = ref<EntryData>()
+
+  get dialogFork() {
+    return this.#dialogFork.value
+  }
+
+  set dialogFork(value) {
+    this.#dialogFork.value = value
+  }
+
+  get dialogSelect() {
+    return this.#dialogSelect.value
+  }
+
+  set dialogSelect(value) {
+    this.#dialogSelect.value = value
+  }
+
   current = ref<EntryData>()
-  dialogFork = ref<string>()
-  dialogSelect = ref<EntryData>()
 
   plugins = computed(() => {
     const expanded: string[] = []
@@ -114,13 +133,27 @@ export default class Manager extends Service {
     })
 
     this.ctx.page({
-      id: 'config',
-      path: '/plugins/:name*',
+      id: 'plugins',
+      path: '/plugins/:id?',
       name: '插件配置',
       icon: 'activity:plugin',
       order: 800,
       authority: 4,
       component: Settings,
+    })
+
+    this.ctx.page({
+      parent: 'plugins',
+      path: '',
+      name: '概览',
+      component: Main,
+    })
+
+    this.ctx.page({
+      parent: 'plugins',
+      path: 'config',
+      name: '配置',
+      component: Config,
     })
 
     this.ctx.menu('config.tree', [{
@@ -174,7 +207,7 @@ export default class Manager extends Service {
     } else if (forks.length === 1) {
       if (!passive) router.push('/plugins/' + forks[0])
     } else {
-      if (!passive) this.dialogFork.value = name
+      if (!passive) this.dialogFork = name
     }
   }
 

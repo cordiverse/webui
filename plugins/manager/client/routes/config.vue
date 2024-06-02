@@ -1,6 +1,6 @@
 <template>
-  <template v-if="current && local.runtime?.schema">
-    <k-form :schema="local.runtime.schema" :initial="current!.config" v-model="config">
+  <template v-if="currentEntry && local.runtime?.schema">
+    <k-form :schema="local.runtime.schema" :initial="currentEntry.config" v-model="config">
     </k-form>
   </template>
   <k-empty v-else>
@@ -18,10 +18,10 @@ const ctx = useContext()
 const data = useRpc<Data>()
 const config = ref()
 
-const current = computed(() => ctx.manager.current.value)
-const local = computed(() => data.value.packages[current.value?.name!])
+const currentEntry = computed(() => ctx.manager.currentEntry)
+const local = computed(() => data.value.packages[currentEntry.value?.name!])
 
-watch(current, (value) => {
+watch(currentEntry, (value) => {
   if (!value) return
   config.value = clone(value.config)
 }, { immediate: true })

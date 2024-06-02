@@ -1,29 +1,29 @@
 <template>
-  <k-layout menu="config.tree" :menu-data="current">
+  <k-layout menu="config.tree" :menu-data="currentEntry">
     <template #header>
       <!-- root -->
-      <template v-if="!current">插件配置</template>
+      <template v-if="!currentEntry">插件配置</template>
 
       <!-- group -->
-      <template v-else-if="current.isGroup">
-        分组：{{ current.label || current.id }}
+      <template v-else-if="currentEntry.isGroup">
+        分组：{{ currentEntry.label || currentEntry.id }}
       </template>
 
       <!-- plugin -->
       <template v-else>
-        {{ current.label || current.name }}
+        {{ currentEntry.label || currentEntry.name }}
       </template>
     </template>
 
     <template #left>
-      <tree-view ref="tree" v-model="path"></tree-view>
+      <tree-view ref="tree"></tree-view>
     </template>
 
-    <k-empty v-if="!current">
+    <k-empty v-if="!currentEntry">
       <div>请在左侧选择插件</div>
     </k-empty>
     <k-content v-else class="plugin-view" :key="path">
-      <plugin-settings v-model="config"></plugin-settings>
+      <plugin-settings></plugin-settings>
     </k-content>
 
     <el-dialog
@@ -77,7 +77,7 @@
 
 import { computed, ref, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { clone, message, send, useContext, Schema } from '@cordisjs/client'
+import { message, send, useContext, Schema } from '@cordisjs/client'
 import TreeView from './tree.vue'
 import PluginSettings from './plugin.vue'
 import { EntryData } from '../../src'
@@ -86,22 +86,15 @@ const route = useRoute()
 const router = useRouter()
 const ctx = useContext()
 
-const current = computed(() => ctx.manager.current.value)
+const currentEntry = computed(() => ctx.manager.currentEntry)
 const plugins = computed(() => ctx.manager.plugins.value)
 
-const path = computed<string>({
-  get() {
-    if (!route.path.startsWith('/plugins/')) return ''
-    if (typeof route.params.id !== 'string') return ''
-    return route.params.id in plugins.value.entries ? route.params.id : ''
-  },
-  set(name) {
-    if (!(name in plugins.value.entries)) name = ''
-    router.replace('/plugins/' + name)
-  },
+const path = computed<string>(() => {
+  if (!route.path.startsWith('/plugins/')) return ''
+  if (typeof route.params.id !== 'string') return ''
+  return route.params.id in plugins.value.entries ? route.params.id : ''
 })
 
-const config = ref()
 const input = ref('')
 const inputEl = ref()
 const tree = ref<InstanceType<typeof TreeView>>()
@@ -126,12 +119,7 @@ watch(rename, (value) => {
   if (value) showRename.value = true
 })
 
-watch(() => plugins.value.entries[path.value], (value) => {
-  ctx.manager.current.value = value
-  if (value) config.value = clone(value.config)
-}, { immediate: true })
-
-ctx.define('config.tree', ctx.manager.current)
+ctx.define('config.tree', currentEntry.value)
 
 ctx.action('config.tree.add-plugin', {
   hidden: ({ config }) => config.tree && !config.tree.isGroup,

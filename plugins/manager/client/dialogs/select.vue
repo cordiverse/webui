@@ -37,9 +37,8 @@
 
 <script lang="ts" setup>
 
-import { router, Dict, send, useContext, useI18nText } from '@cordisjs/client'
-import { computed, inject, nextTick, ref, watch } from 'vue'
-import type { LocalObject } from '@cordisjs/registry'
+import { router, send, useContext, useI18nText } from '@cordisjs/client'
+import { computed, nextTick, ref, watch } from 'vue'
 
 const ctx = useContext()
 const tt = useI18nText()
@@ -79,6 +78,8 @@ watch(() => ctx.manager.dialogSelect, async (value) => {
 <style lang="scss">
 
 .plugin-select {
+  padding: 0;
+
   .el-dialog__header {
     margin-right: 0;
     padding: 12px 20px;

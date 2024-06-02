@@ -42,21 +42,14 @@ import { useRoute } from 'vue-router'
 import type { ElScrollbar, ElTree } from 'element-plus'
 import type { FilterNodeMethodFunction, TreeOptionProps } from 'element-plus/es/components/tree/src/tree.type'
 import type TreeNode from 'element-plus/es/components/tree/src/model/node'
-import { send, useContext, useMenu, useRpc } from '@cordisjs/client'
-import { getStatusClass } from './utils'
-import { Data, EntryData } from '../../src'
+import { send, router, useContext, useMenu } from '@cordisjs/client'
+import { getStatusClass } from '../utils'
+import { EntryData } from '../../src'
 
-const props = defineProps<{
-  modelValue: string
-}>()
-
-const data = useRpc<Data>()
 const ctx = useContext()
 const route = useRoute()
 const trigger = useMenu('config.tree')
 const plugins = computed(() => ctx.manager.plugins.value)
-
-const emit = defineEmits(['update:modelValue'])
 
 const root = ref<InstanceType<typeof ElScrollbar>>()
 const tree = ref<InstanceType<typeof ElTree>>()
@@ -117,7 +110,7 @@ function allowDrop(source: EntryNode, target: EntryNode, type: 'inner' | 'prev' 
 }
 
 function handleClick(tree: EntryData, target: EntryNode, instance: any, event: MouseEvent) {
-  emit('update:modelValue', tree.id)
+  router.replace('/plugins/' + tree.id)
   // el-tree will stop propagation,
   // so we need to manually trigger the event
   // so that context menu can be closed.
@@ -154,7 +147,7 @@ const optionProps: TreeOptionProps = {
     const words: string[] = []
     if (data.isGroup) words.push('is-group')
     if (!data.isGroup && !(data.name in ctx.manager.data.value.packages)) words.push('is-disabled')
-    if (data.id === props.modelValue) words.push('is-active')
+    if (data.id === ctx.manager.currentEntry?.id) words.push('is-active')
     return words.join(' ')
   },
 }

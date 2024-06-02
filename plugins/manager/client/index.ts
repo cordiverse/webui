@@ -1,9 +1,9 @@
-import { Context, Dict, router, send, Service } from '@cordisjs/client'
-import { computed, defineComponent, h, Ref, ref, resolveComponent } from 'vue'
+import { Context, Dict, remove, router, send, Service } from '@cordisjs/client'
+import { computed, reactive, ref, Ref } from 'vue'
 import type { Data, EntryData } from '../src'
 import Settings from './components/index.vue'
-import Forks from './components/forks.vue'
-import Select from './components/select.vue'
+import Forks from './dialogs/forks.vue'
+import Select from './dialogs/select.vue'
 import Main from './routes/main.vue'
 import Config from './routes/config.vue'
 
@@ -41,31 +41,50 @@ export interface EnvInfo {
   warning?: boolean
 }
 
+export interface SubRoute {
+  path: string
+  name: string
+  component: any
+}
+
 export default class Manager extends Service {
   static inject = {
     optional: ['manager'],
   }
 
-  #dialogFork = ref<string>()
-  #dialogSelect = ref<EntryData>()
+  _dialogFork = ref<string>()
+  _dialogSelect = ref<EntryData>()
 
   get dialogFork() {
-    return this.#dialogFork.value
+    return this._dialogFork.value
   }
 
   set dialogFork(value) {
-    this.#dialogFork.value = value
+    this._dialogFork.value = value
   }
 
   get dialogSelect() {
-    return this.#dialogSelect.value
+    return this._dialogSelect.value
   }
 
   set dialogSelect(value) {
-    this.#dialogSelect.value = value
+    this._dialogSelect.value = value
   }
 
-  current = ref<EntryData>()
+  get currentEntry() {
+    const { path } = router.currentRoute.value
+    if (!path.startsWith('/plugins/')) return
+    const [id] = path.slice(9).split('/', 1)
+    return this.plugins.value.entries[id]
+  }
+
+  get currentRoute() {
+    const entry = this.currentEntry
+    if (!entry) return
+    const { path } = router.currentRoute.value
+    const rest = path.slice(9 + entry.id.length + 1)
+    return this.routes.find(route => route.path === rest)
+  }
 
   plugins = computed(() => {
     const expanded: string[] = []
@@ -91,9 +110,9 @@ export default class Manager extends Service {
   })
 
   type = computed(() => {
-    const env = this.getEnvInfo(this.current.value)
+    const env = this.getEnvInfo(this.currentEntry)
     if (!env) return
-    if (env.warning && this.current.value!.disabled) return 'warning'
+    if (env.warning && this.currentEntry!.disabled) return 'warning'
     for (const name in env.using) {
       if (name in this.data.value.services || {}) {
         if (env.impl.includes(name)) return 'warning'
@@ -103,6 +122,8 @@ export default class Manager extends Service {
     }
   })
 
+  routes = reactive<SubRoute[]>([])
+
   constructor(ctx: Context, public data: Ref<Data>) {
     super(ctx, 'manager', true)
   }
@@ -110,21 +131,7 @@ export default class Manager extends Service {
   start() {
     this.ctx.slot({
       type: 'global',
-      component: defineComponent(() => () => {
-        return h(resolveComponent('k-slot'), { name: 'plugin-select', single: true })
-      }),
-    })
-
-    this.ctx.slot({
-      type: 'plugin-select-base',
       component: Select,
-      order: -1000,
-    })
-
-    this.ctx.slot({
-      type: 'plugin-select',
-      component: Select,
-      order: -1000,
     })
 
     this.ctx.slot({
@@ -142,15 +149,13 @@ export default class Manager extends Service {
       component: Settings,
     })
 
-    this.ctx.page({
-      parent: 'plugins',
+    this.subroute({
       path: '',
       name: '概览',
       component: Main,
     })
 
-    this.ctx.page({
-      parent: 'plugins',
+    this.subroute({
       path: 'config',
       name: '配置',
       component: Config,
@@ -196,6 +201,15 @@ export default class Manager extends Service {
       icon: 'add-group',
       label: '添加分组',
     }])
+  }
+
+  subroute(options: SubRoute) {
+    const caller = this[Context.current]
+    options.component = caller.wrapComponent(options.component)
+    return caller.effect(() => {
+      this.routes.push(options)
+      return () => remove(this.routes, options)
+    })
   }
 
   ensure(name: string, passive?: boolean) {

@@ -69,7 +69,7 @@ import { Data } from '../../src'
 const ctx = useContext()
 const data = useRpc<Data>()
 
-const current = computed(() => ctx.manager.current.value)
+const current = computed(() => ctx.manager.currentEntry)
 const local = computed(() => data.value.packages[current.value?.name!])
 const env = computed(() => ctx.manager.getEnvInfo(current.value)!)
 

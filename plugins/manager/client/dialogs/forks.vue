@@ -43,7 +43,7 @@
 
 import { computed } from 'vue'
 import { send, router, useContext } from '@cordisjs/client'
-import { getStatusClass } from './utils'
+import { getStatusClass } from '../utils'
 import { EntryData } from '../../src'
 
 const ctx = useContext()

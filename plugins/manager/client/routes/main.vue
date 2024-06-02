@@ -1,5 +1,6 @@
 <template>
   <k-content v-if="current && local.runtime">
+    <h1>{{ current.name }}</h1>
     <k-slot name="plugin-details">
       <!-- dependency -->
       <k-slot-item :order="800">

@@ -96,7 +96,8 @@ class NodeWebUI extends WebUI<NodeWebUI.Config> {
     this.ctx.server.post(`${this.config.apiPath}/${event}`, async (koa) => {
       const { body } = koa.request
       try {
-        koa.body = await (callback as any)(body) ?? {}
+        koa.body = JSON.stringify(await (callback as any)(body) ?? {})
+        koa.type = 'application/json'
         koa.status = 200
       } catch (error) {
         this.ctx.logger.warn(error)

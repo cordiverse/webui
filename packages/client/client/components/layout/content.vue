@@ -27,6 +27,15 @@
   @media screen and (max-width: 480px) {
     --content-padding: 1.5rem;
   }
+
+  h1 {
+    font-size: 1.5rem;
+    margin: 2rem 0;
+  }
+
+  h2 {
+    font-size: 1.25rem;
+  }
 }
 
 </style>

@@ -1,14 +1,14 @@
 <template>
   <el-dialog
-    :model-value="createGroup !== undefined"
-    @update:model-value="createGroup = undefined"
+    :model-value="ctx.manager.dialogCreateGroup !== undefined"
+    @update:model-value="ctx.manager.dialogCreateGroup = undefined"
     title="创建分组"
     destroy-on-close
     @open="handleOpen"
   >
     <el-input ref="inputEl" v-model="input" @keydown.enter.stop.prevent="action"/>
     <template #footer>
-      <el-button @click="createGroup = undefined">取消</el-button>
+      <el-button @click="ctx.manager.dialogCreateGroup = undefined">取消</el-button>
       <el-button type="primary" @click="action">确定</el-button>
     </template>
   </el-dialog>
@@ -38,8 +38,9 @@ watch(createGroup, (value) => {
 async function action() {
   const id = await send('manager.config.create', {
     name: 'cordis/group',
-    parent: createGroup.value!.id,
+    parent: createGroup.value,
     label: input.value || undefined,
+    config: [],
   })
   router.replace('/plugins/' + id)
   ctx.manager.dialogCreateGroup = undefined

@@ -3,14 +3,14 @@
     v-model="show"
     title="确认移除"
     destroy-on-close
-    @closed="remove = undefined"
+    @closed="ctx.manager.dialogRemove = undefined"
   >
     <template v-if="remove">
       确定要移除{{ remove.isGroup ? `分组 ${remove.label || remove.id}` : `插件 ${remove.label || remove.name}` }} 吗？此操作不可撤销！
     </template>
     <template #footer>
       <el-button @click="show = false">取消</el-button>
-      <el-button type="danger" @click="removeItem">确定</el-button>
+      <el-button type="danger" @click="action">确定</el-button>
     </template>
   </el-dialog>
 </template>
@@ -30,9 +30,9 @@ watch(remove, (value) => {
   show.value = true
 })
 
-async function removeItem() {
+async function action() {
   show.value = false
-  ctx.manager.remove(remove!)
+  ctx.manager.remove(remove.value!)
   // tree?.activate()
 }
 

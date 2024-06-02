@@ -60,10 +60,10 @@ export default class Manager extends Service {
   changes = reactive<Dict<Partial<EntryData>>>({})
 
   _dialogFork = ref<string>()
-  _dialogSelect = ref<EntryData>()
+  _dialogSelect = ref<string | null>()
   _dialogRemove = ref<EntryData>()
   _dialogRename = ref<EntryData>()
-  _dialogCreateGroup = ref<EntryData>()
+  _dialogCreateGroup = ref<string | null>()
 
   get dialogFork() {
     return this._dialogFork.value
@@ -269,14 +269,15 @@ export default class Manager extends Service {
     }])
 
     this.ctx.action('config.tree.rename', {
-      disabled: ({ config }) => !config.tree,
+      hidden: ({ config }) => !config.tree,
       action: ({ config }) => {
         this.dialogRename = config.tree
       },
     })
 
     this.ctx.action('config.tree.remove', {
-      disabled: ({ config }) => !config.tree || this.hasCoreDeps(config.tree),
+      hidden: ({ config }) => !config.tree,
+      disabled: ({ config }) => this.hasCoreDeps(config.tree),
       action: ({ config }) => {
         this.dialogRemove = config.tree
       },
@@ -305,19 +306,19 @@ export default class Manager extends Service {
 
     this.ctx.action('config.tree.add-plugin', {
       hidden: ({ config }) => config.tree && !config.tree.isGroup,
-      action: ({ config }) => this.dialogSelect = config.tree,
+      action: ({ config }) => this.dialogSelect = config.tree?.id ?? null,
     })
 
     this.ctx.action('config.tree.add-group', {
       hidden: ({ config }) => config.tree && !config.tree.isGroup,
       action: ({ config }) => {
-        this.dialogCreateGroup = config.tree
+        this.dialogCreateGroup = config.tree?.id ?? null
       },
     })
 
     this.ctx.action('config.tree.save', {
       shortcut: 'ctrl+s',
-      disabled: (scope) => !scope.config?.tree,
+      hidden: ({ config }) => !config.tree,
       action: async ({ config: { tree } }) => {
         const { disabled } = tree
         if (!disabled && !this.checkConfig(tree)) {
@@ -333,7 +334,8 @@ export default class Manager extends Service {
     })
 
     this.ctx.action('config.tree.toggle', {
-      disabled: ({ config }) => !config.tree || this.hasCoreDeps(config.tree),
+      hidden: ({ config }) => !config.tree,
+      disabled: ({ config }) => this.hasCoreDeps(config.tree),
       action: async ({ config: { tree } }) => {
         const { disabled, name } = tree
         if (disabled && !this.checkConfig(tree)) {

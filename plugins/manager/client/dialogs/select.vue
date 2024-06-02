@@ -1,14 +1,15 @@
 <template>
   <el-dialog
-    :modelValue="!!ctx.manager.dialogSelect"
+    :modelValue="ctx.manager.dialogSelect !== undefined"
     @update:modelValue="ctx.manager.dialogSelect = undefined"
     class="plugin-select"
+    @open="handleOpen"
   >
     <template #header>
       <slot name="title" :packages="packages">
         <span class="title">选择插件</span>
       </slot>
-      <el-input ref="input" v-model="keyword" #suffix>
+      <el-input ref="inputEl" v-model="keyword" #suffix>
         <k-icon name="search"></k-icon>
       </el-input>
     </template>
@@ -39,12 +40,15 @@
 
 import { router, send, useContext, useI18nText } from '@cordisjs/client'
 import { computed, nextTick, ref, watch } from 'vue'
+import { useAutoFocus } from '../utils'
 
 const ctx = useContext()
 const tt = useI18nText()
 
 const keyword = ref('')
-const input = ref()
+const inputEl = ref()
+
+const handleOpen = useAutoFocus(inputEl)
 
 const packages = computed(() => Object.values(ctx.manager.data.value.packages).filter((local) => {
   return local.package.name.includes(keyword.value.toLowerCase())
@@ -56,7 +60,7 @@ function joinName(name: string, base: string) {
 }
 
 async function configure(name: string) {
-  const parent = ctx.manager.dialogSelect!.id
+  const parent = ctx.manager.dialogSelect
   ctx.manager.dialogSelect = undefined
   keyword.value = ''
   const id = await send('manager.config.create', {
@@ -66,12 +70,6 @@ async function configure(name: string) {
   })
   router.push('/plugins/' + id)
 }
-
-watch(() => ctx.manager.dialogSelect, async (value) => {
-  if (!value) return
-  await nextTick()
-  await input.value.focus()
-}, { flush: 'post' })
 
 </script>
 

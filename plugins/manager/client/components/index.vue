@@ -42,11 +42,13 @@
     </k-empty>
     <template v-else-if="currentEntry.name in ctx.manager.data.value.packages">
       <k-content v-if="!local.runtime">
+        <h1>{{ currentEntry.name }}</h1>
         <k-comment>
           <p>正在加载插件信息……</p>
         </k-comment>
       </k-content>
       <k-content v-else-if="local.runtime.failed">
+        <h1>{{ currentEntry.name }}</h1>
         <k-comment type="danger">
           <p>插件信息失败，这可能是插件本身的问题所致。</p>
         </k-comment>
@@ -57,6 +59,7 @@
       />
     </template>
     <k-content v-else>
+      <h1>{{ currentEntry.name }}</h1>
       <k-slot name="plugin-missing" single>
         <k-comment type="danger">
           <p>此插件尚未安装。</p>

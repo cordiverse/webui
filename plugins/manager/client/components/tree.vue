@@ -1,9 +1,15 @@
 <template>
-  <el-scrollbar class="plugin-tree" ref="root">
-    <div class="search">
-      <el-input v-model="keyword" #suffix>
+  <el-scrollbar class="plugin-tree" ref="root" @contextmenu.stop="trigger($event)">
+    <div class="px-4 flex gap-x-2">
+      <el-input v-model="keyword" #prefix>
         <k-icon name="search"></k-icon>
       </el-input>
+      <el-button class="p-0 h-8 w-8 shrink-0" @click="ctx.manager.dialogSelect = null">
+        <k-icon name="add-plugin"></k-icon>
+      </el-button>
+      <el-button class="p-0 h-8 w-8 shrink-0" @click="ctx.manager.dialogCreateGroup = null">
+        <k-icon name="add-group"></k-icon>
+      </el-button>
     </div>
     <el-tree
       ref="tree"
@@ -92,11 +98,7 @@ interface EntryNode extends Omit<TreeNode, 'data'> {
 }
 
 function getLabel(node: EntryNode) {
-  if (node.data.isGroup) {
-    return '分组：' + (node.data.label || node.data.id)
-  } else {
-    return node.data.label || node.data.name
-  }
+  return node.data.label || node.data.name
 }
 
 function allowDrag(node: EntryNode) {
@@ -148,7 +150,7 @@ const optionProps: TreeOptionProps = {
     if (!entry.isGroup && !(entry.name in ctx.manager.data.value.packages)) words.push('not-found')
     if (entry.id === ctx.manager.currentEntry?.id) words.push('is-active')
     const change = ctx.manager.changes[entry.id]
-    if (!deepEqual(change.config, entry.config)) {
+    if (change && !deepEqual(change.config, entry.config)) {
       words.push('is-edited')
     }
     return words.join(' ')
@@ -171,10 +173,6 @@ watch(keyword, (val) => {
   .el-scrollbar__view {
     padding: 1rem 0;
     line-height: 2.25rem;
-  }
-
-  .search {
-    padding: 0 1.5rem;
   }
 
   .k-icon-filter {

@@ -51,9 +51,10 @@
           <p>插件信息失败，这可能是插件本身的问题所致。</p>
         </k-comment>
       </k-content>
-      <template v-else>
-        <component :is="currentRoute?.component"></component>
-      </template>
+      <component v-else
+        :is="currentRoute?.component"
+        :key="currentEntry.id"
+      />
     </template>
     <k-content v-else>
       <k-slot name="plugin-missing" single>

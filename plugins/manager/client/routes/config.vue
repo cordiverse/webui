@@ -1,5 +1,10 @@
 <template>
   <k-content v-if="currentEntry && local.runtime?.schema">
+    <div class="flex flex-wrap gap-x-4 gap-y-2 my-8">
+      <span class="el-button" target="_blank"
+        @click="router.replace('/plugins/' + currentEntry.id)"
+      >回到概览</span>
+    </div>
     <k-form :schema="local.runtime.schema" :initial="currentEntry.config" v-model="ctx.manager.changes[currentEntry.id].config">
     </k-form>
   </k-content>
@@ -11,7 +16,7 @@
 <script lang="ts" setup>
 
 import { computed } from 'vue'
-import { useContext, useRpc } from '@cordisjs/client'
+import { router, useContext, useRpc } from '@cordisjs/client'
 import { Data } from '../../src'
 
 const ctx = useContext()

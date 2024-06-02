@@ -1,6 +1,7 @@
 import { clone, Context, Dict, message, remove, router, Schema, send, Service } from '@cordisjs/client'
 import { computed, reactive, ref, Ref, watch } from 'vue'
 import type { Data, EntryData } from '../src'
+import { hasSchema } from './utils'
 import Settings from './components/index.vue'
 import Forks from './dialogs/forks.vue'
 import Select from './dialogs/select.vue'
@@ -222,7 +223,7 @@ export default class Manager extends Service {
       name: '配置',
       component: Config,
       hidden: ({ name }) => {
-        return !this.data.value.packages[name]?.runtime?.schema
+        return !hasSchema(this.data.value.packages[name]?.runtime?.schema)
       },
     })
 
@@ -314,24 +315,14 @@ export default class Manager extends Service {
       },
     })
 
-    const checkConfig = (entry: EntryData) => {
-      const schema = this.data.value.packages[entry.name]?.runtime?.schema
-      if (!schema) return true
-      try {
-        (new Schema(schema))(this.changes[entry.id].config)
-        return true
-      } catch {
-        message.error('当前配置项不满足约束，请检查配置！')
-        return false
-      }
-    }
-
     this.ctx.action('config.tree.save', {
       shortcut: 'ctrl+s',
       disabled: (scope) => !scope.config?.tree,
       action: async ({ config: { tree } }) => {
         const { disabled } = tree
-        if (!disabled && !checkConfig(tree)) return
+        if (!disabled && !this.checkConfig(tree)) {
+          return message.error('当前配置项不满足约束，请检查配置！')
+        }
         try {
           await execute(tree, disabled || null)
           message.success(disabled ? '配置已保存。' : '配置已重载。')
@@ -345,7 +336,9 @@ export default class Manager extends Service {
       disabled: ({ config }) => !config.tree || this.hasCoreDeps(config.tree),
       action: async ({ config: { tree } }) => {
         const { disabled, name } = tree
-        if (disabled && !checkConfig(tree)) return
+        if (disabled && !this.checkConfig(tree)) {
+          return message.error('当前配置项不满足约束，请检查配置！')
+        }
         try {
           await execute(tree, !disabled || null)
           message.success((name === 'group' ? '分组' : '插件') + (disabled ? '已启用。' : '已停用。'))
@@ -361,6 +354,17 @@ export default class Manager extends Service {
         disabled,
         config: this.changes[data.id].config,
       })
+    }
+  }
+
+  checkConfig(entry: EntryData) {
+    const schema = this.data.value.packages[entry.name]?.runtime?.schema
+    if (!schema) return true
+    try {
+      (new Schema(schema))(this.changes[entry.id].config)
+      return true
+    } catch {
+      return false
     }
   }
 

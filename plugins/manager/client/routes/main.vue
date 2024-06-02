@@ -21,7 +21,7 @@
       <!-- implements -->
       <k-slot-item :order="600">
         <template v-for="name in env.impl" :key="name">
-          <k-comment v-if="name in data.services && current.disabled" type="warning">
+          <k-comment v-if="name in ctx.manager.data.value.services && current.disabled" type="warning">
             <p>此插件将会提供 {{ name }} 服务，但此服务已被其他插件实现。</p>
           </k-comment>
           <k-comment v-else :type="current.disabled ? 'primary' : 'success'">
@@ -56,6 +56,20 @@
       <k-slot-item :order="-200" v-if="local.runtime?.usage">
         <k-markdown unsafe class="usage" :source="local.runtime?.usage"></k-markdown>
       </k-slot-item>
+
+      <k-slot-item :order="-1000" v-if="configState">
+        <k-comment :type="configState[0]">
+          <p class="flex items-center">
+            <span class="grow-1">{{ configState[1] }}</span>
+            <span
+              class="h-8 w-8 my--1 mr--1 p-0 flex items-center justify-center el-button"
+              @click="router.push('/plugins/' + current.id + '/config')"
+            >
+              <k-icon name="arrow-right"></k-icon>
+            </span>
+          </p>
+        </k-comment>
+      </k-slot-item>
     </k-slot>
   </k-content>
 </template>
@@ -63,20 +77,31 @@
 <script lang="ts" setup>
 
 import { computed } from 'vue'
-import { router, useContext, useRpc } from '@cordisjs/client'
-import { Data } from '../../src'
+import { router, useContext, deepEqual } from '@cordisjs/client'
+import { hasSchema } from '../utils'
 
 const ctx = useContext()
-const data = useRpc<Data>()
 
 const current = computed(() => ctx.manager.currentEntry)
-const local = computed(() => data.value.packages[current.value?.name!])
+const local = computed(() => ctx.manager.data.value.packages[current.value?.name!])
+const change = computed(() => ctx.manager.changes[current.value?.id!])
 const env = computed(() => ctx.manager.getEnvInfo(current.value)!)
 
 function gotoProvider(provider: string[]) {
   if (!provider.length) return
   router.push('/plugins/' + provider[0])
 }
+
+const configState = computed(() => {
+  if (!hasSchema(local.value.runtime?.schema)) return
+  if (deepEqual(change.value.config, current.value!.config)) {
+    return ['success', '此插件提供了配置项。']
+  } else if (ctx.manager.checkConfig(current.value!)) {
+    return ['warning', '当前存在未保存的配置项。']
+  } else {
+    return ['error', '当前配置项不满足约束，请检查配置。']
+  }
+})
 
 </script>
 

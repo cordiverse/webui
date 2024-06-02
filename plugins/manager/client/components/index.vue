@@ -8,25 +8,27 @@
           {{ currentEntry.label || currentEntry.name }}
         </span>
         <span class="divider"></span>
-        <el-popover popper-class="k-menu">
+        <el-popover popper-class="k-menu" v-model:visible="visible">
           <template #reference>
-            <span class="nav-button">
+            <span class="flex items-center cursor-pointer h-full">
               <span>{{ currentRoute!.name }}</span>
-              <svg class="h-4 ml-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+              <svg class="h-4 ml-2 transition" :class="{ 'rotate-90': visible }" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
                 <path fill="currentColor" d="M384 192v640l384-320.064z"></path>
               </svg>
             </span>
           </template>
-          <div
-            v-for="route in ctx.manager.routes"
-            class="k-menu-item pl-8"
-            @click="gotoRoute(route)"
-          >
-            <span class="absolute left-3 top-0 bottom-0 flex items-center" v-if="route === currentRoute">
-              <span class="w-6px h-6px rounded bg-current"></span>
-            </span>
-            <span>{{ route.name }}</span>
-          </div>
+          <template v-for="route in ctx.manager.routes">
+            <div
+              v-if="!route.hidden?.(currentEntry)"
+              class="k-menu-item pl-8"
+              @click="gotoRoute(route)"
+            >
+              <span class="absolute left-3 top-0 bottom-0 flex items-center" v-if="route === currentRoute">
+                <span class="w-6px h-6px rounded bg-current"></span>
+              </span>
+              <span>{{ route.name }}</span>
+            </div>
+          </template>
         </el-popover>
       </template>
     </template>
@@ -76,6 +78,7 @@ const currentEntry = computed(() => ctx.manager.currentEntry)
 const currentRoute = computed(() => ctx.manager.currentRoute)
 const local = computed(() => ctx.manager.data.value.packages[ctx.manager.currentEntry?.name!])
 
+const visible = ref(false)
 const tree = ref<InstanceType<typeof TreeView>>()
 
 ctx.define('config.tree', currentEntry)
@@ -122,18 +125,8 @@ function gotoRoute(route: SubRoute) {
   }
 }
 
-.nav-button {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  height: 100%;
-}
-
-.nav-menu-item {
-  transition: all 0.3s ease;
-  &:hover {
-    background-color: var(--k-hover-bg);
-  }
+svg.rotate-90 {
+  transform: rotate(90deg);
 }
 
 </style>

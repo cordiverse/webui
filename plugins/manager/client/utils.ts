@@ -1,8 +1,9 @@
 import { ScopeStatus } from '@cordisjs/client'
 import { nextTick, Ref } from 'vue'
+import { EntryData } from '../src'
 
-export function getStatusClass(status?: ScopeStatus) {
-  switch (status) {
+export function getStatusClass(entry: EntryData) {
+  switch (entry?.status) {
     case ScopeStatus.PENDING: return 'pending'
     case ScopeStatus.LOADING: return 'loading'
     case ScopeStatus.ACTIVE: return 'active'

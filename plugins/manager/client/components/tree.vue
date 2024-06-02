@@ -26,9 +26,8 @@
         <div class="label" :title="getLabel(node)">
           {{ getLabel(node) }}
         </div>
-        <!-- FIXME: subpath, relative, etc. -->
         <div class="right">
-          <span class="status-light" :class="getStatusClass(node.data.status)"></span>
+          <span class="status-light" :class="getStatusClass(node.data)"></span>
         </div>
       </div>
     </el-tree>
@@ -42,7 +41,7 @@ import { useRoute } from 'vue-router'
 import type { ElScrollbar, ElTree } from 'element-plus'
 import type { FilterNodeMethodFunction, TreeOptionProps } from 'element-plus/es/components/tree/src/tree.type'
 import type TreeNode from 'element-plus/es/components/tree/src/model/node'
-import { send, router, useContext, useMenu } from '@cordisjs/client'
+import { send, router, useContext, useMenu, deepEqual } from '@cordisjs/client'
 import { getStatusClass } from '../utils'
 import { EntryData } from '../../src'
 
@@ -143,11 +142,15 @@ function handleDrop(source: EntryNode, target: EntryNode, position: 'before' | '
 
 const optionProps: TreeOptionProps = {
   class(tree: any, node) {
-    const data = tree as EntryData
+    const entry = tree as EntryData
     const words: string[] = []
-    if (data.isGroup) words.push('is-group')
-    if (!data.isGroup && !(data.name in ctx.manager.data.value.packages)) words.push('is-disabled')
-    if (data.id === ctx.manager.currentEntry?.id) words.push('is-active')
+    if (entry.isGroup) words.push('is-group')
+    if (!entry.isGroup && !(entry.name in ctx.manager.data.value.packages)) words.push('not-found')
+    if (entry.id === ctx.manager.currentEntry?.id) words.push('is-active')
+    const change = ctx.manager.changes[entry.id]
+    if (!deepEqual(change.config, entry.config)) {
+      words.push('is-edited')
+    }
     return words.join(' ')
   },
 }
@@ -179,11 +182,15 @@ watch(keyword, (val) => {
   }
 
   .el-tree-node {
+    &.is-edited > .el-tree-node__content {
+      color: var(--warning);
+    }
+
     &.is-group > .el-tree-node__content {
       font-weight: bold;
     }
 
-    &.is-disabled {
+    &.not-found {
       .el-tree-node__content .status-light {
         display: none;
       }

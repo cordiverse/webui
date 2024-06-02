@@ -1,5 +1,5 @@
-import { Context, Dict, message, remove, router, Schema, send, Service } from '@cordisjs/client'
-import { computed, reactive, ref, Ref } from 'vue'
+import { clone, Context, Dict, message, remove, router, Schema, send, Service } from '@cordisjs/client'
+import { computed, reactive, ref, Ref, watch } from 'vue'
 import type { Data, EntryData } from '../src'
 import Settings from './components/index.vue'
 import Forks from './dialogs/forks.vue'
@@ -48,12 +48,15 @@ export interface SubRoute {
   path: string
   name: string
   component: any
+  hidden?(entry: EntryData): boolean
 }
 
 export default class Manager extends Service {
   static inject = {
     optional: ['manager'],
   }
+
+  changes = reactive<Dict<Partial<EntryData>>>({})
 
   _dialogFork = ref<string>()
   _dialogSelect = ref<EntryData>()
@@ -156,6 +159,20 @@ export default class Manager extends Service {
 
   constructor(ctx: Context, public data: Ref<Data>) {
     super(ctx, 'manager', true)
+
+    watch(data, (value) => {
+      const old = { ...this.changes }
+      for (const entry of value.entries) {
+        delete old[entry.id]
+        this.changes[entry.id] ??= {
+          config: clone(entry.config),
+          intercept: clone(entry.intercept),
+        }
+      }
+      for (const key in old) {
+        delete this.changes[key]
+      }
+    }, { immediate: true })
   }
 
   start() {
@@ -204,6 +221,9 @@ export default class Manager extends Service {
       path: 'config',
       name: '配置',
       component: Config,
+      hidden: ({ name }) => {
+        return !this.data.value.packages[name]?.runtime?.schema
+      },
     })
 
     this.ctx.menu('config.tree', [{
@@ -294,11 +314,11 @@ export default class Manager extends Service {
       },
     })
 
-    const checkConfig = (name: string) => {
-      const schema = this.data.value.packages[name]?.runtime?.schema
+    const checkConfig = (entry: EntryData) => {
+      const schema = this.data.value.packages[entry.name]?.runtime?.schema
       if (!schema) return true
       try {
-        (new Schema(schema))(config.value)
+        (new Schema(schema))(this.changes[entry.id].config)
         return true
       } catch {
         message.error('当前配置项不满足约束，请检查配置！')
@@ -308,10 +328,10 @@ export default class Manager extends Service {
 
     this.ctx.action('config.tree.save', {
       shortcut: 'ctrl+s',
-      disabled: (scope) => !scope?.config?.tree || !['config'].includes(router.currentRoute.value?.meta?.activity?.id!),
+      disabled: (scope) => !scope.config?.tree,
       action: async ({ config: { tree } }) => {
         const { disabled } = tree
-        if (!disabled && !checkConfig(tree.name)) return
+        if (!disabled && !checkConfig(tree)) return
         try {
           await execute(tree, disabled || null)
           message.success(disabled ? '配置已保存。' : '配置已重载。')
@@ -325,7 +345,7 @@ export default class Manager extends Service {
       disabled: ({ config }) => !config.tree || this.hasCoreDeps(config.tree),
       action: async ({ config: { tree } }) => {
         const { disabled, name } = tree
-        if (disabled && !checkConfig(tree.name)) return
+        if (disabled && !checkConfig(tree)) return
         try {
           await execute(tree, !disabled || null)
           message.success((name === 'group' ? '分组' : '插件') + (disabled ? '已启用。' : '已停用。'))
@@ -335,11 +355,11 @@ export default class Manager extends Service {
       },
     })
 
-    async function execute(data: EntryData, disabled: true | null) {
+    const execute = async (data: EntryData, disabled: true | null) => {
       await send('manager.config.update', {
         id: data.id,
         disabled,
-        config: config.value,
+        config: this.changes[data.id].config,
       })
     }
   }

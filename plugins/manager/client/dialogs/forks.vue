@@ -12,7 +12,7 @@
     <table>
       <tr v-for="id in plugins.forks[ctx.manager.dialogFork!]" :key="id">
         <td class="text-left">
-          <span class="status-light" :class="getStatusClass(plugins.entries[id].status)"></span>
+          <span class="status-light" :class="getStatusClass(plugins.entries[id])"></span>
           <span class="path">{{ getFullPath(plugins.entries[id]) }}</span>
         </td>
         <td class="text-right">

@@ -1,14 +1,11 @@
 <template>
   <el-scrollbar class="plugin-tree" ref="root" @contextmenu.stop="trigger($event)">
-    <div class="px-4 flex gap-x-2">
+    <div class="search px-4 flex gap-x-2 w-full box-border absolute top-4 z-100">
       <el-input v-model="keyword" #prefix>
         <k-icon name="search"></k-icon>
       </el-input>
-      <el-button class="p-0 h-8 w-8 shrink-0" @click="ctx.manager.dialogSelect = null">
-        <k-icon name="add-plugin"></k-icon>
-      </el-button>
-      <el-button class="p-0 h-8 w-8 shrink-0" @click="ctx.manager.dialogCreateGroup = null">
-        <k-icon name="add-group"></k-icon>
+      <el-button class="p-0 h-8 w-8 shrink-0" @click.stop="trigger($event)">
+        <k-icon name="add"></k-icon>
       </el-button>
     </div>
     <el-tree
@@ -29,8 +26,8 @@
       @node-collapse="handleCollapse"
       #="{ node }">
       <div class="item" :ref="handleItemMount">
-        <div class="label" :title="getLabel(node)">
-          {{ getLabel(node) }}
+        <div class="label">
+          {{ ctx.manager.getLabel(node.data) }}
         </div>
         <div class="right">
           <span class="status-light" :class="getStatusClass(node.data)"></span>
@@ -97,10 +94,6 @@ interface EntryNode extends Omit<TreeNode, 'data'> {
   childNodes: EntryNode[]
 }
 
-function getLabel(node: EntryNode) {
-  return node.data.label || node.data.name
-}
-
 function allowDrag(node: EntryNode) {
   return !!node.data.id
 }
@@ -163,23 +156,29 @@ watch(keyword, (val) => {
 
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 
-.plugin-tree {
+.search {
+  background: var(--k-side-bg);
+}
+
+.search::after {
+  position: absolute;
+  content: '';
+  top: 100%;
+  left: 0;
   width: 100%;
-  height: 100%;
-  overflow: auto;
+  height: 32px;
+  background: linear-gradient(var(--k-side-bg) 25%, transparent 50%);
+}
 
-  .el-scrollbar__view {
-    padding: 1rem 0;
+.el-scrollbar {
+  :deep(.el-scrollbar__view) {
+    padding: 4rem 0 1rem;
     line-height: 2.25rem;
   }
 
-  .k-icon-filter {
-    height: 15px;
-  }
-
-  .el-tree-node {
+  :deep(.el-tree-node) {
     &.is-edited > .el-tree-node__content {
       color: var(--warning);
     }
@@ -188,14 +187,12 @@ watch(keyword, (val) => {
       font-weight: bold;
     }
 
-    &.not-found {
-      .el-tree-node__content .status-light {
-        display: none;
-      }
+    &.not-found > .el-tree-node__content .status-light {
+      display: none;
     }
   }
 
-  .el-tree-node__content {
+  :deep(.el-tree-node__content) {
     .item {
       flex: 1;
       height: 100%;
@@ -213,7 +210,9 @@ watch(keyword, (val) => {
 
     .right {
       height: 100%;
+      width: 1rem;
       margin: 0 1.5rem 0 0.5rem;
+      text-align: center;
     }
   }
 }

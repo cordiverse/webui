@@ -9,10 +9,10 @@ import Rename from './dialogs/rename.vue'
 import Group from './dialogs/group.vue'
 import Main from './routes/main.vue'
 import Config from './routes/config.vue'
+import Remove from './dialogs/remove.vue'
 
 import './index.scss'
 import './icons'
-import Remove from './dialogs/remove.vue'
 
 declare module '@cordisjs/client' {
   interface Context {
@@ -357,6 +357,32 @@ export default class Manager extends Service {
         config: this.changes[data.id].config,
       })
     }
+  }
+
+  getLabel(entry: EntryData) {
+    if (entry.label) return entry.label
+    const cap = /^(@[\w-]+\/)?([\w-]+)/.exec(entry.name)
+    if (!cap) return entry.name
+    const fullname = cap[0]
+    const path = entry.name.slice(fullname.length)
+    const local = this.data.value.packages[entry.name]
+    if (local) return local.shortname + path
+    const patterns = Object.values(this.data.value.packages).flatMap((local) => {
+      if (!local.manifest.ecosystem) return []
+      return local.manifest.ecosystem.pattern ?? [`${local.package.name}-plugin-*`]
+    })
+    for (const pattern of patterns) {
+      const regexp = new RegExp('^' + pattern.replace('*', '.*') + '$')
+      let prefix = '', name = fullname
+      if (!pattern.startsWith('@')) {
+        prefix = cap[1] || ''
+        name = cap[2]
+      }
+      if (!regexp.test(name)) continue
+      const index = pattern.indexOf('*')
+      return prefix + name.slice(index) + path
+    }
+    return fullname + path
   }
 
   checkConfig(entry: EntryData) {

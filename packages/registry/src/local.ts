@@ -209,7 +209,7 @@ export class LocalScanner {
         name,
         property: manifest.ecosystem.property || 'cordis',
         inject: manifest.service?.implements || [],
-        pattern: manifest.ecosystem.pattern || [`${name}-plugin-`],
+        pattern: manifest.ecosystem.pattern || [`${name}-plugin-*`],
         keywords: manifest.ecosystem.keywords || [name, 'plugin'],
       })
     }

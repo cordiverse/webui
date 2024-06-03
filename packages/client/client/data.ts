@@ -27,6 +27,9 @@ export async function send(type: string, ...args: any[]) {
       'Content-Type': 'application/json',
     }),
   })
+  if (!response.ok) {
+    throw new Error(response.statusText)
+  }
   const result = await response.json()
   console.debug('[response]', result)
   return result

@@ -5,7 +5,7 @@
 
       <template v-else>
         <span class="label">
-          {{ currentEntry.label || currentEntry.name }}
+          {{ ctx.manager.getLabel(currentEntry) }}
         </span>
         <span class="divider"></span>
         <el-popover popper-class="k-menu" v-model:visible="visible">

@@ -59,7 +59,7 @@ export interface ActiveMenu {
 
 export function useMenu<K extends keyof ActionContext>(id: K) {
   const ctx = useContext()
-  return (event: MouseEvent, value: MaybeRefOrGetter<ActionContext[K]>) => {
+  return (event: MouseEvent, value?: MaybeRefOrGetter<ActionContext[K]>) => {
     ctx.define(id, value)
     event.preventDefault()
     const { clientX, clientY } = event

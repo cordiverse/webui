@@ -1,6 +1,6 @@
 import * as cordis from 'cordis'
 import {
-  App, Component, createApp, defineComponent, h, inject, InjectionKey,
+  App, Component, createApp, DefineComponent, defineComponent, h, inject, InjectionKey,
   markRaw, onBeforeUnmount, onErrorCaptured, provide, Ref, resolveComponent,
 } from 'vue'
 import ActionService from './plugins/action'
@@ -75,8 +75,10 @@ export class Context extends cordis.Context {
     })
   }
 
+  wrapComponent(component: Component): DefineComponent
+  wrapComponent(component?: Component): DefineComponent | undefined
   wrapComponent(component: Component) {
-    if (!component) return null!
+    if (!component) return undefined
     const caller = this[Context.current] || this
     if (!caller.$entry) return component
     return markRaw(defineComponent((props, { slots }) => {

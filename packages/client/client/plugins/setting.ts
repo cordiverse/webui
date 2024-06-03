@@ -6,10 +6,15 @@ import { Dict, remove } from 'cosmokit'
 import { Component, computed, markRaw, reactive, ref, watch } from 'vue'
 import { Config } from '..'
 
+declare module '@cordisjs/schema' {
+  interface SchemaService {
+    component(extension: SchemaBase.Extension): () => void
+  }
+}
+
 declare module '../context' {
   interface Context {
     $setting: SettingService
-    schema(extension: SchemaBase.Extension): () => void
     settings(options: SettingOptions): () => void
   }
 
@@ -26,7 +31,7 @@ interface SettingOptions extends Ordered {
   component?: Component
 }
 
-export let useStorage = <T extends object>(key: string, version: number, fallback?: () => T): RemovableRef<T> => {
+export let useStorage = <T extends object>(key: string, version?: number, fallback?: () => T): RemovableRef<T> => {
   const initial = fallback ? fallback() : {} as T
   initial['__version__'] = version
   const storage = useLocalStorage('koishi.console.' + key, initial)
@@ -38,23 +43,6 @@ export let useStorage = <T extends object>(key: string, version: number, fallbac
 
 export function provideStorage(factory: typeof useStorage) {
   useStorage = factory
-}
-
-interface StorageData<T> {
-  version: number
-  data: T
-}
-
-/** @deprecated use `useConfig` instead */
-export function createStorage<T extends object>(key: string, version: number, fallback?: () => T) {
-  const storage = useLocalStorage('koishi.console.' + key, {} as StorageData<T>)
-  const initial = fallback ? fallback() : {} as T
-  if (storage.value.version !== version) {
-    storage.value = { version, data: initial }
-  } else if (!Array.isArray(storage.value.data)) {
-    storage.value.data = { ...initial, ...storage.value.data }
-  }
-  return reactive<T>(storage.value['data'])
 }
 
 export const original = useStorage<Config>('config', undefined, () => ({
@@ -73,7 +61,10 @@ export const useConfig = (useOriginal = false) => useOriginal ? original : resol
 export default class SettingService extends Service {
   constructor(ctx: Context) {
     super(ctx, '$setting', true)
-    ctx.mixin('$setting', ['schema', 'settings'])
+    ctx.mixin('$setting', {
+      'schema': 'schema.component',
+      'settings': 'settings',
+    })
 
     ctx.internal.settings = reactive({})
 

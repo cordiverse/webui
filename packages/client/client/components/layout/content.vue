@@ -30,11 +30,12 @@
 
   h1 {
     font-size: 1.5rem;
-    margin: 2rem 0;
+    margin: 1.75rem 0;
   }
 
   h2 {
     font-size: 1.25rem;
+    margin: 1rem 0;
   }
 }
 

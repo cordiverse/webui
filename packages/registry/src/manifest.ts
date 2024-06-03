@@ -69,7 +69,7 @@ function concludeExport(base?: Manifest.Export | null, description?: string) {
 
   const result: Manifest.Export = {
     browser: Ensure.boolean(base.browser),
-    description: Ensure.dict(base.description) ?? Ensure.string(description),
+    description: Ensure.dict(base.description) ?? Ensure.string(base.description ?? description),
     service: Ensure.object(base.service, (service) => ({
       required: Ensure.array(service.required),
       optional: Ensure.array(service.optional),

@@ -18,18 +18,11 @@
       <el-scrollbar>
         <template v-for="local in packages" :key="local.package.name">
           <div
-            class="package"
-            v-if="local.manifest.exports?.['.'] !== null"
+            class="package text-base px-4 py-2 cursor-pointer transition"
             @click.stop="configure(local.package.name)">
-            <h3>{{ local.package.name }}</h3>
+            <div class="font-bold mb-1">{{ local.package.name }}</div>
             <k-markdown inline class="desc" :source="tt(local.manifest.description)"></k-markdown>
           </div>
-          <template v-for="(manifest, name) in local.manifest.exports">
-            <div class="package" v-if="manifest">
-              <h3>{{ joinName(name, local.package.name) }}</h3>
-              <k-markdown inline class="desc" :source="tt(manifest.description)"></k-markdown>
-            </div>
-          </template>
         </template>
       </el-scrollbar>
     </div>
@@ -161,16 +154,6 @@ async function configure(name: string) {
       flex: 1 1 auto;
 
       .package {
-        padding: 0.5rem 1rem;
-        cursor: pointer;
-        transition: var(--color-transition);
-
-        h3 {
-          font-size: 16px;
-          margin: 0;
-          margin-bottom: 0.25rem;
-        }
-
         p {
           margin: 0;
           font-size: 14px;

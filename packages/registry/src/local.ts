@@ -21,7 +21,7 @@ declare module 'pnpapi' {
   function getAllLocators(): PackageLocator[]
 }
 
-const LocalKey = ['name', 'version', 'peerDependencies', 'peerDependenciesMeta'] as const
+const LocalKey = ['name', 'version'] as const
 type LocalKeys = typeof LocalKey[number]
 
 interface LocalObject extends Pick<SearchObject, 'shortname' | 'ecosystem' | 'workspace' | 'manifest'> {
@@ -198,12 +198,28 @@ export class LocalScanner {
       if (!shortname) continue
       delete this.candidates[name]
       const manifest = Manifest.conclude(meta, ecosystem.property)
-      this.pkgTasks[name] ||= this.loadPackage(name, {
-        shortname,
-        workspace,
-        manifest,
-        package: pick(meta, LocalKey),
-      })
+      const exports = manifest.exports ?? {}
+      if (exports['.'] !== null) {
+        this.pkgTasks[name] ||= this.loadPackage(name, {
+          shortname,
+          workspace,
+          manifest,
+          package: pick(meta, LocalKey),
+        })
+      }
+      for (const [path, manifest] of Object.entries(exports)) {
+        if (!manifest) continue
+        const fullname = join(name, path)
+        this.pkgTasks[fullname] ||= this.loadPackage(fullname, {
+          shortname: join(shortname, path),
+          workspace,
+          manifest,
+          package: {
+            name: fullname,
+            version: meta.version,
+          },
+        })
+      }
       if (!manifest.ecosystem) continue
       this.ecosystems.push({
         name,

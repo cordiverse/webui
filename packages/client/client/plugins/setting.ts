@@ -34,7 +34,7 @@ interface SettingOptions extends Ordered {
 export let useStorage = <T extends object>(key: string, version?: number, fallback?: () => T): RemovableRef<T> => {
   const initial = fallback ? fallback() : {} as T
   initial['__version__'] = version
-  const storage = useLocalStorage('koishi.console.' + key, initial)
+  const storage = useLocalStorage('cordis.webui.' + key, initial)
   if (storage.value['__version__'] !== version) {
     storage.value = initial
   }
@@ -62,8 +62,8 @@ export default class SettingService extends Service {
   constructor(ctx: Context) {
     super(ctx, '$setting', true)
     ctx.mixin('$setting', {
-      'schema': 'schema.component',
-      'settings': 'settings',
+      settings: 'settings',
+      extendSchema: 'schema',
     })
 
     ctx.internal.settings = reactive({})
@@ -112,10 +112,9 @@ export default class SettingService extends Service {
     ctx.effect(() => watch(schema, update))
   }
 
-  schema(extension: SchemaBase.Extension) {
-    const caller = this[Context.current]
-    extension.component = caller.wrapComponent(extension.component)
-    return caller.effect(() => {
+  extendSchema(extension: SchemaBase.Extension) {
+    extension.component = this.ctx.wrapComponent(extension.component)
+    return this.ctx.effect(() => {
       SchemaBase.extensions.add(extension)
       return () => SchemaBase.extensions.delete(extension)
     })

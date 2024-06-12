@@ -79,12 +79,11 @@ export class Context extends cordis.Context {
   wrapComponent(component?: Component): DefineComponent | undefined
   wrapComponent(component: Component) {
     if (!component) return undefined
-    const caller = this[Context.current] || this
-    if (!caller.$entry) return component
+    if (!this.$entry) return component
     return markRaw(defineComponent((props, { slots }) => {
-      provide(kContext, caller)
+      provide(kContext, this)
       onErrorCaptured((e, instance, info) => {
-        return caller.scope.uid !== null
+        return this.scope.uid !== null
       })
       return () => h(component, props, slots)
     }))

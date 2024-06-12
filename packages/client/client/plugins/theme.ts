@@ -75,7 +75,7 @@ export default class ThemeService extends Service {
 
     ctx.effect(() => watchEffect(() => {
       if (!config.value.theme) return
-      const root = window.document.querySelector('html')
+      const root = window.document.querySelector('html')!
       root.setAttribute('theme', config.value.theme[colorMode.value])
       if (colorMode.value === 'dark') {
         root.classList.add('dark')
@@ -87,15 +87,14 @@ export default class ThemeService extends Service {
 
   theme(options: ThemeOptions) {
     markRaw(options)
-    const caller = this[Context.current]
     for (const [type, component] of Object.entries(options.components || {})) {
-      caller.slot({
+      this.ctx.slot({
         type,
         disabled: () => config.value.theme[colorMode.value] !== options.id,
         component,
       })
     }
-    return caller.effect(() => {
+    return this.ctx.effect(() => {
       this.ctx.internal.themes[options.id] = options
       return () => delete this.ctx.internal.themes[options.id]
     })

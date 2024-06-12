@@ -122,15 +122,14 @@ export default class SettingService extends Service {
 
   settings(options: SettingOptions) {
     markRaw(options)
-    const caller = this[Context.current]
     options.order ??= 0
-    options.component = caller.wrapComponent(options.component)
-    return caller.effect(() => {
-      const list = caller.internal.settings[options.id] ||= []
+    options.component = this.ctx.wrapComponent(options.component)
+    return this.ctx.effect(() => {
+      const list = this.ctx.internal.settings[options.id] ||= []
       insert(list, options)
       return () => {
         remove(list, options)
-        if (!list.length) delete caller.internal.settings[options.id]
+        if (!list.length) delete this.ctx.internal.settings[options.id]
       }
     })
   }

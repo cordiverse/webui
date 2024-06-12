@@ -120,14 +120,14 @@ export default class ActionService extends Service {
   action(id: string, options: ActionOptions | ActionOptions['action']) {
     if (typeof options === 'function') options = { action: options }
     markRaw(options)
-    return this[Context.current].effect(() => {
+    return this.ctx.effect(() => {
       this.ctx.internal.actions[id] = options
       return () => delete this.ctx.internal.actions[id]
     })
   }
 
   menu(id: string, items: MenuItem[]) {
-    return this[Context.current].effect(() => {
+    return this.ctx.effect(() => {
       const list = this.ctx.internal.menus[id] ||= []
       items.forEach(item => insert(list, item))
       return () => {
@@ -138,7 +138,7 @@ export default class ActionService extends Service {
   }
 
   define<K extends keyof ActionContext>(key: K, value: MaybeRefOrGetter<ActionContext[K]>) {
-    return this[Context.current].effect(() => {
+    return this.ctx.effect(() => {
       this.ctx.internal.scope[key] = value as any
       return () => delete this.ctx.internal.scope[key]
     })

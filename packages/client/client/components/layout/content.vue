@@ -35,7 +35,7 @@
 
   h2 {
     font-size: 1.25rem;
-    margin: 1rem 0;
+    margin: 2rem 0 1rem;
   }
 }
 

@@ -41,7 +41,7 @@ const icon = computed(() => {
 
 .k-comment {
   padding: 1px 1.5rem;
-  margin: 2rem 0;
+  margin: 1rem 0;
   border-left-width: 4px;
   border-left-style: solid;
   position: relative;
@@ -64,10 +64,6 @@ const icon = computed(() => {
   @include apply-color(warning);
   @include apply-color(success);
   @include apply-color(danger);
-
-  & + & {
-    margin-top: -1rem;
-  }
 
   :deep(a) {
     text-decoration: underline;

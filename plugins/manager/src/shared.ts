@@ -1,4 +1,4 @@
-import { Context, MainScope, Plugin, Schema, ScopeStatus, Service } from 'cordis'
+import { Context, Inject, MainScope, Plugin, Schema, ScopeStatus, Service } from 'cordis'
 import { Dict, pick } from 'cosmokit'
 import { EntryOptions } from '@cordisjs/loader'
 import { Entry as ClientEntry } from '@cordisjs/plugin-webui'
@@ -20,7 +20,7 @@ declare module '@cordisjs/plugin-webui' {
     'manager.config.remove'(options: { id: string }): void
     'manager.package.list'(): Promise<LocalObject[]>
     'manager.package.runtime'(options: { name: string }): Promise<RuntimeData>
-    'manager.service.list'(): Promise<Dict<RealmData>>
+    'manager.service.list'(): Promise<Dict<ServiceData>>
   }
 }
 
@@ -35,16 +35,25 @@ export interface EntryData extends EntryOptions, Required<EntryLocation> {
   status?: ScopeStatus
 }
 
-export interface RealmData {
-  root?: string[]
-  local: Dict<string[]>
-  global: Dict<string[]>
+export interface ServiceInfo {
+  location?: string[]
+  schema?: Schema
+}
+
+export interface ServiceData {
+  root?: ServiceInfo
+  local: Dict<ServiceInfo>
+  global: Dict<ServiceInfo>
 }
 
 export interface Data {
   entries: EntryData[]
   packages: Dict<LocalObject>
-  services: Dict<RealmData>
+  services: Dict<ServiceData>
+}
+
+export interface InjectInfo {
+  required: boolean
 }
 
 export interface RuntimeData {
@@ -53,8 +62,7 @@ export interface RuntimeData {
   forkable?: boolean
   schema?: Schema
   usage?: string
-  required?: string[]
-  optional?: string[]
+  inject?: Dict<InjectInfo>
   failed?: boolean
 }
 
@@ -89,20 +97,22 @@ export abstract class Manager extends Service {
     }))
   }
 
-  locateService(ctx: Context, name: string) {
+  private getServiceInfo(ctx: Context, name: string) {
     const instance = ctx.get(name)
     if (!(instance instanceof Object)) return
     const origin: Context = Reflect.getOwnPropertyDescriptor(instance, Context.current)?.value
     if (!origin) return
-    return this.ctx.loader.locate(origin)
+    const location = this.ctx.loader.locate(origin)
+    const schema = Reflect.getOwnPropertyDescriptor(instance, 'schema')?.value
+    return { location, schema } as ServiceInfo
   }
 
   getServices() {
-    const result = {} as Dict<RealmData>
+    const result = Object.create(null) as Dict<ServiceData>
     for (const [name, { type }] of Object.entries(this.ctx.root[Context.internal])) {
       if (type !== 'service') continue
       result[name] = {
-        root: this.locateService(this.ctx.root, name),
+        root: this.getServiceInfo(this.ctx.root, name),
         local: {},
         global: {},
       }
@@ -112,9 +122,9 @@ export abstract class Manager extends Service {
       for (const [name, value] of Object.entries(entry.options.isolate)) {
         if (!result[name]) continue
         if (value === true) {
-          result[name].local[entry.id] = this.locateService(entry.ctx, name)!
+          result[name].local[entry.id] = this.getServiceInfo(entry.ctx, name)!
         } else {
-          result[name].global[value] = this.locateService(entry.ctx, name)!
+          result[name].global[value] = this.getServiceInfo(entry.ctx, name)!
         }
       }
     }
@@ -226,17 +236,18 @@ export abstract class Manager extends Service {
       const exports = await this.ctx.loader.import(name)
       const plugin = this.ctx.loader.unwrapExports(exports)
       if (plugin) this.plugins.set(plugin, name)
-      const result: RuntimeData = { id: null }
+      const result: RuntimeData = { id: null, inject: {} }
       result.schema = plugin?.Config || plugin?.schema
       result.usage = plugin?.usage
       result.filter = plugin?.filter
-      const inject = plugin?.using || plugin?.inject || []
+      const inject: Inject = plugin?.using || plugin?.inject || []
       if (Array.isArray(inject)) {
-        result.required = inject
-        result.optional = []
+        result.inject = Object.fromEntries(inject.map((name) => [name, { required: true }]))
       } else {
-        result.required = inject.required || []
-        result.optional = inject.optional || []
+        result.inject = {
+          ...Object.fromEntries((inject.required || []).map((name) => [name, { required: true }])),
+          ...Object.fromEntries((inject.optional || []).map((name) => [name, { required: false }])),
+        }
       }
 
       // make sure that result can be serialized into json

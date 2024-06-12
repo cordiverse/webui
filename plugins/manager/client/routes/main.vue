@@ -8,12 +8,12 @@
       <k-slot-item :order="800">
         <k-slot name="plugin-dependency" single>
           <k-comment
-            v-for="({ required, provider }, name) in env.using" :key="name"
-            :type="provider ? 'success' : required ? 'warning' : 'primary'">
+            v-for="({ required, location }, name) in env.using" :key="name"
+            :type="location ? 'success' : required ? 'warning' : 'primary'">
             <p>
               {{ required ? '必需' : '可选' }}服务：{{ name }}
-              <template v-if="provider">
-                (<span :class="{ 'k-link': provider.length }" @click="gotoProvider(provider)">已加载</span>)
+              <template v-if="location">
+                (<span :class="{ 'k-link': location.length }" @click="gotoProvider(location)">已加载</span>)
               </template>
               <template v-else>(未加载)</template>
             </p>
@@ -90,9 +90,9 @@ const local = computed(() => ctx.manager.data.value.packages[current.value?.name
 const change = computed(() => ctx.manager.changes[current.value?.id!])
 const env = computed(() => ctx.manager.getEnvInfo(current.value)!)
 
-function gotoProvider(provider: string[]) {
-  if (!provider.length) return
-  router.push('/plugins/' + provider[0])
+function gotoProvider(location: string[]) {
+  if (!location.length) return
+  router.push('/plugins/' + location[0])
 }
 
 const configState = computed(() => {

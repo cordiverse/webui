@@ -48,7 +48,7 @@ export abstract class WebUI<T = unknown> extends Service<T> {
   abstract addListener<K extends keyof Events>(event: K, callback: Events[K]): void
 
   addEntry<T>(files: Entry.Files, data?: () => T) {
-    return new Entry(this[Context.origin], files, data)
+    return new Entry(this.ctx, files, data)
   }
 
   async broadcast(type: string, body: any) {

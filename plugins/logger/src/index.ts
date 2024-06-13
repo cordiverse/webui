@@ -78,9 +78,8 @@ export async function apply(ctx: Context, config: Config) {
     colors: 3,
     record: (record: Logger.Record) => {
       record.meta ||= {}
-      const scope = record.meta[Context.current]?.scope
-      if (loader && scope) {
-        record.meta.paths = loader.paths(scope)
+      if (record.meta.ctx) {
+        record.meta.paths = loader?.locate(record.meta.ctx)
       }
       const date = new Date(record.timestamp).toISOString().slice(0, 10)
       if (writer.date !== date) {

@@ -9,14 +9,14 @@
 
 <script setup lang="ts">
 
-import { useContext, useRpc } from '@cordisjs/client'
+import { useRpc, useInject } from '@cordisjs/client'
 import { computed } from 'vue'
 import {} from '@cordisjs/plugin-manager/client'
 import type { Logger } from 'cordis'
 import Logs from './logs.vue'
 
 const data = useRpc<Logger.Record[]>()
-const ctx = useContext()
+const manager = useInject('manager')
 
 const logs = computed(() => {
   if (!data.value) return []
@@ -25,7 +25,7 @@ const logs = computed(() => {
   for (let index = data.value.length - 1; index > 0; --index) {
     if (data.value[index].id >= last) break
     last = data.value[index].id
-    if (!data.value[index].meta?.paths?.includes(ctx.manager.currentEntry?.id)) continue
+    if (!data.value[index].meta?.paths?.includes(manager.value?.currentEntry?.id)) continue
     results.unshift(data.value[index])
   }
   return results

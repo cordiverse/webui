@@ -1,7 +1,7 @@
 import * as cordis from 'cordis'
 import {
   App, Component, createApp, DefineComponent, defineComponent, h, inject, InjectionKey,
-  markRaw, onBeforeUnmount, onErrorCaptured, provide, Ref, resolveComponent,
+  markRaw, onBeforeUnmount, onErrorCaptured, provide, ref, Ref, resolveComponent,
 } from 'vue'
 import ActionService from './plugins/action'
 import I18nService from './plugins/i18n'
@@ -26,6 +26,15 @@ export function useContext() {
   const fork = parent.plugin(() => {})
   onBeforeUnmount(() => fork.dispose())
   return fork.ctx
+}
+
+export function useInject<K extends string & keyof Context>(name: K): Ref<Context[K]> {
+  const parent = inject(kContext)!
+  const service = ref(parent.get(name))
+  onBeforeUnmount(parent.on('internal/service', () => {
+    service.value = parent.get(name)
+  }))
+  return service
 }
 
 export function useRpc<T>(): Ref<T> {

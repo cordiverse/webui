@@ -14,10 +14,12 @@ declare module '@cordisjs/client' {
 }
 
 export default (ctx: Context) => {
-  ctx.slot({
-    type: 'plugin-details',
-    component: Config,
-    order: 0,
+  ctx.inject(['manager'], (ctx) => {
+    ctx.slot({
+      type: 'plugin-details',
+      component: Config,
+      order: 0,
+    })
   })
 
   ctx.on('notifier/message', ({ content, type }) => {

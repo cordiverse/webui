@@ -33,9 +33,9 @@ export class Entry<T = any> {
   }
 
   refresh() {
-    this.ctx.webui.broadcast('entry:refresh', async (client: Client) => ({
+    this.ctx.webui.broadcast('entry:refresh', (client: Client) => ({
       id: this.id,
-      data: await this.data!(),
+      data: this.data?.(),
     }))
   }
 

@@ -87,7 +87,11 @@ export default class LoaderService extends Service {
         const part = parts.shift()!
         node = node[part]
       }
-      Object.assign(node, data)
+      if (Array.isArray(node)) {
+        node.push(data)
+      } else {
+        Object.assign(node, data)
+      }
     })
   }
 

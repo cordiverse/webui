@@ -52,17 +52,13 @@ export interface Data {
   services: Dict<ServiceData>
 }
 
-export interface InjectInfo {
-  required: boolean
-}
-
 export interface RuntimeData {
   id?: number | null
   filter?: boolean
   forkable?: boolean
   schema?: Schema
   usage?: string
-  inject?: Dict<InjectInfo>
+  inject?: Dict<Inject.Meta>
   failed?: boolean
 }
 
@@ -240,15 +236,7 @@ export abstract class Manager extends Service {
       result.schema = plugin?.Config || plugin?.schema
       result.usage = plugin?.usage
       result.filter = plugin?.filter
-      const inject: Inject = plugin?.using || plugin?.inject || []
-      if (Array.isArray(inject)) {
-        result.inject = Object.fromEntries(inject.map((name) => [name, { required: true }]))
-      } else {
-        result.inject = {
-          ...Object.fromEntries((inject.required || []).map((name) => [name, { required: true }])),
-          ...Object.fromEntries((inject.optional || []).map((name) => [name, { required: false }])),
-        }
-      }
+      result.inject = Inject.resolve(plugin?.using || plugin?.inject)
 
       // make sure that result can be serialized into json
       JSON.stringify(result)

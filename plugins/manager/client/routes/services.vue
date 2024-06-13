@@ -5,6 +5,7 @@
       <k-icon name="arrow-left" class="h-3.25 mr-2"/>
       回到概览
     </el-button>
+
     <h2>依赖项</h2>
     <k-comment
       v-for="({ required, location }, name) in env.using" :key="name"
@@ -12,6 +13,7 @@
       <p>{{ required ? '必需' : '可选' }}服务 {{ name }} {{ location ? '已加载' : '未加载' }}。</p>
     </k-comment>
     <el-button @click="showAddDependency = true">添加依赖项</el-button>
+
     <h2>隔离域</h2>
     <k-comment
       v-for="(label, name) in currentEntry.isolate" :key="name"
@@ -55,7 +57,7 @@
 <script lang="ts" setup>
 
 import { computed, ref } from 'vue'
-import { router, send, useContext } from '@cordisjs/client'
+import { router, send, useContext, Inject } from '@cordisjs/client'
 
 const ctx = useContext()
 const showAddDependency = ref(false)
@@ -80,8 +82,10 @@ function getService(name: string, label: string | true) {
 function addDependency() {
   send('manager.config.update', {
     id: currentEntry.value.id,
-    // TODO
-    // inject: [],
+    inject: {
+      ...Inject.resolve(currentEntry.value.inject),
+      [input.value]: { required: isRequired.value },
+    },
   })
 }
 

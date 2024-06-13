@@ -47,11 +47,15 @@ export class Entry<T = any> {
     })
   }
 
-  toJSON(): Entry.Data {
-    return {
-      files: this.ctx.webui.resolveEntry(this.files, this.id),
-      paths: this.ctx.get('loader')?.locate(),
-      data: this.data?.(),
+  toJSON(): Entry.Data | undefined {
+    try {
+      return {
+        files: this.ctx.webui.resolveEntry(this.files, this.id),
+        paths: this.ctx.get('loader')?.locate(),
+        data: JSON.parse(JSON.stringify(this.data?.())),
+      }
+    } catch (e) {
+      this.ctx.logger.error(e)
     }
   }
 }

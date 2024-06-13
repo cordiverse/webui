@@ -7,8 +7,11 @@
         回到概览
       </el-button>
     </div>
-    <k-form :schema="local.runtime.schema" :initial="currentEntry.config" v-model="ctx.manager.changes[currentEntry.id].config">
-    </k-form>
+    <k-form
+      :schema="local.runtime.schema"
+      :initial="currentEntry.config"
+      v-model="ctx.manager.changes[currentEntry.id].config"
+    />
   </k-content>
   <k-empty v-else>
     当前插件未声明配置。

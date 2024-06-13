@@ -1,6 +1,6 @@
-import { clone, Context, Dict, message, remove, router, Schema, send, Service } from '@cordisjs/client'
+import { clone, Context, Dict, Inject, message, remove, router, Schema, send, Service } from '@cordisjs/client'
 import { computed, reactive, ref, Ref, watch } from 'vue'
-import type { Data, EntryData, InjectInfo, ServiceInfo } from '../src'
+import type { Data, EntryData, ServiceInfo } from '../src'
 import { hasSchema } from './utils'
 import Settings from './components/index.vue'
 import Forks from './dialogs/forks.vue'
@@ -10,7 +10,8 @@ import Group from './dialogs/group.vue'
 import Remove from './dialogs/remove.vue'
 import MainPage from './routes/main.vue'
 import ConfigPage from './routes/config.vue'
-import ServicePage from './routes/service.vue'
+import ServicesPage from './routes/services.vue'
+import InterceptPage from './routes/intercept.vue'
 
 import './index.scss'
 import './icons'
@@ -35,7 +36,7 @@ export interface Node extends EntryData {
   children?: Node[]
 }
 
-interface DepInfo extends ServiceInfo, InjectInfo {}
+interface DepInfo extends ServiceInfo, Inject.Meta {}
 
 export interface EnvInfo {
   impl: string[]
@@ -45,9 +46,13 @@ export interface EnvInfo {
 
 export interface SubRoute {
   path: string
-  name: string
+  title: string | ((params: any) => string)
+  label?: string | ((params: any) => string)
   component: any
-  hidden?(entry: EntryData): boolean
+  hidden?(entry: EntryData, params: any): boolean
+  list?(entry: EntryData): any[]
+  indent?: number
+  params?: Dict<string>
 }
 
 export default class Manager extends Service {
@@ -115,7 +120,30 @@ export default class Manager extends Service {
     if (!entry) return
     const { path } = router.currentRoute.value
     const rest = path.slice(9 + entry.id.length + 1)
-    return this.routes.find(route => route.path === rest) ?? this.routes[0]
+    for (const route of this.routes) {
+      const regexp = new RegExp('^' + route.path.replace(/:(\w+)/g, (_, $1) => `(?<${$1}>[^/]+)`) + '$')
+      const capture = regexp.exec(rest)
+      if (!capture) continue
+      const params = capture.groups
+      const path = route.path.replace(/:(\w+)/g, (_, $1) => params![$1])
+      const title = typeof route.title === 'function' ? route.title(params) : route.title
+      const label = route.label ? typeof route.label === 'function' ? route.label(params) : route.label : title
+      return { ...route, title, label, path, params }
+    }
+    return this.routes[0]
+  }
+
+  * getRoutes(entry: EntryData) {
+    for (const route of this.routes) {
+      const matrix = route.list?.(entry) ?? [undefined]
+      for (const params of matrix) {
+        if (route.hidden?.(entry, params)) continue
+        const path = route.path.replace(/:(\w+)/g, (_, $1) => params[$1] ?? '')
+        const title = typeof route.title === 'function' ? route.title(params) : route.title
+        const label = route.label ? typeof route.label === 'function' ? route.label(params) : route.label : title
+        yield { ...route, title, label, path, params }
+      }
+    }
   }
 
   plugins = computed(() => {
@@ -165,7 +193,7 @@ export default class Manager extends Service {
         delete old[entry.id]
         this.changes[entry.id] ??= {
           config: clone(entry.config),
-          intercept: clone(entry.intercept),
+          intercept: clone(entry.intercept ?? {}),
         }
       }
       for (const key in old) {
@@ -212,26 +240,45 @@ export default class Manager extends Service {
 
     this.subroute({
       path: '',
-      name: '概览',
+      title: '概览',
       component: MainPage,
     })
 
     this.subroute({
       path: 'config',
-      name: '配置',
+      title: '配置',
       component: ConfigPage,
-      hidden: ({ name }) => {
-        return !hasSchema(this.data.value.packages[name]?.runtime?.schema)
+      hidden: (entry) => {
+        return !hasSchema(this.data.value.packages[entry.name]?.runtime?.schema)
       },
     })
 
     this.subroute({
       path: 'service',
-      name: '服务',
-      component: ServicePage,
-      hidden: ({ name }) => {
-        return !this.data.value.packages[name]?.runtime
+      title: '服务管理',
+      label: '服务',
+      component: ServicesPage,
+      hidden: (entry) => {
+        return !this.data.value.packages[entry.name]?.runtime
       },
+    })
+
+    this.subroute({
+      path: 'service/:name',
+      title: ({ name }) => '服务：' + name,
+      label: ({ name }) => name,
+      component: InterceptPage,
+      hidden: (entry) => {
+        return !this.data.value.packages[entry.name]?.runtime
+      },
+      list: (entry) => {
+        const inject = {
+          ...Inject.resolve(this.data.value.packages[entry.name]!.runtime!.inject),
+          ...Inject.resolve(entry.inject),
+        }
+        return Object.keys(inject).map(name => ({ name }))
+      },
+      indent: 1,
     })
 
     this.ctx.menu('config.tree', [{
@@ -454,7 +501,7 @@ export default class Manager extends Service {
     }
 
     // check services
-    const setService = (name: string, info: InjectInfo) => {
+    const setService = (name: string, meta: Inject.Meta) => {
       let provider = this.data.value.services[name]?.root
       let node = entry
       while (node) {
@@ -469,24 +516,14 @@ export default class Manager extends Service {
         }
         break
       }
-      result.using[name] = { ...info, ...provider }
+      result.using[name] = { ...meta, ...provider }
     }
 
-    for (const [name, info] of Object.entries(local.runtime.inject ?? {})) {
+    for (const [name, info] of Object.entries(Inject.resolve(local.runtime.inject))) {
       setService(name, info)
     }
-
-    if (Array.isArray(entry.inject)) {
-      for (const name of entry.inject) {
-        setService(name, { required: true })
-      }
-    } else if (entry.inject) {
-      for (const name of entry.inject.required || []) {
-        setService(name, { required: true })
-      }
-      for (const name of entry.inject.optional || []) {
-        setService(name, { required: false })
-      }
+    for (const [name, info] of Object.entries(Inject.resolve(entry.inject))) {
+      setService(name, info)
     }
 
     // check reusability

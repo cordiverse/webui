@@ -11,22 +11,22 @@
         <el-popover popper-class="k-menu" v-model:visible="visible">
           <template #reference>
             <span class="flex items-center cursor-pointer h-full">
-              <span>{{ currentRoute!.name }}</span>
+              <span>{{ currentRoute!.title }}</span>
               <svg class="h-4 ml-2 transition" :class="{ 'rotate-90': visible }" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
                 <path fill="currentColor" d="M384 192v640l384-320.064z"></path>
               </svg>
             </span>
           </template>
-          <template v-for="route in ctx.manager.routes">
+          <template v-for="route in ctx.manager.getRoutes(currentEntry)">
             <div
-              v-if="!route.hidden?.(currentEntry)"
-              class="k-menu-item pl-8"
+              class="k-menu-item"
+              :class="[{ active: route.path === currentRoute!.path }, route.indent ? 'pl-8' : 'pl-4']"
               @click="gotoRoute(route)"
             >
-              <span class="absolute left-3 top-0 bottom-0 flex items-center" v-if="route === currentRoute">
+              <!-- <span class="absolute left-3 top-0 bottom-0 flex items-center" v-if="route.path === currentRoute!.path">
                 <span class="w-6px h-6px rounded bg-current"></span>
-              </span>
-              <span>{{ route.name }}</span>
+              </span> -->
+              <span>{{ route.label }}</span>
             </div>
           </template>
         </el-popover>
@@ -131,6 +131,10 @@ function gotoRoute(route: SubRoute) {
 
 svg.rotate-90 {
   transform: rotate(90deg);
+}
+
+.k-menu-item.active {
+  color: var(--primary);
 }
 
 </style>

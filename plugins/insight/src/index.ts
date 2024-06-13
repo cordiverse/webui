@@ -123,7 +123,8 @@ export function apply(ctx: Context) {
       }
 
       const addDeps = (scope: EffectScope) => {
-        for (const name of runtime.using) {
+        for (const [name, meta] of Object.entries(runtime.inject)) {
+          if (!meta.required) continue
           const instance = ctx.get(name)
           if (!(instance instanceof Object)) continue
           const ctx2: Context = Reflect.getOwnPropertyDescriptor(instance, Context.current)?.value

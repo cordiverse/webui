@@ -24,7 +24,7 @@
       </tr>
     </table>
     <template #footer>
-      <div class="left">
+      <div>
         <template v-if="plugins.forks[ctx.manager.dialogFork!]?.length">
           此插件目前存在 {{ plugins.forks[ctx.manager.dialogFork!]?.length }} 份配置。
         </template>
@@ -32,7 +32,7 @@
           此插件尚未被配置。
         </template>
       </div>
-      <div class="right">
+      <div class="grow-1">
         <el-button @click.stop="configure()">添加新配置</el-button>
       </div>
     </template>

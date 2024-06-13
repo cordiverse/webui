@@ -159,6 +159,29 @@ html.dark .el-popper.is-dark {
   }
 }
 
+.el-dialog {
+  .el-dialog__body {
+    > :first-child {
+      margin-top: 0;
+    }
+
+    > :last-child {
+      margin-bottom: 0;
+    }
+
+    p {
+      margin: 0.5rem 0;
+    }
+  }
+
+  .el-dialog__footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    font-size: 0.9em;
+  }
+}
+
 .el-table__body-wrapper,
 .el-table__footer-wrapper,
 .el-table__header-wrapper {

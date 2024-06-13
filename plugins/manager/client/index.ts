@@ -1,15 +1,16 @@
 import { clone, Context, Dict, message, remove, router, Schema, send, Service } from '@cordisjs/client'
 import { computed, reactive, ref, Ref, watch } from 'vue'
-import type { Data, EntryData } from '../src'
+import type { Data, EntryData, InjectInfo, ServiceInfo } from '../src'
 import { hasSchema } from './utils'
 import Settings from './components/index.vue'
 import Forks from './dialogs/forks.vue'
 import Select from './dialogs/select.vue'
 import Rename from './dialogs/rename.vue'
 import Group from './dialogs/group.vue'
-import Main from './routes/main.vue'
-import Config from './routes/config.vue'
 import Remove from './dialogs/remove.vue'
+import MainPage from './routes/main.vue'
+import ConfigPage from './routes/config.vue'
+import ServicePage from './routes/service.vue'
 
 import './index.scss'
 import './icons'
@@ -34,10 +35,7 @@ export interface Node extends EntryData {
   children?: Node[]
 }
 
-interface DepInfo {
-  required: boolean
-  provider?: string[]
-}
+interface DepInfo extends ServiceInfo, InjectInfo {}
 
 export interface EnvInfo {
   impl: string[]
@@ -215,15 +213,24 @@ export default class Manager extends Service {
     this.subroute({
       path: '',
       name: '概览',
-      component: Main,
+      component: MainPage,
     })
 
     this.subroute({
       path: 'config',
       name: '配置',
-      component: Config,
+      component: ConfigPage,
       hidden: ({ name }) => {
         return !hasSchema(this.data.value.packages[name]?.runtime?.schema)
+      },
+    })
+
+    this.subroute({
+      path: 'service',
+      name: '服务',
+      component: ServicePage,
+      hidden: ({ name }) => {
+        return !this.data.value.packages[name]?.runtime
       },
     })
 
@@ -397,9 +404,8 @@ export default class Manager extends Service {
   }
 
   subroute(options: SubRoute) {
-    const caller = this[Context.current]
-    options.component = caller.wrapComponent(options.component)
-    return caller.effect(() => {
+    options.component = this.ctx.wrapComponent(options.component)
+    return this.ctx.effect(() => {
       this.routes.push(options)
       return () => remove(this.routes, options)
     })
@@ -442,13 +448,13 @@ export default class Manager extends Service {
 
     const result: EnvInfo = { impl: [], using: {} }
 
-    // check implementations
+    // FIXME check implementations
     for (const name of local.manifest.service?.implements || []) {
       result.impl.push(name)
     }
 
     // check services
-    const setService = (name: string, required: boolean) => {
+    const setService = (name: string, info: InjectInfo) => {
       let provider = this.data.value.services[name]?.root
       let node = entry
       while (node) {
@@ -463,13 +469,24 @@ export default class Manager extends Service {
         }
         break
       }
-      result.using[name] = { required, provider }
+      result.using[name] = { ...info, ...provider }
     }
-    for (const name of local.runtime.required ?? []) {
-      setService(name, true)
+
+    for (const [name, info] of Object.entries(local.runtime.inject ?? {})) {
+      setService(name, info)
     }
-    for (const name of local.runtime?.optional ?? []) {
-      setService(name, false)
+
+    if (Array.isArray(entry.inject)) {
+      for (const name of entry.inject) {
+        setService(name, { required: true })
+      }
+    } else if (entry.inject) {
+      for (const name of entry.inject.required || []) {
+        setService(name, { required: true })
+      }
+      for (const name of entry.inject.optional || []) {
+        setService(name, { required: false })
+      }
     }
 
     // check reusability

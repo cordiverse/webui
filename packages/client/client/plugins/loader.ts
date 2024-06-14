@@ -88,7 +88,7 @@ export default class LoaderService extends Service {
         node = node[part]
       }
       if (Array.isArray(node)) {
-        node.push(data)
+        node.push(...data)
       } else {
         Object.assign(node, data)
       }

@@ -6,7 +6,7 @@
         <!-- FIXME: ctx.manager is not reactive -->
         <router-link
           class="log-link inline-flex items-center justify-center absolute w-20px h-20px bottom-0 right-0"
-          v-if="showLink && manager && record.meta?.paths?.length"
+          v-if="showLink && ctx.manager && record.meta?.paths?.length"
           :to="'/plugins/' + record.meta.paths[0].replace(/\./, '/')"
         >
           <k-icon name="arrow-right"/>
@@ -18,7 +18,7 @@
 
 <script lang="ts" setup>
 
-import { Time, VirtualList, useInject } from '@cordisjs/client'
+import { Time, VirtualList, useContext } from '@cordisjs/client'
 import {} from '@cordisjs/plugin-manager/client'
 import Logger from 'reggol'
 import AnsiUp from 'ansi_up'
@@ -29,7 +29,7 @@ const props = defineProps<{
   maxHeight?: string,
 }>()
 
-const manager = useInject('manager')
+const ctx = useContext()
 
 const converter = new AnsiUp()
 

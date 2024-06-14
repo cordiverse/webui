@@ -1,7 +1,7 @@
 import * as cordis from 'cordis'
 import {
-  App, Component, createApp, DefineComponent, defineComponent, h, inject, InjectionKey,
-  markRaw, onBeforeUnmount, onErrorCaptured, provide, ref, Ref, resolveComponent,
+  App, Component, createApp, customRef, defineComponent, DefineComponent, h, inject,
+  InjectionKey, markRaw, onErrorCaptured, onScopeDispose, provide, Ref, ref, resolveComponent,
 } from 'vue'
 import ActionService from './plugins/action'
 import I18nService from './plugins/i18n'
@@ -24,14 +24,14 @@ const kContext = Symbol('context') as InjectionKey<Context>
 export function useContext() {
   const parent = inject(kContext)!
   const fork = parent.plugin(() => {})
-  onBeforeUnmount(() => fork.dispose())
+  onScopeDispose(() => fork.dispose())
   return fork.ctx
 }
 
 export function useInject<K extends string & keyof Context>(name: K): Ref<Context[K]> {
   const parent = inject(kContext)!
   const service = ref(parent.get(name))
-  onBeforeUnmount(parent.on('internal/service', () => {
+  onScopeDispose(parent.on('internal/service', () => {
     service.value = parent.get(name)
   }))
   return service
@@ -46,6 +46,8 @@ export interface Internal {}
 
 export class Context extends cordis.Context {
   app: App
+
+  private _store: Record<string | symbol, Ref<any>> = Object.create(null)
 
   constructor() {
     super()
@@ -64,6 +66,20 @@ export class Context extends cordis.Context {
     this.plugin(RouterService)
     this.plugin(SettingService)
     this.plugin(ThemeService)
+
+    this.on('internal/service', function (name) {
+      // trigger
+      const ref1 = this._store[this[Context.isolate][name]]
+      if (ref1) ref1.value = Symbol(name)
+      const ref2 = this._store[name]
+      if (ref2) ref2.value = Symbol(name)
+    }, { global: true })
+
+    this.on('internal/inject', function (name) {
+      // track
+      const ref = this._store[this[Context.isolate][name] ?? name] ??= customRef((get, set) => ({ get, set }))
+      return ref.value, false
+    }, { prepend: true })
 
     this.on('ready', async () => {
       await this.$loader.initTask

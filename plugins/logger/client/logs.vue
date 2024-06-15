@@ -1,11 +1,15 @@
 <template>
-  <virtual-list class="log-list k-text-selectable" :data="logs" :count="300" :max-height="maxHeight">
+  <virtual-list
+    class="log-list k-text-selectable"
+    :data="logs" :count="300"
+    :max-height="maxHeight"
+    @top="onTop"
+  >
     <template #="record">
       <div :class="{ line: true, start: isStart(record) }">
         <code v-html="renderLine(record)"></code>
-        <!-- FIXME: ctx.manager is not reactive -->
         <router-link
-          class="log-link inline-flex items-center justify-center absolute w-20px h-20px bottom-0 right-0"
+          class="log-link inline-flex items-center justify-center absolute w-20px h-20px bottom-0 right-1"
           v-if="showLink && ctx.manager && record.meta?.paths?.length"
           :to="'/plugins/' + record.meta.paths[0].replace(/\./, '/')"
         >
@@ -18,7 +22,7 @@
 
 <script lang="ts" setup>
 
-import { Time, VirtualList, useContext } from '@cordisjs/client'
+import { Dict, Time, VirtualList, useContext, useRpc, send } from '@cordisjs/client'
 import {} from '@cordisjs/plugin-manager/client'
 import Logger from 'reggol'
 import AnsiUp from 'ansi_up'
@@ -30,6 +34,7 @@ const props = defineProps<{
 }>()
 
 const ctx = useContext()
+const data = useRpc<Dict<Logger.Record[] | null>>()
 
 const converter = new AnsiUp()
 
@@ -40,7 +45,7 @@ function renderColor(code: number, value: any, decoration = '') {
 const showTime = 'yyyy-MM-dd hh:mm:ss'
 
 function isStart(record: Logger.Record & { index: number }) {
-  return record.index && props.logs[record.index - 1].id > record.id && record.name === 'app'
+  return record.index && props.logs[record.index - 1].id > record.id
 }
 
 function renderLine(record: Logger.Record) {
@@ -55,6 +60,14 @@ function renderLine(record: Logger.Record) {
   output += prefix + space + label.padEnd(padLength) + space
   output += record.content.replace(/\n/g, '\n' + ' '.repeat(indent))
   return converter.ansi_to_html(output)
+}
+
+async function onTop() {
+  const keys = Object.keys(data.value).filter(key => !data.value[key]).sort((a, b) => {
+    return a.slice(0, 11).localeCompare(b.slice(0, 11)) || +a.slice(11) - +b.slice(11)
+  }).reverse()
+  if (!keys.length) return
+  data.value[keys[0]] = await send('log.read', { name: keys[0] })
 }
 
 </script>
@@ -92,7 +105,7 @@ function renderLine(record: Logger.Record) {
 
   .line {
     padding: 0 0.5rem;
-    border-radius: 2px;
+    border-radius: 4px;
     font-size: 14px;
     line-height: 20px;
     white-space: pre-wrap;

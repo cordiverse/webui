@@ -1,4 +1,4 @@
-import { Context } from '@cordisjs/client'
+import type { Logger } from 'cordis'
 import {} from '../src'
 import Logs from './index.vue'
 import Settings from './settings.vue'
@@ -9,7 +9,7 @@ export const inject = {
   manager: false,
 }
 
-export function apply(ctx: Context) {
+export function apply(ctx: Context, data: Ref<Dict<Logger.Record[]>>) {
   ctx.page({
     path: '/logs',
     name: '日志',
@@ -24,12 +24,21 @@ export function apply(ctx: Context) {
     order: -800,
   })
 
-  // this.subroute({
-  //   path: 'logs',
-  //   title: '日志',
-  //   component: ServicesPage,
-  //   hidden: (entry) => {
-  //     return !this.data.value.packages[entry.name]?.runtime
-  //   },
+  // ctx.inject(['manager'], (ctx) => {
+  //   ctx.manager.subroute({
+  //     path: 'logs',
+  //     title: '日志',
+  //     component: Settings,
+  //     hidden: (entry) => {
+  //       let last = Infinity
+  //       for (let index = data.value.length - 1; index > 0; --index) {
+  //         if (data.value[index].id >= last) break
+  //         last = data.value[index].id
+  //         if (!data.value[index].meta.paths?.includes(entry.id)) continue
+  //         return false
+  //       }
+  //       return true
+  //     },
+  //   })
   // })
 }

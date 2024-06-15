@@ -8,7 +8,6 @@ declare const CLIENT_CONFIG: ClientConfig
 export const global = CLIENT_CONFIG
 
 export const socket = ref<WebSocket>()
-const listeners: Record<string, (data: any) => void> = {}
 
 export function send<T extends keyof Events>(type: T, ...args: Parameters<Events[T]>): Promisify<ReturnType<Events[T]>>
 export async function send(type: string, ...args: any[]) {
@@ -33,10 +32,6 @@ export async function send(type: string, ...args: any[]) {
   const result = await response.json()
   console.debug('[response]', result)
   return result
-}
-
-export function receive<T = any>(event: string, listener: (data: T) => void) {
-  listeners[event] = listener
 }
 
 export function connect(ctx: Context, callback: () => WebSocket) {
@@ -73,9 +68,6 @@ export function connect(ctx: Context, callback: () => WebSocket) {
     const data = JSON.parse(ev.data)
     if (data.type !== 'pong') {
       console.debug('↓%c', 'color:purple', data.type, data.body)
-    }
-    if (data.type in listeners) {
-      listeners[data.type](data.body)
     }
     ctx.emit(data.type, data.body)
   })

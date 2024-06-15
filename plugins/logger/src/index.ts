@@ -1,9 +1,23 @@
 import { Context, Logger, Schema } from 'cordis'
 import { Dict, remove, Time } from 'cosmokit'
 import { resolve } from 'path'
-import { mkdir, readdir, rm } from 'fs/promises'
+import { mkdir, readdir, readFile, rm } from 'fs/promises'
 import {} from '@cordisjs/plugin-webui'
-import { FileWriter } from './file'
+import { LogFile } from './file'
+
+declare module '@cordisjs/plugin-webui' {
+  interface Events {
+    'log.read'(options: { name: string }): Promise<Logger.Record[]>
+  }
+}
+
+declare module 'reggol' {
+  namespace Logger {
+    interface Meta {
+      paths?: string[]
+    }
+  }
+}
 
 export const name = 'logger'
 
@@ -36,10 +50,14 @@ export async function apply(ctx: Context, config: Config) {
     files[capture[1]].push(+capture[2])
   }
 
-  let writer: FileWriter
-  async function createFile(date: string, index: number) {
-    writer = new FileWriter(date, `${root}/${date}-${index}.log`)
+  let writer: LogFile
+  function createFile(date: string, index: number) {
+    const name = `${date}-${index}.log`
+    writer = new LogFile(date, name, `${root}/${name}`)
+    cleanUp()
+  }
 
+  function cleanUp() {
     const { maxAge } = config
     if (!maxAge) return
 
@@ -47,7 +65,7 @@ export async function apply(ctx: Context, config: Config) {
     for (const date of Object.keys(files)) {
       if (now - +new Date(date) < maxAge * Time.day) continue
       for (const index of files[date]) {
-        await rm(`${root}/${date}-${index}.log`).catch((error) => {
+        rm(`${root}/${date}-${index}.log`).catch((error) => {
           ctx.logger('logger').warn(error)
         })
       }
@@ -58,19 +76,36 @@ export async function apply(ctx: Context, config: Config) {
   const date = new Date().toISOString().slice(0, 10)
   createFile(date, Math.max(...files[date] ?? [0]) + 1)
 
-  const entry = ctx.webui.addEntry({
+  const entry = ctx.webui.addEntry<Dict<Logger.Record[] | null>>({
     base: import.meta.url,
     dev: '../client/index.ts',
     prod: [
       '../dist/index.js',
       '../dist/style.css',
     ],
-  }, () => writer.data)
+  }, () => ({
+    ...Object.fromEntries(Object.entries(files).flatMap(([date, indices]) => {
+      return indices.map(index => [`${date}-${index}.log`, null] as const)
+    })),
+    [writer.name]: writer.data,
+  }))
 
-  const update = ctx.throttle(() => {
-    entry.patch(buffer)
+  ctx.webui.addListener('log.read', async (options) => {
+    if (options.name === writer.name) {
+      return writer.data
+    } else {
+      const content = await readFile(`${root}/${options.name}`, 'utf8')
+      return LogFile.parse(content)
+    }
+  })
+
+  const flush = () => {
+    if (!buffer.length) return
+    entry.patch(buffer, writer.name)
     buffer = []
-  }, 100)
+  }
+
+  const flushThrottled = ctx.throttle(flush, 100)
 
   let buffer: Logger.Record[] = []
   const loader = ctx.get('loader')
@@ -83,14 +118,16 @@ export async function apply(ctx: Context, config: Config) {
       }
       const date = new Date(record.timestamp).toISOString().slice(0, 10)
       if (writer.date !== date) {
+        flush()
         writer.close()
         files[date] = [1]
         createFile(date, 1)
       }
       writer.write(record)
       buffer.push(record)
-      update()
+      flushThrottled()
       if (writer.size >= config.maxSize) {
+        flush()
         writer.close()
         const index = Math.max(...files[date] ?? [0]) + 1
         files[date] ??= []
@@ -103,9 +140,9 @@ export async function apply(ctx: Context, config: Config) {
   ctx.effect(() => {
     Logger.targets.push(target)
     return () => {
-      writer?.close()
       remove(Logger.targets, target)
       if (loader) loader.prolog = []
+      writer?.close()
     }
   })
 

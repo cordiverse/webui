@@ -9,26 +9,20 @@
 
 <script setup lang="ts">
 
-import { useRpc, useContext } from '@cordisjs/client'
+import { Dict, useRpc, useContext } from '@cordisjs/client'
 import { computed } from 'vue'
 import {} from '@cordisjs/plugin-manager/client'
 import type { Logger } from 'cordis'
+import { flattenRecords } from './utils'
 import Logs from './logs.vue'
 
-const data = useRpc<Logger.Record[]>()
+const data = useRpc<Dict<Logger.Record[] | null>>()
 const ctx = useContext()
 
 const logs = computed(() => {
-  if (!data.value) return []
-  const results: Logger.Record[] = []
-  let last = Infinity
-  for (let index = data.value.length - 1; index > 0; --index) {
-    if (data.value[index].id >= last) break
-    last = data.value[index].id
-    if (!data.value[index].meta?.paths?.includes(ctx.manager?.currentEntry?.id)) continue
-    results.unshift(data.value[index])
-  }
-  return results
+  return flattenRecords(data.value).filter(record => {
+    return record.meta.paths?.includes(ctx.manager?.currentEntry?.id!)
+  })
 })
 
 </script>

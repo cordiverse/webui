@@ -18,7 +18,7 @@
 
 <script lang="ts" setup>
 
-import { ref, computed, watch, nextTick, onActivated, onMounted, PropType } from 'vue'
+import { ref, computed, watch, nextTick, onActivated, onMounted, onUpdated, PropType } from 'vue'
 import type { ElScrollbar } from 'element-plus'
 import Virtual from './virtual'
 import VirtualItem from './item'
@@ -91,6 +91,7 @@ onMounted(() => {
   } else {
     scrollToBottom()
   }
+  checkBoundary()
 })
 
 function scrollToOffset(offset: number, smooth = false) {
@@ -140,22 +141,26 @@ function onScroll(ev: MouseEvent) {
   const clientLength = Math.ceil(root.value.wrapRef.clientHeight)
   const scrollLength = Math.ceil(root.value.wrapRef.scrollHeight)
 
-  // iOS scroll-spring-back behavior will make direction mistake
-  if (offset < 0 || (offset + clientLength > scrollLength + 1) || !scrollLength) {
-    return
-  }
-
   virtual.handleScroll(offset)
   emitEvent(offset, clientLength, scrollLength, ev)
 }
 
 function emitEvent(offset: number, clientLength: number, scrollLength: number, ev: MouseEvent) {
   emit('scroll', ev, virtual.range)
-  if (virtual.direction < 0 && !!props.data.length && (offset - props.threshold <= 0)) {
+  checkBoundary(true)
+}
+
+function checkBoundary(directed = false) {
+  const offset = Math.ceil(root.value.wrapRef.scrollTop)
+  const clientLength = Math.ceil(root.value.wrapRef.clientHeight)
+  const scrollLength = Math.ceil(root.value.wrapRef.scrollHeight)
+  if ((!directed || virtual.direction < 0 && !!props.data.length) && (offset - props.threshold <= 0)) {
     emit('top')
-  } else if (virtual.direction > 0 && (offset + clientLength + props.threshold >= scrollLength)) {
+  } else if ((!directed || virtual.direction > 0) && (offset + clientLength + props.threshold >= scrollLength)) {
     emit('bottom')
   }
 }
+
+onUpdated(checkBoundary)
 
 </script>

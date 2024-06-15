@@ -1,7 +1,6 @@
 import { Ref, ref, shallowReactive } from 'vue'
 import { Context } from '../context'
 import { Service } from '../utils'
-import { receive } from '../data'
 import { ForkScope } from 'cordis'
 import { defineProperty, Dict } from 'cosmokit'
 import { Entry } from '@cordisjs/plugin-webui'
@@ -72,22 +71,22 @@ export default class LoaderService extends Service {
   constructor(ctx: Context) {
     super(ctx, '$loader', true)
 
-    receive('entry:refresh', ({ id, data }) => {
+    ctx.on('entry:refresh', ({ id, data }) => {
       const entry = this.entries[id]
       if (!entry) return
       entry.data.value = data
     })
 
-    receive('entry:patch', ({ id, data, key }) => {
+    ctx.on('entry:patch', ({ id, data, key }) => {
       const entry = this.entries[id]
       if (!entry) return
       let node = entry.data.value
       const parts: string[] = key ? key.split('.') : []
       while (parts.length) {
         const part = parts.shift()!
-        node = node[part]
+        node = node[part] ?? (parts.length || !Array.isArray(data) ? {} : [])
       }
-      if (Array.isArray(node)) {
+      if (Array.isArray(data)) {
         node.push(...data)
       } else {
         Object.assign(node, data)
@@ -96,7 +95,7 @@ export default class LoaderService extends Service {
   }
 
   initTask = new Promise<void>((resolve) => {
-    receive('entry:init', async (value) => {
+    this.ctx.on('entry:init', async (value) => {
       const { _id, ...rest } = value as Dict<Entry.Data> & { _id?: string }
       if (this.id && _id && this.id !== _id as unknown) {
         return window.location.reload()

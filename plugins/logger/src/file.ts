@@ -2,17 +2,17 @@ import { FileHandle, open } from 'fs/promises'
 import { Logger } from 'cordis'
 import { Buffer } from 'buffer'
 
-export class FileWriter {
+export class LogFile {
   public data: Logger.Record[] = []
   public task: Promise<FileHandle>
   public size: number = 0
 
   private temp: Logger.Record[] = []
 
-  constructor(public date: string, public path: string) {
+  constructor(public date: string, public name: string, public path: string) {
     this.task = open(path, 'a+').then(async (handle) => {
       const buffer = await handle.readFile()
-      this.data = this.parse(new TextDecoder().decode(buffer))
+      this.data = LogFile.parse(new TextDecoder().decode(buffer))
       this.size = buffer.byteLength
       return handle
     })
@@ -31,8 +31,8 @@ export class FileWriter {
     })
   }
 
-  parse(text: string) {
-    return text.split('\n').map((line) => {
+  static parse(text: string) {
+    return text.split('\n').map<Logger.Record>((line) => {
       try {
         return JSON.parse(line)
       } catch {}

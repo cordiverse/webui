@@ -16,7 +16,7 @@
   </el-scrollbar>
 </template>
 
-<script lang="ts" setup>
+<script lang="ts" setup generic="T">
 
 import { ref, computed, watch, nextTick, onActivated, onMounted, onUpdated, PropType } from 'vue'
 import type { ElScrollbar } from 'element-plus'
@@ -27,7 +27,7 @@ const emit = defineEmits(['item-click', 'scroll', 'top', 'bottom', 'update:activ
 
 const props = defineProps({
   keyName: { type: String, default: 'id' },
-  data: { type: Array, required: true },
+  data: { type: Array, required: true } as unknown as PropType<T[]>,
   count: { default: 50 },
   estimated: { default: 50 },
   tag: { default: 'div' },
@@ -41,7 +41,7 @@ const props = defineProps({
   },
 })
 
-const dataShown = computed<any[]>(() => props.data.slice(range.start, range.end))
+const dataShown = computed<T[]>(() => props.data.slice(range.start, range.end))
 
 const root = ref<typeof ElScrollbar>()
 
@@ -80,7 +80,7 @@ function getUids() {
   return props.data.map(getKey)
 }
 
-function getKey(item: string) {
+function getKey(item: any) {
   const keys = props.keyName.split('.')
   return keys.reduce((obj, key) => obj[key], item)
 }

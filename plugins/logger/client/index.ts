@@ -1,3 +1,5 @@
+import { Context, Dict } from '@cordisjs/client'
+import { Ref } from 'vue'
 import type { Logger } from 'cordis'
 import {} from '../src'
 import Logs from './index.vue'

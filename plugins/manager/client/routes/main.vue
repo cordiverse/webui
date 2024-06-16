@@ -1,11 +1,12 @@
 <template>
   <k-content v-if="current && local.runtime">
     <h1>{{ current.name }}</h1>
-    <p v-if="local.manifest.description">{{ local.manifest.description }}</p>
+
+    <k-markdown class="mb-8" unsafe :source="desc"/>
 
     <k-slot name="plugin-details">
       <!-- dependency -->
-      <k-slot-item :order="800">
+      <k-slot-item :order="1000">
         <k-slot name="plugin-dependency" single>
           <k-comment
             v-for="({ required, location }, name) in env.using" :key="name"
@@ -22,7 +23,7 @@
       </k-slot-item>
 
       <!-- implements -->
-      <k-slot-item :order="600">
+      <k-slot-item :order="800">
         <template v-for="name in env.impl" :key="name">
           <k-comment v-if="name in ctx.manager.data.value.services && current.disabled" type="warning">
             <p>此插件将会提供 {{ name }} 服务，但此服务已被其他插件实现。</p>
@@ -34,7 +35,7 @@
       </k-slot-item>
 
       <!-- reusability -->
-      <k-slot-item :order="400">
+      <k-slot-item :order="600">
         <k-comment v-if="local.runtime.id && !local.runtime.forkable && current.disabled" type="warning">
           <p>此插件已在运行且不可重用，启用可能会导致非预期的问题。</p>
         </k-comment>
@@ -44,7 +45,7 @@
       </k-slot-item>
 
       <!-- implements -->
-      <k-slot-item :order="300">
+      <k-slot-item :order="400">
         <template v-for="(activity, key) in ctx.$router.pages" :key="key">
           <k-comment type="success" v-if="activity.ctx.$entry?.paths.includes(current.id) && !activity.disabled()">
             <p>
@@ -55,12 +56,7 @@
         </template>
       </k-slot-item>
 
-      <!-- usage -->
-      <k-slot-item :order="-200" v-if="local.runtime?.usage">
-        <k-markdown unsafe class="usage" :source="local.runtime?.usage"></k-markdown>
-      </k-slot-item>
-
-      <k-slot-item :order="-1000" v-if="configState">
+      <k-slot-item :order="200" v-if="configState">
         <k-comment :type="configState[0]">
           <p class="flex items-center">
             <span class="grow-1">{{ configState[1] }}</span>
@@ -80,15 +76,20 @@
 <script lang="ts" setup>
 
 import { computed } from 'vue'
-import { router, useContext, deepEqual } from '@cordisjs/client'
+import { router, useContext, deepEqual, useI18nText } from '@cordisjs/client'
 import { hasSchema } from '../utils'
 
 const ctx = useContext()
+const tt = useI18nText()
 
 const current = computed(() => ctx.manager.currentEntry)
 const local = computed(() => ctx.manager.data.value.packages[current.value?.name!])
 const change = computed(() => ctx.manager.changes[current.value?.id!])
 const env = computed(() => ctx.manager.getEnvInfo(current.value)!)
+
+const desc = computed(() => {
+  return tt(local?.value.runtime?.usage ?? local?.value.manifest.description)
+})
 
 function gotoProvider(location: string[]) {
   if (!location.length) return
@@ -109,15 +110,5 @@ const configState = computed(() => {
 </script>
 
 <style lang="scss">
-
-.plugin-view {
-  .markdown.usage {
-    margin-bottom: 2rem;
-
-    h2 {
-      font-size: 1.25rem;
-    }
-  }
-}
 
 </style>

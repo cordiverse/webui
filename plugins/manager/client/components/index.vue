@@ -41,16 +41,16 @@
       <div>请在左侧选择插件</div>
     </k-empty>
     <template v-else-if="currentEntry.name in ctx.manager.data.value.packages">
-      <k-content v-if="!local.runtime">
+      <k-content v-if="local.runtime === undefined">
         <h1>{{ currentEntry.name }}</h1>
         <k-comment>
           <p>正在加载插件信息……</p>
         </k-comment>
       </k-content>
-      <k-content v-else-if="local.runtime.failed">
+      <k-content v-else-if="local.runtime === null">
         <h1>{{ currentEntry.name }}</h1>
         <k-comment type="danger">
-          <p>插件信息失败，这可能是插件本身的问题所致。</p>
+          <p>插件信息失败，这可能是插件本身的问题所致。请检查错误日志。</p>
         </k-comment>
       </k-content>
       <component v-else
@@ -134,7 +134,7 @@ svg.rotate-90 {
 }
 
 .k-menu-item.active {
-  color: var(--primary);
+  color: var(--primary) !important;
 }
 
 </style>

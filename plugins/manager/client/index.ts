@@ -49,10 +49,11 @@ export interface SubRoute {
   title: string | ((params: any) => string)
   label?: string | ((params: any) => string)
   component: any
-  hidden?(entry: EntryData, params: any): boolean
+  hidden?(entry: EntryData): boolean
   list?(entry: EntryData): any[]
   indent?: number
   params?: Dict<string>
+  order?: number
 }
 
 export default class Manager extends Service {
@@ -136,8 +137,8 @@ export default class Manager extends Service {
   * getRoutes(entry: EntryData) {
     for (const route of this.routes) {
       const matrix = route.list?.(entry) ?? [undefined]
+      if (route.hidden?.(entry)) continue
       for (const params of matrix) {
-        if (route.hidden?.(entry, params)) continue
         const path = route.path.replace(/:(\w+)/g, (_, $1) => params[$1] ?? '')
         const title = typeof route.title === 'function' ? route.title(params) : route.title
         const label = route.label ? typeof route.label === 'function' ? route.label(params) : route.label : title
@@ -242,12 +243,14 @@ export default class Manager extends Service {
       path: '',
       title: '概览',
       component: MainPage,
+      order: -Infinity,
     })
 
     this.subroute({
       path: 'config',
       title: '配置',
       component: ConfigPage,
+      order: -500,
       hidden: (entry) => {
         return !hasSchema(this.data.value.packages[entry.name]?.runtime?.schema)
       },
@@ -258,6 +261,7 @@ export default class Manager extends Service {
       title: '服务管理',
       label: '服务',
       component: ServicesPage,
+      order: 500,
       hidden: (entry) => {
         return !this.data.value.packages[entry.name]?.runtime
       },
@@ -268,12 +272,13 @@ export default class Manager extends Service {
       title: ({ name }) => '服务：' + name,
       label: ({ name }) => name,
       component: InterceptPage,
+      order: 600,
       hidden: (entry) => {
         return !this.data.value.packages[entry.name]?.runtime
       },
       list: (entry) => {
         const inject = {
-          ...Inject.resolve(this.data.value.packages[entry.name]!.runtime!.inject),
+          ...Inject.resolve(this.data.value.packages[entry.name]?.runtime?.inject),
           ...Inject.resolve(entry.inject),
         }
         return Object.keys(inject).map(name => ({ name }))
@@ -451,9 +456,15 @@ export default class Manager extends Service {
   }
 
   subroute(options: SubRoute) {
+    options.order ??= 0
     options.component = this.ctx.wrapComponent(options.component)
     return this.ctx.effect(() => {
-      this.routes.push(options)
+      const index = this.routes.findIndex(route => route.order! > options.order!)
+      if (index === -1) {
+        this.routes.push(options)
+      } else {
+        this.routes.splice(index, 0, options)
+      }
       return () => remove(this.routes, options)
     })
   }

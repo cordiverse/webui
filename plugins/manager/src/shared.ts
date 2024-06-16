@@ -19,14 +19,14 @@ declare module '@cordisjs/plugin-webui' {
     'manager.config.update'(options: Omit<EntryOptions, 'name'> & EntryLocation): void
     'manager.config.remove'(options: { id: string }): void
     'manager.package.list'(): Promise<LocalObject[]>
-    'manager.package.runtime'(options: { name: string }): Promise<RuntimeData>
+    'manager.package.runtime'(options: { name: string }): Promise<RuntimeData | null>
     'manager.service.list'(): Promise<Dict<ServiceData>>
   }
 }
 
 declare module '@cordisjs/registry' {
   interface LocalObject {
-    runtime?: RuntimeData
+    runtime?: RuntimeData | null
   }
 }
 
@@ -54,12 +54,11 @@ export interface Data {
 
 export interface RuntimeData {
   id?: number | null
-  filter?: boolean
+  filter?: boolean // FIXME
   forkable?: boolean
   schema?: Schema
   usage?: string
   inject?: Dict<Inject.Meta>
-  failed?: boolean
 }
 
 export interface EntryLocation {
@@ -182,7 +181,7 @@ export abstract class Manager extends Service {
 
       ctx.webui.addListener('manager.package.runtime', async (options) => {
         let runtime = this.packages[options.name]?.runtime
-        if (runtime) return runtime
+        if (runtime !== undefined) return runtime
         runtime = await this.parseExports(options.name)
         if (this.packages[options.name]) {
           this.packages[options.name].runtime = runtime
@@ -249,7 +248,7 @@ export abstract class Manager extends Service {
     } catch (error) {
       this.ctx.logger.warn('failed to load %c', name)
       this.ctx.logger.warn(error)
-      return { failed: true }
+      return null
     }
   }
 }

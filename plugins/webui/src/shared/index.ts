@@ -21,6 +21,11 @@ declare module 'cordis' {
 export type SocketListener = (this: Client, ...args: any[]) => void
 
 export abstract class WebUI<T = unknown> extends Service<T> {
+  // FIXME
+  public inject = {
+    optional: ['webui'],
+  }
+
   public id = Math.random().toString(36).slice(2)
 
   readonly entries: Dict<Entry> = Object.create(null)

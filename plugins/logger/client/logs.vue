@@ -90,6 +90,7 @@ const logs = computed(() => {
 })
 
 async function onTop() {
+  if (!props.showHistory) return
   const keys = Object.keys(data.value).filter(key => !data.value[key]).sort((a, b) => {
     return a.slice(0, 11).localeCompare(b.slice(0, 11)) || +a.slice(11) - +b.slice(11)
   }).reverse()

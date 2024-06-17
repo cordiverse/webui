@@ -136,7 +136,7 @@ onActivated(() => {
   }
 })
 
-function onScroll(ev: MouseEvent) {
+function onScroll(ev: { scrollTop: number, scrollLeft: number }) {
   const offset = Math.ceil(scrollTop = root.value.wrapRef.scrollTop)
   const clientLength = Math.ceil(root.value.wrapRef.clientHeight)
   const scrollLength = Math.ceil(root.value.wrapRef.scrollHeight)
@@ -145,7 +145,7 @@ function onScroll(ev: MouseEvent) {
   emitEvent(offset, clientLength, scrollLength, ev)
 }
 
-function emitEvent(offset: number, clientLength: number, scrollLength: number, ev: MouseEvent) {
+function emitEvent(offset: number, clientLength: number, scrollLength: number, ev: { scrollTop: number, scrollLeft: number }) {
   emit('scroll', ev, virtual.range)
   checkBoundary(true)
 }

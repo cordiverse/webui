@@ -1,7 +1,7 @@
 {
   "name": "@cordisjs/plugin-webui",
   "description": "Web User Interface for Koishi",
-  "version": "0.1.6",
+  "version": "0.1.8",
   "type": "module",
   "exports": {
     ".": {
@@ -51,8 +51,8 @@
     }
   },
   "peerDependencies": {
-    "@cordisjs/client": "^0.1.6",
-    "cordis": "^3.16.1"
+    "@cordisjs/client": "^0.1.8",
+    "cordis": "^3.17.1"
   },
   "peerDependenciesMeta": {
     "@cordisjs/client": {
@@ -60,8 +60,8 @@
     }
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.1.6",
-    "@cordisjs/loader": "^0.11.1",
+    "@cordisjs/client": "^0.1.8",
+    "@cordisjs/loader": "^0.12.1",
     "@cordisjs/plugin-server": "^0.2.3",
     "@maikolib/vite-plugin-yaml": "^1.0.1",
     "@types/uuid": "^8.3.4",

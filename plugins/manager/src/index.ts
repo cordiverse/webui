@@ -18,7 +18,7 @@ export default class NodeManager extends Manager {
       } catch (error) {
         this.ctx.logger.warn('failed to parse %c', name)
         this.ctx.logger.debug(error)
-        object.runtime = { failed: true }
+        object.runtime = null
       }
       this.flushPackage(name)
     },

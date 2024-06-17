@@ -43,7 +43,10 @@ interface HeartbeatConfig {
 }
 
 class NodeWebUI extends WebUI<NodeWebUI.Config> {
-  static inject = ['server']
+  static inject = {
+    required: ['server'],
+    optional: ['webui'], // FIXME
+  }
 
   public vite!: ViteDevServer
   public root: string

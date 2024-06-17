@@ -1,7 +1,7 @@
 {
   "name": "@cordisjs/plugin-insight",
   "description": "Show plugin dependency graph for Cordis",
-  "version": "3.5.3",
+  "version": "3.5.4",
   "type": "module",
   "main": "lib/index.js",
   "files": [
@@ -43,11 +43,11 @@
     }
   },
   "peerDependencies": {
-    "@cordisjs/plugin-webui": "^0.1.6",
-    "cordis": "^3.16.1"
+    "@cordisjs/plugin-webui": "^0.1.8",
+    "cordis": "^3.17.1"
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.1.6",
+    "@cordisjs/client": "^0.1.8",
     "@types/d3-force": "^3.0.9",
     "d3-force": "^3.0.0"
   },

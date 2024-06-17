@@ -1,7 +1,7 @@
 {
   "name": "@cordisjs/plugin-logger",
   "description": "Logger service for Cordis",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "exports": {
     ".": {
@@ -50,12 +50,12 @@
     }
   },
   "peerDependencies": {
-    "@cordisjs/plugin-webui": "^0.1.7",
-    "cordis": "^3.16.2"
+    "@cordisjs/plugin-webui": "^0.1.8",
+    "cordis": "^3.17.1"
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.1.7",
-    "@cordisjs/plugin-manager": "^0.3.0",
+    "@cordisjs/client": "^0.1.8",
+    "@cordisjs/plugin-manager": "^0.3.1",
     "ansi_up": "^6.0.2"
   },
   "dependencies": {

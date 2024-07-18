@@ -56,13 +56,13 @@
     }
   },
   "peerDependencies": {
-    "@cordisjs/plugin-webui": "^0.1.8",
-    "cordis": "^3.17.1"
+    "@cordisjs/plugin-webui": "^0.1.11",
+    "cordis": "^3.17.5"
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.1.8",
-    "@cordisjs/loader": "^0.12.1",
-    "@cordisjs/plugin-hmr": "^0.2.3"
+    "@cordisjs/client": "^0.1.11",
+    "@cordisjs/loader": "^0.12.5",
+    "@cordisjs/plugin-hmr": "^0.2.4"
   },
   "dependencies": {
     "@cordisjs/registry": "^7.1.3",

@@ -32,8 +32,8 @@
 import { computed } from 'vue'
 import { Dict, Time, VirtualList, useContext, useRpc, send } from '@cordisjs/client'
 import {} from '@cordisjs/plugin-manager/client'
+import { AnsiUp } from 'ansi_up'
 import Logger from 'reggol'
-import AnsiUp from 'ansi_up'
 
 defineOptions({
   inheritAttrs: false,

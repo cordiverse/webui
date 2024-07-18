@@ -1,5 +1,5 @@
 import { App, Component, defineComponent, h, markRaw, reactive } from 'vue'
-import * as components from '@koishijs/components'
+import * as components from '@cordisjs/components'
 import Default from './activity/default.vue'
 import Ellipsis from './activity/ellipsis.vue'
 import Home from './activity/home.vue'

@@ -18,7 +18,8 @@
     "lib",
     "src",
     "bin.js",
-    "global.d.ts"
+    "global.d.ts",
+    "tsconfig.client.json"
   ],
   "bin": {
     "cordis-webui": "bin.js"

@@ -52,7 +52,7 @@
   },
   "peerDependencies": {
     "@cordisjs/client": "^0.1.11",
-    "cordis": "^3.17.5"
+    "cordis": "^3.17.6"
   },
   "peerDependenciesMeta": {
     "@cordisjs/client": {
@@ -61,13 +61,14 @@
   },
   "devDependencies": {
     "@cordisjs/client": "^0.1.11",
-    "@cordisjs/loader": "^0.12.5",
     "@cordisjs/plugin-server": "^0.2.3",
     "@maikolib/vite-plugin-yaml": "^1.0.1",
     "@types/uuid": "^8.3.4",
     "@vitejs/plugin-vue": "^4.6.2",
+    "cordis": "^3.17.6",
     "unocss": "^0.58.6",
-    "vite": "^5.3.4"
+    "vite": "^5.3.4",
+    "vue": "^3.4.32"
   },
   "dependencies": {
     "cosmokit": "^1.6.2",

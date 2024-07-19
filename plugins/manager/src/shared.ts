@@ -1,11 +1,11 @@
 import { Context, Inject, MainScope, Plugin, Schema, ScopeStatus, Service } from 'cordis'
 import { Dict, pick } from 'cosmokit'
-import { EntryOptions } from '@cordisjs/loader'
+import { EntryOptions } from 'cordis/loader'
 import { Entry as ClientEntry } from '@cordisjs/plugin-webui'
 import { LocalObject } from '@cordisjs/registry'
 import {} from '@cordisjs/plugin-hmr'
 
-declare module '@cordisjs/loader' {
+declare module 'cordis/loader' {
   interface EntryOptions {
     label?: string | null
     collapse?: boolean | null

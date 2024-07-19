@@ -1,7 +1,7 @@
 import { Context, EffectScope, ForkScope, Plugin, Schema, ScopeStatus } from 'cordis'
 import { camelize, capitalize } from 'cosmokit'
 import {} from '@cordisjs/plugin-webui'
-import {} from '@cordisjs/loader'
+import {} from 'cordis/loader'
 import assert from 'node:assert'
 
 export interface Data {

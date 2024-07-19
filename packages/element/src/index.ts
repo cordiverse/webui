@@ -492,6 +492,10 @@ namespace Element {
     }))).flat(1)
     return typeof source === 'string' ? children.join('') : children
   }
+
+  export function text(content: string) {
+    return Element('text', { content })
+  }
 }
 
 export default Element

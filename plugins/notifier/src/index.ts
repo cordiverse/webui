@@ -1,7 +1,7 @@
 import { Context, Schema, Service } from 'cordis'
 import { Dict, isNullable, remove } from 'cosmokit'
 import { h } from '@cordisjs/element'
-import {} from '@cordisjs/loader'
+import {} from 'cordis/loader'
 import type { Entry } from '@cordisjs/plugin-webui'
 
 declare module 'cordis' {

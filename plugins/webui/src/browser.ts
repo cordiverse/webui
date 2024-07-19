@@ -1,7 +1,7 @@
 import { Schema } from 'cordis'
 import { makeArray } from 'cosmokit'
 import { Entry, Events, WebUI } from './shared/index.ts'
-import {} from '@cordisjs/loader'
+import {} from 'cordis/loader'
 
 export * from './shared/index.ts'
 

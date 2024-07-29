@@ -8,6 +8,7 @@ declare const CLIENT_CONFIG: ClientConfig
 export const global = CLIENT_CONFIG
 
 export const socket = ref<WebSocket>()
+export const clientId = ref<string>()
 
 export function send<T extends keyof Events>(type: T, ...args: Parameters<Events[T]>): Promisify<ReturnType<Events[T]>>
 export async function send(type: string, ...args: any[]) {
@@ -24,6 +25,7 @@ export async function send(type: string, ...args: any[]) {
     body: JSON.stringify(args[0]),
     headers: new Headers({
       'Content-Type': 'application/json',
+      'X-Client-ID': clientId.value ?? '',
     }),
   })
   if (!response.ok) {

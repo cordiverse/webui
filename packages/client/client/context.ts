@@ -1,4 +1,5 @@
 import * as cordis from 'cordis'
+import type { ClientEvents } from '@cordisjs/plugin-webui'
 import {
   App, Component, createApp, customRef, defineComponent, DefineComponent, h, inject,
   InjectionKey, markRaw, onErrorCaptured, onScopeDispose, provide, Ref, ref, resolveComponent,
@@ -12,7 +13,7 @@ import ThemeService from './plugins/theme'
 
 // layout api
 
-export interface Events<C extends Context = Context> extends cordis.Events<C> {}
+export interface Events<C extends Context = Context> extends cordis.Events<C>, ClientEvents {}
 
 export interface Context {
   [Context.events]: Events<this>

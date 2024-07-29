@@ -3,7 +3,7 @@ import { Context } from '../context'
 import { Service } from '../utils'
 import { ForkScope } from 'cordis'
 import { defineProperty, Dict } from 'cosmokit'
-import { Entry } from '@cordisjs/plugin-webui'
+import { clientId } from '../data'
 
 declare module '../context' {
   interface Context {
@@ -71,7 +71,7 @@ export default class LoaderService extends Service {
   constructor(ctx: Context) {
     super(ctx, '$loader', true)
 
-    ctx.on('entry:refresh', ({ id, data }) => {
+    ctx.on('entry:update', ({ id, data }) => {
       const entry = this.entries[id]
       if (!entry) return
       entry.data.value = data
@@ -96,13 +96,14 @@ export default class LoaderService extends Service {
 
   initTask = new Promise<void>((resolve) => {
     this.ctx.on('entry:init', async (value) => {
-      const { _id, ...rest } = value as Dict<Entry.Data> & { _id?: string }
-      if (this.id && _id && this.id !== _id as unknown) {
+      const { serverId, entries } = value
+      clientId.value = value.clientId
+      if (this.id && serverId && this.id !== serverId as unknown) {
         return window.location.reload()
       }
-      this.id = _id
+      this.id = serverId
 
-      await Promise.all(Object.entries(rest).map(([key, body]) => {
+      await Promise.all(Object.entries(entries).map(([key, body]) => {
         if (this.entries[key]) {
           if (body) return console.warn(`Entry ${key} already exists`)
           for (const fork of this.entries[key].forks) {
@@ -135,7 +136,7 @@ export default class LoaderService extends Service {
         task.then(() => this.entries[key].done.value = true)
       }))
 
-      if (_id) resolve()
+      if (serverId) resolve()
     })
   })
 }

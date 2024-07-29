@@ -52,7 +52,7 @@ export abstract class WebUI<T = unknown> extends Service<T> {
   abstract resolveEntry(files: Entry.Files, key: string): string[]
   abstract addListener<K extends keyof Events>(event: K, callback: Events[K]): void
 
-  addEntry<T>(files: Entry.Files, data?: () => T) {
+  addEntry<T>(files: Entry.Files, data?: (client: Client) => T) {
     return new Entry(this.ctx, files, data)
   }
 

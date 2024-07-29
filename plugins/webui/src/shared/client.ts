@@ -1,8 +1,16 @@
 import { Context, Logger } from 'cordis'
 import { IncomingMessage } from 'node:http'
 import { WebSocket } from './types.ts'
+import { mapValues } from 'cosmokit'
+import { Entry } from './entry.ts'
 
 const logger = new Logger('webui')
+
+export interface ClientEvents {
+  'entry:init'(data: Entry.Init): void
+  'entry:update'(data: Entry.Update): void
+  'entry:patch'(data: Entry.Patch): void
+}
 
 export class Client {
   readonly id = Math.random().toString(36).slice(2)
@@ -10,7 +18,11 @@ export class Client {
   constructor(readonly ctx: Context, public socket: WebSocket, public request?: IncomingMessage) {
     socket.addEventListener('message', this.receive)
     const webui = this.ctx.get('webui')!
-    const body = { ...webui.entries, _id: webui.id }
+    const body: Entry.Init = {
+      entries: mapValues(webui.entries, entry => entry.toJSON(this)!),
+      serverId: webui.id,
+      clientId: this.id,
+    }
     this.send({ type: 'entry:init', body })
   }
 

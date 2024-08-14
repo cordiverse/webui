@@ -1,10 +1,11 @@
-import { Awaitable, deduplicate, Dict, pick } from 'cosmokit'
+import { Awaitable, deduplicate, defineProperty, Dict, pick } from 'cosmokit'
 import { dirname, join } from 'node:path'
 import { createRequire } from 'node:module'
 import { Dirent } from 'node:fs'
 import { readdir, readFile } from 'node:fs/promises'
 import { DependencyKey, PackageJson, SearchObject, SearchResult } from './types'
 import { Ecosystem, Manifest } from './manifest'
+import glob from 'fast-glob'
 
 type PnP = typeof import('pnpapi')
 
@@ -26,6 +27,8 @@ type LocalKeys = typeof LocalKey[number]
 
 interface LocalObject extends Pick<SearchObject, 'shortname' | 'ecosystem' | 'workspace' | 'manifest'> {
   package: Pick<PackageJson, LocalKeys>
+  readme?: Dict<string | null>
+  _readmeFiles?: Dict<string | Promise<string>>
 }
 
 export interface LocalScanner extends SearchResult<LocalObject>, LocalScanner.Options {}
@@ -44,6 +47,7 @@ function clear(object: Dict) {
 }
 
 interface Candidate {
+  path: string
   meta: PackageJson
   workspace: boolean
 }
@@ -125,6 +129,7 @@ export class LocalScanner {
     await Promise.all(Object.entries(locators).map(async ([name, [path, workspace]]) => {
       try {
         this.candidates[name] = {
+          path,
           meta: await this.loadMeta(join(path, 'package.json')),
           workspace,
         }
@@ -145,14 +150,15 @@ export class LocalScanner {
       root = parent
     }
     const names = deduplicate((await Promise.all(dirTasks)).flat(1))
-    const results = await Promise.all(names.map(async (name) => {
+    const results = await Promise.all(names.map<Promise<Candidate | undefined>>(async (name) => {
       try {
         const filename = this.require.resolve(name + '/package.json')
         const workspace = !filename.includes('node_modules')
         return {
+          path: dirname(filename),
           meta: await this.loadMeta(filename),
           workspace,
-        } as Candidate
+        }
       } catch (reason) {
         this.onFailure?.(reason, name)
       }
@@ -193,14 +199,14 @@ export class LocalScanner {
   }
 
   private loadEcosystem(ecosystem: Ecosystem) {
-    for (const [name, { meta, workspace }] of Object.entries(this.candidates)) {
+    for (const [name, { path, meta, workspace }] of Object.entries(this.candidates)) {
       const shortname = Ecosystem.check(ecosystem, meta)
       if (!shortname) continue
       delete this.candidates[name]
       const manifest = Manifest.conclude(meta, ecosystem.property)
       const exports = manifest.exports ?? {}
       if (exports['.'] !== null) {
-        this.pkgTasks[name] ||= this.loadPackage(name, {
+        this.pkgTasks[name] ||= this.loadPackage(name, path, {
           shortname,
           workspace,
           manifest,
@@ -210,7 +216,7 @@ export class LocalScanner {
       for (const [path, manifest] of Object.entries(exports)) {
         if (!manifest) continue
         const fullname = join(name, path)
-        this.pkgTasks[fullname] ||= this.loadPackage(fullname, {
+        this.pkgTasks[fullname] ||= this.loadPackage(fullname, path, {
           shortname: join(shortname, path),
           workspace,
           manifest,
@@ -231,9 +237,19 @@ export class LocalScanner {
     }
   }
 
-  private async loadPackage(name: string, object: LocalObject) {
+  private async loadPackage(name: string, cwd: string, object: LocalObject) {
     try {
       this.cache[name] = object
+      const files = await glob(['README?(.*).md'], { cwd, caseSensitiveMatch: false })
+      const readme = {}
+      const readmeFiles = {}
+      for (const file of files) {
+        const locale = file.slice(7, -3)
+        readme[locale] = null
+        readmeFiles[locale] = join(cwd, file)
+      }
+      object.readme = readme
+      defineProperty(object, '_readmeFiles', readmeFiles)
       await this.onSuccess?.(object)
       return object
     } catch (error) {

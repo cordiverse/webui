@@ -1,4 +1,5 @@
 import { Context, Inject, MainScope, Plugin, Schema, ScopeStatus, Service } from 'cordis'
+import { readFile } from 'fs/promises'
 import { Dict, pick } from 'cosmokit'
 import { EntryOptions } from 'cordis/loader'
 import { Entry as ClientEntry } from '@cordisjs/plugin-webui'
@@ -20,6 +21,7 @@ declare module '@cordisjs/plugin-webui' {
     'manager.config.remove'(options: { id: string }): void
     'manager.package.list'(): Promise<LocalObject[]>
     'manager.package.runtime'(options: { name: string }): Promise<RuntimeData | null>
+    'manager.package.readme'(options: { name: string; locale: string }): Promise<string | null>
     'manager.service.list'(): Promise<Dict<ServiceData>>
   }
 }
@@ -27,6 +29,7 @@ declare module '@cordisjs/plugin-webui' {
 declare module '@cordisjs/registry' {
   interface LocalObject {
     runtime?: RuntimeData | null
+    readme?: Dict<string | null>
   }
 }
 
@@ -179,15 +182,30 @@ export abstract class Manager extends Service {
         return await this.getPackages()
       })
 
-      ctx.webui.addListener('manager.package.runtime', async (options) => {
-        let runtime = this.packages[options.name]?.runtime
+      ctx.webui.addListener('manager.package.runtime', async ({ name }) => {
+        let runtime = this.packages[name]?.runtime
         if (runtime !== undefined) return runtime
-        runtime = await this.parseExports(options.name)
-        if (this.packages[options.name]) {
-          this.packages[options.name].runtime = runtime
-          this.flushPackage(options.name)
+        runtime = await this.parseExports(name)
+        if (this.packages[name]) {
+          this.packages[name].runtime = runtime
+          this.flushPackage(name)
         }
         return runtime
+      })
+
+      ctx.webui.addListener('manager.package.readme', async ({ name, locale }) => {
+        const files = this.packages[name]?._readmeFiles
+        if (!files) return null
+        if (!files[locale]) return null
+        if (typeof files[locale] === 'string') {
+          files[locale] = readFile(files[locale], 'utf8')
+          files[locale].then((content) => {
+            if (this.packages[name]?._readmeFiles !== files) return
+            this.packages[name].readme![locale] = content
+            this.flushPackage(name)
+          })
+        }
+        return files[locale]
       })
 
       ctx.webui.addListener('manager.service.list', async () => {

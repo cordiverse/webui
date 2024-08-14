@@ -9,6 +9,7 @@ import Rename from './dialogs/rename.vue'
 import Group from './dialogs/group.vue'
 import Remove from './dialogs/remove.vue'
 import MainPage from './routes/main.vue'
+import ReadmePage from './routes/readme.vue'
 import ConfigPage from './routes/config.vue'
 import ServicesPage from './routes/services.vue'
 import InterceptPage from './routes/intercept.vue'
@@ -244,6 +245,16 @@ export default class Manager extends Service {
       title: '概览',
       component: MainPage,
       order: -Infinity,
+    })
+
+    this.subroute({
+      path: 'readme',
+      title: '介绍',
+      component: ReadmePage,
+      order: -1000,
+      hidden: (entry) => {
+        return !Object.keys(this.data.value.packages[entry.name]?.readme || {}).length
+      },
     })
 
     this.subroute({

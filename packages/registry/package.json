@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "cosmokit": "^1.6.2",
+    "fast-glob": "^3.3.2",
     "p-map": "^4.0.0",
     "semver": "^7.6.3"
   }

@@ -1,6 +1,6 @@
 <template>
   <el-scrollbar class="plugin-tree" ref="root" @contextmenu.stop="trigger($event)">
-    <div class="search px-4 flex gap-x-2 w-full box-border absolute top-4 z-100">
+    <div class="search px-4 pt-4 top-0 flex gap-x-2 w-full box-border absolute z-100">
       <el-input v-model="keyword" #prefix>
         <k-icon name="search"></k-icon>
       </el-input>

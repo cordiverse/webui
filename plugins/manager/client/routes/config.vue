@@ -8,6 +8,7 @@
       </el-button>
     </div>
     <k-form
+      v-bind="formProps"
       :schema="local.runtime.schema"
       :initial="currentEntry.config"
       v-model="ctx.manager.changes[currentEntry.id].config"
@@ -22,6 +23,7 @@
 
 import { computed } from 'vue'
 import { router, useContext, useRpc } from '@cordisjs/client'
+import { formProps } from './utils'
 import { Data } from '../../src'
 
 const ctx = useContext()

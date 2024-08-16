@@ -456,10 +456,13 @@ export default class Manager extends Service {
   }
 
   checkConfig(entry: EntryData) {
-    const schema = this.data.value.packages[entry.name]?.runtime?.schema
+    let schema = this.data.value.packages[entry.name]?.runtime?.schema
     if (!schema) return true
     try {
-      (new Schema(schema))(this.changes[entry.id].config)
+      schema = new Schema(schema)
+      schema(this.changes[entry.id].config, {
+        ignore: value => value instanceof Object && '__jsExpr' in value,
+      })
       return true
     } catch {
       return false

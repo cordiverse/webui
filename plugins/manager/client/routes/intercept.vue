@@ -6,6 +6,7 @@
     </k-comment>
     <k-form
       v-if="info.schema"
+      v-bind="formProps"
       :schema="info.schema"
       :initial="currentEntry.intercept?.[name]"
       v-model="ctx.manager.changes[currentEntry.id].intercept![name]"
@@ -20,6 +21,7 @@
 
 import { computed } from 'vue'
 import { useContext } from '@cordisjs/client'
+import { formProps } from './utils'
 
 const ctx = useContext()
 

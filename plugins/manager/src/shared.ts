@@ -19,6 +19,7 @@ declare module '@cordisjs/plugin-webui' {
     'manager.config.create'(options: Omit<EntryOptions, 'id'> & EntryLocation): Promise<string>
     'manager.config.update'(options: Omit<EntryOptions, 'name'> & EntryLocation): void
     'manager.config.remove'(options: { id: string }): void
+    'manager.config.eval'(options: { id: string; expr: string; schema: Schema }): Promise<EvalResult>
     'manager.package.list'(): Promise<LocalObject[]>
     'manager.package.runtime'(options: { name: string }): Promise<RuntimeData | null>
     'manager.package.readme'(options: { name: string; locale: string }): Promise<string | null>
@@ -31,6 +32,11 @@ declare module '@cordisjs/registry' {
     runtime?: RuntimeData | null
     readme?: Dict<string | null>
   }
+}
+
+export interface EvalResult {
+  error?: 'syntax' | 'evaluation' | 'validation' | 'serialization'
+  value?: any
 }
 
 export interface EntryData extends EntryOptions, Required<EntryLocation> {
@@ -96,12 +102,14 @@ export abstract class Manager extends Service {
   }
 
   private getServiceInfo(ctx: Context, name: string) {
-    const instance = ctx.get(name)
-    if (!(instance instanceof Object)) return
-    const origin: Context = Reflect.getOwnPropertyDescriptor(instance, Context.current)?.value
-    if (!origin) return
-    const location = this.ctx.loader.locate(origin)
-    const schema = Reflect.getOwnPropertyDescriptor(instance, 'schema')?.value
+    const key = ctx[Context.isolate][name]
+    const item = ctx[Context.store][key]
+    // FIXME
+    // 1. check `item` instead of `item?.source`
+    // 2. experimental `schema`
+    if (!item?.source) return
+    const location = this.ctx.loader.locate(item.source)
+    const schema = Reflect.getOwnPropertyDescriptor(item.value, 'schema')?.value
     return { location, schema } as ServiceInfo
   }
 
@@ -144,9 +152,11 @@ export abstract class Manager extends Service {
         services: this.getServices(),
       }))
 
-      ctx.on('loader/config-update', ctx.debounce(() => {
+      const updateEntries = ctx.debounce(() => {
         this.entry?.patch({ entries: this.getEntries() })
-      }, 0))
+      }, 0)
+
+      ctx.on('loader/config-update', updateEntries)
 
       ctx.on('internal/service', ctx.debounce(() => {
         this.entry?.patch({ services: this.getServices() })
@@ -154,7 +164,7 @@ export abstract class Manager extends Service {
 
       ctx.on('internal/runtime', scope => this.updateRuntime(scope.runtime))
       ctx.on('internal/fork', scope => this.updateRuntime(scope.runtime))
-      ctx.on('internal/status', scope => this.updateRuntime(scope.runtime))
+      ctx.on('internal/status', updateEntries)
 
       ctx.on('hmr/reload', (reloads) => {
         reloads.forEach((_, plugin) => this.updatePlugin(plugin))
@@ -176,6 +186,29 @@ export abstract class Manager extends Service {
 
       ctx.webui.addListener('manager.config.remove', (options) => {
         return ctx.loader.remove(options.id)
+      })
+
+      ctx.webui.addListener('manager.config.eval', async ({ id, expr, schema }) => {
+        const entry = ctx.loader.resolve(id)
+        schema = Schema(schema)
+        let value: any
+        try {
+          value = entry.evaluate(expr)
+        } catch (error) {
+          if (error instanceof SyntaxError) return { error: 'syntax' }
+          return { error: 'evaluation' }
+        }
+        try {
+          value = schema(value)
+        } catch (error) {
+          return { error: 'validation' }
+        }
+        try {
+          JSON.stringify(value)
+        } catch (error) {
+          return { error: 'serialization' }
+        }
+        return { value }
       })
 
       ctx.webui.addListener('manager.package.list', async () => {

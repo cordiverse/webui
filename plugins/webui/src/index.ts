@@ -130,7 +130,7 @@ class NodeWebUI extends WebUI<NodeWebUI.Config> {
   private serveAssets() {
     const { uiPath } = this.config
 
-    this.ctx.server.get(uiPath + '(/.+)*', async (ctx, next) => {
+    this.ctx.server.get(uiPath + '(.*)', async (ctx, next) => {
       await next()
       if (ctx.body || ctx.response.body) return
 
@@ -244,7 +244,7 @@ class NodeWebUI extends WebUI<NodeWebUI.Config> {
       }],
     })
 
-    this.ctx.server.all('/vite(/.+)*', (ctx) => new Promise((resolve) => {
+    this.ctx.server.all('/vite(.*)', (ctx) => new Promise((resolve) => {
       this.vite.middlewares(ctx.req, ctx.res, resolve)
     }))
 

@@ -10,7 +10,12 @@ declare module '@cordisjs/loader' {
 }
 
 export default class BrowserManager extends Manager {
-  async getPackages(forced: boolean) {
+  async getPackages() {
     return this.ctx.loader.market.objects
+  }
+
+  async getDependencies() {
+    // TODO simulate dependencies
+    return []
   }
 }

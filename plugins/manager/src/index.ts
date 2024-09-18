@@ -11,8 +11,8 @@ export default class NodeManager extends Manager {
       const { internal, url: parentURL } = this.ctx.loader
       if (!internal) return
       try {
-        const { url } = await internal!.resolve(name, parentURL, {})
-        if (internal?.loadCache.has(url)) {
+        const { url } = await internal.resolve(name, parentURL, {})
+        if (internal.loadCache.has(url)) {
           object.runtime = await this.parseExports(name)
         }
       } catch (error) {
@@ -34,8 +34,11 @@ export default class NodeManager extends Manager {
     this.packages = this.scanner.cache
   }
 
-  async getPackages(forced: boolean) {
-    await this.scanner.collect(forced)
-    return this.scanner.objects
+  async getPackages() {
+    return this.scanner.collect()
+  }
+
+  async getDependencies() {
+    return this.scanner.scan()
   }
 }

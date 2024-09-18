@@ -3,8 +3,14 @@ import { readFile } from 'fs/promises'
 import { Dict, pick } from 'cosmokit'
 import { EntryOptions } from 'cordis/loader'
 import { Entry as ClientEntry } from '@cordisjs/plugin-webui'
-import { LocalObject } from '@cordisjs/registry'
+import { Dependency, LocalObject } from '@cordisjs/registry'
 import {} from '@cordisjs/plugin-hmr'
+
+declare module 'cordis' {
+  interface Context {
+    _manager: Manager
+  }
+}
 
 declare module 'cordis/loader' {
   interface EntryOptions {
@@ -20,6 +26,7 @@ declare module '@cordisjs/plugin-webui' {
     'manager.config.update'(options: Omit<EntryOptions, 'name'> & EntryLocation): void
     'manager.config.remove'(options: { id: string }): void
     'manager.config.eval'(options: { id: string; expr: string; schema: Schema }): Promise<EvalResult>
+    'manager.dependency.list'(): Promise<Dependency[]>
     'manager.package.list'(): Promise<LocalObject[]>
     'manager.package.runtime'(options: { name: string }): Promise<RuntimeData | null>
     'manager.package.readme'(options: { name: string; locale: string }): Promise<string | null>
@@ -78,15 +85,16 @@ export interface EntryLocation {
 export abstract class Manager extends Service {
   static inject = ['loader']
 
-  entry?: ClientEntry
-  packages: Dict<LocalObject> = Object.create(null)
-  plugins = new WeakMap<Plugin, string>()
+  public entry?: ClientEntry<Data>
 
-  pending = new Set<string>()
-  flushTimer?: NodeJS.Timeout
+  protected packages: Dict<LocalObject> = Object.create(null)
+
+  private plugins = new WeakMap<Plugin, string>()
+  private pending = new Set<string>()
+  private flushTimer?: NodeJS.Timeout
 
   constructor(public ctx: Context) {
-    super(ctx, 'manager', true)
+    super(ctx, '_manager', true)
   }
 
   getEntries() {
@@ -137,117 +145,121 @@ export abstract class Manager extends Service {
     return result
   }
 
-  start() {
-    this.ctx.inject(['webui'], (ctx) => {
-      this.entry = ctx.webui.addEntry({
-        base: import.meta.url,
-        dev: '../client/index.ts',
-        prod: [
-          '../dist/index.js',
-          '../dist/style.css',
-        ],
-      }, () => (this.getPackages(), {
-        entries: this.getEntries(),
-        packages: this.packages,
-        services: this.getServices(),
-      }))
+  @Inject(['webui'])
+  injectWebUI() {
+    this.entry = this.ctx.webui.addEntry({
+      base: import.meta.url,
+      dev: '../client/index.ts',
+      prod: [
+        '../dist/index.js',
+        '../dist/style.css',
+      ],
+    }, () => (this.getPackages(), {
+      entries: this.getEntries(),
+      packages: this.packages,
+      services: this.getServices(),
+    }))
 
-      const updateEntries = ctx.debounce(() => {
-        this.entry?.patch({ entries: this.getEntries() })
-      }, 0)
+    const updateEntries = this.ctx.debounce(() => {
+      this.entry?.patch({ entries: this.getEntries() })
+    }, 0)
 
-      ctx.on('loader/config-update', updateEntries)
+    this.ctx.on('loader/config-update', updateEntries)
 
-      ctx.on('internal/service', ctx.debounce(() => {
-        this.entry?.patch({ services: this.getServices() })
-      }, 0))
+    this.ctx.on('internal/service', this.ctx.debounce(() => {
+      this.entry?.patch({ services: this.getServices() })
+    }, 0))
 
-      ctx.on('internal/runtime', scope => this.updateRuntime(scope.runtime))
-      ctx.on('internal/fork', scope => this.updateRuntime(scope.runtime))
-      ctx.on('internal/status', updateEntries)
+    this.ctx.on('internal/runtime', scope => this.updateRuntime(scope.runtime))
+    this.ctx.on('internal/fork', scope => this.updateRuntime(scope.runtime))
+    this.ctx.on('internal/status', updateEntries)
 
-      ctx.on('hmr/reload', (reloads) => {
-        reloads.forEach((_, plugin) => this.updatePlugin(plugin))
-      })
+    this.ctx.on('hmr/reload', (reloads) => {
+      reloads.forEach((_, plugin) => this.updatePlugin(plugin))
+    })
 
-      ctx.webui.addListener('manager.config.list', () => {
-        return this.getEntries()
-      })
+    this.ctx.webui.addListener('manager.config.list', () => {
+      return this.getEntries()
+    })
 
-      ctx.webui.addListener('manager.config.create', (options) => {
-        const { parent, position, ...rest } = options
-        return ctx.loader.create(rest, parent, position)
-      })
+    this.ctx.webui.addListener('manager.config.create', (options) => {
+      const { parent, position, ...rest } = options
+      return this.ctx.loader.create(rest, parent, position)
+    })
 
-      ctx.webui.addListener('manager.config.update', (options) => {
-        const { id, parent, position, ...rest } = options
-        return ctx.loader.update(id, rest, parent, position)
-      })
+    this.ctx.webui.addListener('manager.config.update', (options) => {
+      const { id, parent, position, ...rest } = options
+      return this.ctx.loader.update(id, rest, parent, position)
+    })
 
-      ctx.webui.addListener('manager.config.remove', (options) => {
-        return ctx.loader.remove(options.id)
-      })
+    this.ctx.webui.addListener('manager.config.remove', (options) => {
+      return this.ctx.loader.remove(options.id)
+    })
 
-      ctx.webui.addListener('manager.config.eval', async ({ id, expr, schema }) => {
-        const entry = ctx.loader.resolve(id)
-        schema = Schema(schema)
-        let value: any
-        try {
-          value = entry.evaluate(expr)
-        } catch (error) {
-          if (error instanceof SyntaxError) return { error: 'syntax' }
-          return { error: 'evaluation' }
-        }
-        try {
-          value = schema(value)
-        } catch (error) {
-          return { error: 'validation' }
-        }
-        try {
-          JSON.stringify(value)
-        } catch (error) {
-          return { error: 'serialization' }
-        }
-        return { value }
-      })
+    this.ctx.webui.addListener('manager.config.eval', async ({ id, expr, schema }) => {
+      const entry = this.ctx.loader.resolve(id)
+      schema = Schema(schema)
+      let value: any
+      try {
+        value = entry.evaluate(expr)
+      } catch (error) {
+        if (error instanceof SyntaxError) return { error: 'syntax' }
+        return { error: 'evaluation' }
+      }
+      try {
+        value = schema(value)
+      } catch (error) {
+        return { error: 'validation' }
+      }
+      try {
+        JSON.stringify(value)
+      } catch (error) {
+        return { error: 'serialization' }
+      }
+      return { value }
+    })
 
-      ctx.webui.addListener('manager.package.list', async () => {
-        return await this.getPackages()
-      })
+    this.ctx.webui.addListener('manager.dependency.list', async () => {
+      return await this.getDependencies()
+    })
 
-      ctx.webui.addListener('manager.package.runtime', async ({ name }) => {
-        let runtime = this.packages[name]?.runtime
-        if (runtime !== undefined) return runtime
-        runtime = await this.parseExports(name)
-        if (this.packages[name]) {
-          this.packages[name].runtime = runtime
+    this.ctx.webui.addListener('manager.package.list', async () => {
+      return await this.getPackages()
+    })
+
+    this.ctx.webui.addListener('manager.package.runtime', async ({ name }) => {
+      let runtime = this.packages[name]?.runtime
+      if (runtime !== undefined) return runtime
+      runtime = await this.parseExports(name)
+      if (this.packages[name]) {
+        this.packages[name].runtime = runtime
+        this.flushPackage(name)
+      }
+      return runtime
+    })
+
+    this.ctx.webui.addListener('manager.package.readme', async ({ name, locale }) => {
+      const files = this.packages[name]?._readmeFiles
+      if (!files) return null
+      if (!files[locale]) return null
+      if (typeof files[locale] === 'string') {
+        files[locale] = readFile(files[locale], 'utf8')
+        files[locale].then((content) => {
+          if (this.packages[name]?._readmeFiles !== files) return
+          this.packages[name].readme![locale] = content
           this.flushPackage(name)
-        }
-        return runtime
-      })
+        })
+      }
+      return files[locale]
+    })
 
-      ctx.webui.addListener('manager.package.readme', async ({ name, locale }) => {
-        const files = this.packages[name]?._readmeFiles
-        if (!files) return null
-        if (!files[locale]) return null
-        if (typeof files[locale] === 'string') {
-          files[locale] = readFile(files[locale], 'utf8')
-          files[locale].then((content) => {
-            if (this.packages[name]?._readmeFiles !== files) return
-            this.packages[name].readme![locale] = content
-            this.flushPackage(name)
-          })
-        }
-        return files[locale]
-      })
-
-      ctx.webui.addListener('manager.service.list', async () => {
-        return this.getServices()
-      })
+    this.ctx.webui.addListener('manager.service.list', async () => {
+      return this.getServices()
     })
   }
 
-  abstract getPackages(forced?: boolean): Promise<LocalObject[]>
+  abstract getPackages(): Promise<LocalObject[]>
+  abstract getDependencies(): Promise<Dependency[]>
 
   flushPackage(name: string) {
     this.pending.add(name)

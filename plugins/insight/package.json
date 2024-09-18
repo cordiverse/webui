@@ -43,11 +43,11 @@
     }
   },
   "peerDependencies": {
-    "@cordisjs/plugin-webui": "^0.1.11",
-    "cordis": "^3.17.6"
+    "@cordisjs/plugin-webui": "^0.1.13",
+    "cordis": "^3.18.1"
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.1.11",
+    "@cordisjs/client": "^0.1.13",
     "@types/d3-force": "^3.0.9",
     "d3-force": "^3.0.0"
   },

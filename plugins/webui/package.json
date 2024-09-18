@@ -51,8 +51,8 @@
     }
   },
   "peerDependencies": {
-    "@cordisjs/client": "^0.1.11",
-    "cordis": "^3.17.6"
+    "@cordisjs/client": "^0.1.13",
+    "cordis": "^3.18.1"
   },
   "peerDependenciesMeta": {
     "@cordisjs/client": {
@@ -60,13 +60,13 @@
     }
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.1.11",
+    "@cordisjs/client": "^0.1.13",
     "@cordisjs/plugin-server": "^0.2.3",
     "@maikolib/vite-plugin-yaml": "^1.0.1",
     "@types/uuid": "^8.3.4",
     "@vitejs/plugin-vue": "^4.6.2",
-    "cordis": "^3.17.6",
-    "unocss": "^0.58.6",
+    "cordis": "^3.18.1",
+    "unocss": "^0.61.5",
     "vite": "^5.3.4",
     "vue": "^3.4.32"
   },

@@ -7,7 +7,7 @@ import unocss from 'unocss/vite'
 import uno from 'unocss/preset-uno'
 import vue from '@vitejs/plugin-vue'
 import yaml from '@maikolib/vite-plugin-yaml'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 declare module 'yakumo' {
   interface PackageConfig {
@@ -166,7 +166,7 @@ export function apply(ctx: Context) {
       }
       let config: vite.UserConfig = {}
       if (meta.yakumo?.client) {
-        const filename = resolve(ctx.yakumo.cwd + path, meta.yakumo.client)
+        const filename = pathToFileURL(resolve(ctx.yakumo.cwd + path, meta.yakumo.client)).href
         const exports = (await import(filename)).default
         if (typeof exports === 'function') {
           await exports()

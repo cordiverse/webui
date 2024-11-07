@@ -27,7 +27,7 @@
   "devDependencies": {
     "@vueuse/core": "^10.11.0",
     "element-plus": "^2.7.7",
-    "vue": "^3.4.32"
+    "vue": "^3.5.12"
   },
   "peerDependencies": {
     "vue": "^3"

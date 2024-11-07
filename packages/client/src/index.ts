@@ -81,6 +81,13 @@ export async function build(root: string, config: vite.UserConfig = {}) {
     define: {
       'process.env.NODE_ENV': '"production"',
     },
+    css: {
+      preprocessorOptions: {
+        scss: {
+          api: 'modern-compiler',
+        },
+      },
+    },
   } as vite.InlineConfig, config)) as RollupOutput[]
 
   for (const item of results[0].output) {
@@ -142,6 +149,13 @@ export async function createServer(baseDir: string, config: InlineConfig = {}) {
         'marked',
         'xss',
       ],
+    },
+    css: {
+      preprocessorOptions: {
+        scss: {
+          api: 'modern-compiler',
+        },
+      },
     },
     build: {
       rollupOptions: {

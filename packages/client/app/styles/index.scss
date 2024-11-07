@@ -1,7 +1,7 @@
 @use 'sass:color';
-@import './layout.scss';
-@import './element.scss';
-@import './hc.scss';
+@use './layout.scss';
+@use './element.scss';
+@use './hc.scss';
 
 $black: #000000;
 $white: #ffffff;

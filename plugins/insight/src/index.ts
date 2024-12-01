@@ -1,4 +1,4 @@
-import { Context, EffectScope, ForkScope, Plugin, Schema, ScopeStatus } from 'cordis'
+import { Context, EffectScope, Plugin, Schema, ScopeStatus } from 'cordis'
 import { camelize, capitalize } from 'cosmokit'
 import {} from '@cordisjs/plugin-webui'
 import {} from 'cordis/loader'
@@ -35,7 +35,7 @@ function getName(plugin: Plugin) {
   return format(plugin.name)
 }
 
-function getSourceId(child: ForkScope) {
+function getSourceId(child: EffectScope) {
   const { scope } = child.parent
   if (scope.runtime.isForkable) {
     return scope.uid

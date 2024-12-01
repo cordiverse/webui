@@ -1,7 +1,7 @@
 import { Ref, ref, shallowReactive } from 'vue'
 import { Context } from '../context'
 import { Service } from '../utils'
-import { ForkScope } from 'cordis'
+import { EffectScope } from 'cordis'
 import { defineProperty, Dict } from 'cosmokit'
 import { clientId } from '../data'
 
@@ -23,7 +23,7 @@ export function unwrapExports(module: any) {
   return module?.default || module
 }
 
-type LoaderFactory = (ctx: Context, url: string) => Promise<ForkScope>
+type LoaderFactory = (ctx: Context, url: string) => Promise<EffectScope>
 
 function jsLoader(ctx: Context, exports: {}) {
   return ctx.plugin(unwrapExports(exports), ctx.$entry.data)
@@ -48,7 +48,7 @@ const loaders: Dict<LoaderFactory> = {
     const link = document.createElement('link')
     link.rel = 'stylesheet'
     link.href = url
-    return ctx.plugin(cssLoader, link)
+    return ctx.plugin(cssLoader, link as any)
   },
   async [``](ctx, url) {
     const exports = await import(/* @vite-ignore */ url)
@@ -57,8 +57,8 @@ const loaders: Dict<LoaderFactory> = {
 }
 
 export interface LoadState {
-  forks: ForkScope[]
-  paths: string[]
+  forks: EffectScope[]
+  entryId?: string
   done: Ref<boolean>
   data: Ref
 }
@@ -69,7 +69,7 @@ export default class LoaderService extends Service {
   public entries: Dict<LoadState> = shallowReactive({})
 
   constructor(ctx: Context) {
-    super(ctx, '$loader', true)
+    super(ctx, '$loader')
 
     ctx.on('entry:update', ({ id, data }) => {
       const entry = this.entries[id]
@@ -113,11 +113,11 @@ export default class LoaderService extends Service {
           return
         }
 
-        const { files, paths = [], data } = body
+        const { files, entryId, data } = body
         const ctx = this.ctx.isolate('$entry')
         ctx.$entry = this.entries[key] = {
           done: ref(false),
-          paths,
+          entryId,
           data: ref(data),
           forks: [],
         }

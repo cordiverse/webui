@@ -20,20 +20,15 @@ declare module 'cordis' {
 
 export type SocketListener = (this: Client, ...args: any[]) => void
 
-export abstract class WebUI<T = unknown> extends Service<T> {
-  // FIXME
-  public inject = {
-    optional: ['webui'],
-  }
-
+export abstract class WebUI extends Service {
   public id = Math.random().toString(36).slice(2)
 
   readonly entries: Dict<Entry> = Object.create(null)
   readonly listeners: Dict<(args?: any) => any> = Object.create(null)
   readonly clients: Dict<Client> = Object.create(null)
 
-  constructor(public ctx: Context, public config: T) {
-    super(ctx, 'webui', true)
+  constructor(public ctx: Context) {
+    super(ctx, 'webui')
     this.listeners.ping = function () {
       this.send({ type: 'pong' })
     }

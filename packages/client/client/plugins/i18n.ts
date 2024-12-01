@@ -19,7 +19,7 @@ export default class I18nService extends Service {
   })
 
   constructor(ctx: Context) {
-    super(ctx, '$i18n', true)
+    super(ctx, '$i18n')
 
     ctx.effect(() => watchEffect(() => {
       this.i18n.global.locale.value = config.value.locale

@@ -11,7 +11,7 @@ export namespace Entry {
 
   export interface Data {
     files: string[]
-    paths?: string[]
+    entryId?: string
     data?: any
   }
 
@@ -44,7 +44,7 @@ export class Entry<T = any> {
         [this.id]: this.toJSON(client),
       },
     }))
-    this.dispose = ctx.collect('entry', () => {
+    this.dispose = ctx.effect(() => () => {
       delete this.ctx.webui.entries[this.id]
       ctx.webui.broadcast('entry:init', (client: Client) => ({
         serverId: ctx.webui.id,
@@ -75,7 +75,7 @@ export class Entry<T = any> {
     try {
       return {
         files: this.ctx.webui.resolveEntry(this.files, this.id),
-        paths: this.ctx.get('loader')?.locate(),
+        entryId: this.ctx.get('loader')?.locate(),
         data: JSON.parse(JSON.stringify(this.data?.(client))),
       }
     } catch (e) {

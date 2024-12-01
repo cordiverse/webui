@@ -51,7 +51,7 @@ export const useColorMode = () => colorMode
 
 export default class ThemeService extends Service {
   constructor(ctx: Context) {
-    super(ctx, '$theme', true)
+    super(ctx, '$theme')
     ctx.mixin('$theme', ['theme'])
 
     ctx.internal.themes = reactive({})

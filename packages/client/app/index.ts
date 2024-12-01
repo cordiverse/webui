@@ -16,8 +16,6 @@ root.plugin(status)
 root.plugin(styles)
 root.plugin(theme)
 
-root.start()
-
 if (!global.static) {
   const endpoint = new URL(global.endpoint, location.origin).toString()
   connect(root, () => new WebSocket(endpoint.replace(/^http/, 'ws')))

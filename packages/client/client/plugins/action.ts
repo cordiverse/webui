@@ -77,7 +77,7 @@ export function useMenu<K extends keyof ActionContext>(id: K) {
 
 export default class ActionService extends Service {
   constructor(ctx: Context) {
-    super(ctx, '$action', true)
+    super(ctx, '$action')
     ctx.mixin('$action', ['action', 'menu', 'define'])
 
     ctx.internal.scope = shallowReactive({})

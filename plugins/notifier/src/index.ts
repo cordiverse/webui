@@ -1,4 +1,4 @@
-import { Context, Schema, Service } from 'cordis'
+import { Context, Service } from 'cordis'
 import { Dict, isNullable, remove } from 'cosmokit'
 import { h } from '@cordisjs/element'
 import {} from 'cordis/loader'
@@ -27,13 +27,15 @@ export class Notifier {
       type: 'primary',
       content: [],
     }
-    ctx.notifier.store.push(this)
-    this.update(options)
-    ctx.notifier.entry?.refresh()
-    this.dispose = ctx.collect('entry', () => {
-      this.clearActions()
-      remove(ctx.notifier.store, this)
+    this.dispose = ctx.effect(() => {
+      ctx.notifier.store.push(this)
+      this.update(options)
       ctx.notifier.entry?.refresh()
+      return () => {
+        this.clearActions()
+        remove(ctx.notifier.store, this)
+        ctx.notifier.entry?.refresh()
+      }
     })
   }
 
@@ -71,7 +73,7 @@ export class Notifier {
     return {
       ...this.options,
       content: this.options.content.join(''),
-      paths: this.ctx.get('loader')?.locate(),
+      entryId: this.ctx.get('loader')?.locate(),
     }
   }
 }
@@ -90,19 +92,17 @@ export namespace Notifier {
 
   export interface Data extends Required<Options> {
     content: string
-    paths?: string[]
+    entryId?: string
   }
 }
 
 class NotifierService extends Service {
-  static inject = { optional: ['notifier'] }
-
   public store: Notifier[] = []
   public actions: Dict<() => void> = Object.create(null)
   public entry?: Entry<NotifierService.Data>
 
   constructor(ctx: Context, public config: NotifierService.Config) {
-    super(ctx, 'notifier', true)
+    super(ctx, 'notifier')
 
     ctx.inject(['webui'], (ctx) => {
       ctx.on('dispose', () => this.entry = undefined)
@@ -143,8 +143,6 @@ namespace NotifierService {
   }
 
   export interface Config {}
-
-  export const Config: Schema<Config> = Schema.object({})
 }
 
 export default NotifierService

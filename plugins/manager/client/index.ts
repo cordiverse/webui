@@ -58,10 +58,6 @@ export interface SubRoute {
 }
 
 export default class Manager extends Service {
-  static inject = {
-    optional: ['manager'],
-  }
-
   changes = reactive<Dict<Partial<EntryData>>>({})
 
   _dialogFork = ref<string>()
@@ -187,7 +183,7 @@ export default class Manager extends Service {
   routes = reactive<SubRoute[]>([])
 
   constructor(ctx: Context, public data: Ref<Data>) {
-    super(ctx, 'manager', true)
+    super(ctx, 'manager')
 
     watch(data, (value) => {
       const old = { ...this.changes }
@@ -549,11 +545,6 @@ export default class Manager extends Service {
     }
     for (const [name, info] of Object.entries(Inject.resolve(entry.inject))) {
       setService(name, info)
-    }
-
-    // check reusability
-    if (local.runtime?.id && !local.runtime?.forkable) {
-      result.warning = true
     }
 
     // check schema

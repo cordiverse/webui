@@ -60,7 +60,7 @@ export const useConfig = (useOriginal = false) => useOriginal ? original : resol
 
 export default class SettingService extends Service {
   constructor(ctx: Context) {
-    super(ctx, '$setting', true)
+    super(ctx, '$setting')
     ctx.mixin('$setting', {
       settings: 'settings',
       extendSchema: 'schema',

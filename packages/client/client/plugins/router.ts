@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory, START_LOCATION } from 'vue-router'
+import { createRouter, createWebHistory, RouteLocation, START_LOCATION } from 'vue-router'
 import { Context } from '../context'
 import { insert, Service } from '../utils'
 import { Component, MaybeRefOrGetter, reactive, ref, toValue } from 'vue'
@@ -50,19 +50,31 @@ function getActivityId(path: string) {
 export const redirectTo = ref<string>()
 
 export class Activity {
-  id: string
+  id!: string
   _disposables: Disposable[] = []
 
   constructor(public ctx: Context, public options: Activity.Options) {
     options.order ??= 0
     options.position ??= 'top'
     Object.assign(this, omit(options, ['icon', 'name', 'desc', 'disabled']))
-    const { path, id = getActivityId(path), component } = options
-    this._disposables.push(ctx.$router.router.addRoute({ path, name: id, component, meta: { activity: this } }))
+  }
+
+  *setup() {
+    const { path, id = getActivityId(path), component } = this.options
+    yield this.ctx.$router.router.addRoute({ path, name: id, component, meta: { activity: this } })
     this.id ??= id
-    this.handleUpdate()
     this.authority ??= 0
-    ctx.$router.pages[this.id] = this
+    this.ctx.$router.pages[this.id] = this
+    yield () => delete this.ctx.$router.pages[this.id]
+    this.handleUpdate()
+    yield () => {
+      const { meta, fullPath } = this.ctx.$router.router.currentRoute.value
+      this._disposables.forEach(dispose => dispose())
+      if (meta?.activity === this) {
+        redirectTo.value = fullPath
+        this.ctx.$router.router.replace(this.ctx.$router.cache['home'] || '/')
+      }
+    }
   }
 
   handleUpdate() {
@@ -91,16 +103,6 @@ export class Activity {
     if (this.ctx.bail('activity', this)) return true
     if (this.options.disabled?.()) return true
   }
-
-  dispose() {
-    const { meta, fullPath } = this.ctx.$router.router.currentRoute.value
-    this._disposables.forEach(dispose => dispose())
-    if (meta?.activity === this) {
-      redirectTo.value = fullPath
-      this.ctx.$router.router.replace(this.ctx.$router.cache['home'] || '/')
-    }
-    return delete this.ctx.$router.pages[this.id]
-  }
 }
 
 export default class RouterService extends Service {
@@ -114,20 +116,26 @@ export default class RouterService extends Service {
   })
 
   constructor(ctx: Context) {
-    super(ctx, '$router', true)
+    super(ctx, '$router')
     ctx.mixin('$router', ['slot', 'page'])
 
-    const initialTitle = document.title
-    ctx.effect(() => this.router.afterEach((route) => {
-      const { name, fullPath } = this.router.currentRoute.value
-      this.cache[name!] = fullPath
-      if (route.meta.activity) {
-        document.title = `${route.meta.activity.name}`
-        if (initialTitle) document.title += ` | ${initialTitle}`
+    ctx.effect(() => {
+      const initialTitle = document.title
+      const dispose = this.router.afterEach((route) => {
+        const { name, fullPath } = this.router.currentRoute.value
+        this.cache[name!] = fullPath
+        if (route.meta.activity) {
+          document.title = `${route.meta.activity.name}`
+          if (initialTitle) document.title += ` | ${initialTitle}`
+        }
+      })
+      return () => {
+        document.title = initialTitle
+        dispose()
       }
-    }))
+    })
 
-    this.router.beforeEach(async (to, from) => {
+    ctx.effect(() => this.router.beforeEach(async (to: RouteLocation, from) => {
       if (to.matched.length) {
         if (to.matched[0].path !== '/') {
           redirectTo.value = undefined
@@ -145,7 +153,7 @@ export default class RouterService extends Service {
       const result = this.cache['home'] || '/'
       if (result === to.fullPath) return
       return result
-    })
+    }))
   }
 
   slot(options: SlotOptions) {
@@ -164,7 +172,8 @@ export default class RouterService extends Service {
   page(options: Activity.Options) {
     options.component = this.ctx.wrapComponent(options.component)
     return this.ctx.effect(() => {
-      return new Activity(this.ctx, options)
+      const activity = new Activity(this.ctx, options)
+      return activity.setup()
     })
   }
 }

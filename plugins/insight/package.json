@@ -44,7 +44,7 @@
   },
   "peerDependencies": {
     "@cordisjs/plugin-webui": "^0.1.13",
-    "cordis": "^3.18.1"
+    "cordis": "^4.0.0-alpha.0"
   },
   "devDependencies": {
     "@cordisjs/client": "^0.1.13",
@@ -52,6 +52,6 @@
     "d3-force": "^3.0.0"
   },
   "dependencies": {
-    "cosmokit": "^1.6.2"
+    "cosmokit": "^1.6.3"
   }
 }

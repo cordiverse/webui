@@ -27,14 +27,14 @@
   "devDependencies": {
     "@vueuse/core": "^10.11.0",
     "element-plus": "^2.7.7",
-    "vue": "^3.5.12"
+    "vue": "^3.5.13"
   },
   "peerDependencies": {
     "vue": "^3"
   },
   "dependencies": {
     "@satorijs/element": "^3.1.7",
-    "cosmokit": "^1.6.3",
+    "cosmokit": "^1.7.2",
     "schemastery-vue": "^7.3.7"
   }
 }

@@ -43,15 +43,15 @@
     }
   },
   "peerDependencies": {
-    "@cordisjs/plugin-webui": "^0.1.13",
-    "cordis": "^4.0.0-alpha.0"
+    "@cordisjs/plugin-webui": "^0.2.0",
+    "cordis": "^4.0.0-alpha.1"
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.1.13",
+    "@cordisjs/client": "^0.2.0",
     "@types/d3-force": "^3.0.9",
     "d3-force": "^3.0.0"
   },
   "dependencies": {
-    "cosmokit": "^1.6.3"
+    "cosmokit": "^1.7.2"
   }
 }

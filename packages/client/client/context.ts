@@ -25,13 +25,13 @@ const kContext = Symbol('context') as InjectionKey<Context>
 export function useContext() {
   const parent = inject(kContext)!
   const fork = parent.plugin(() => {})
-  onScopeDispose(() => fork.dispose())
+  onScopeDispose(fork.dispose)
   return fork.ctx
 }
 
 export function useInject<K extends string & keyof Context>(name: K): Ref<Context[K]> {
   const parent = inject(kContext)!
-  const service = ref(parent.get(name))
+  const service = ref<any>(parent.get(name))
   onScopeDispose(parent.on('internal/service', () => {
     service.value = parent.get(name)
   }))

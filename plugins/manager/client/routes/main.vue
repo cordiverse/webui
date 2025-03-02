@@ -76,10 +76,12 @@
 <script lang="ts" setup>
 
 import { computed } from 'vue'
-import { router, useContext, deepEqual, useI18nText } from '@cordisjs/client'
+import { useRouter } from 'vue-router'
+import { useContext, deepEqual, useI18nText } from '@cordisjs/client'
 import { hasSchema } from '../utils'
 
 const ctx = useContext()
+const router = useRouter()
 const tt = useI18nText()
 
 const current = computed(() => ctx.manager.currentEntry)

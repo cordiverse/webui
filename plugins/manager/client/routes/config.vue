@@ -22,11 +22,13 @@
 <script lang="ts" setup>
 
 import { computed } from 'vue'
-import { router, useContext, useRpc } from '@cordisjs/client'
+import { useRouter } from 'vue-router'
+import { useContext, useRpc } from '@cordisjs/client'
 import { formProps } from './utils'
 import { Data } from '../../src'
 
 const ctx = useContext()
+const router = useRouter()
 const data = useRpc<Data>()
 
 const currentEntry = computed(() => ctx.manager.currentEntry!)

@@ -31,11 +31,13 @@
 
 <script lang="ts" setup>
 
-import { router, send, useContext, useI18nText } from '@cordisjs/client'
+import { send, useContext, useI18nText } from '@cordisjs/client'
 import { computed, nextTick, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAutoFocus } from '../utils'
 
 const ctx = useContext()
+const router = useRouter()
 const tt = useI18nText()
 
 const keyword = ref('')

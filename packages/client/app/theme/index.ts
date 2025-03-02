@@ -1,4 +1,4 @@
-import { Context, router, useConfig } from '@cordisjs/client'
+import { Context, useConfig } from '@cordisjs/client'
 import App from './index.vue'
 
 export default function (ctx: Context) {
@@ -11,7 +11,7 @@ export default function (ctx: Context) {
   const config = useConfig()
 
   ctx.action('theme.activity.settings', {
-    action: () => router.push('/settings/activity'),
+    action: () => ctx.$router.router.push('/settings/activity'),
   })
 
   ctx.action('theme.activity.reset', {

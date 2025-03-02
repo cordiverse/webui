@@ -13,10 +13,12 @@
 <script lang="ts" setup>
 
 import { computed, ref, watch } from 'vue'
-import { router, send, useContext, useRpc } from '@cordisjs/client'
+import { useRouter } from 'vue-router'
+import { send, useContext, useRpc } from '@cordisjs/client'
 import { Data } from '../../src'
 
 const ctx = useContext()
+const router = useRouter()
 const data = useRpc<Data>()
 
 // FIXME locale with fallback

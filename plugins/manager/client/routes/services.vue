@@ -57,9 +57,12 @@
 <script lang="ts" setup>
 
 import { computed, ref } from 'vue'
-import { router, send, useContext, Inject } from '@cordisjs/client'
+import { useRouter } from 'vue-router'
+import { send, useContext, Inject } from '@cordisjs/client'
 
 const ctx = useContext()
+const router = useRouter()
+
 const showAddDependency = ref(false)
 const showCreateIsolate = ref(false)
 const isRequired = ref(false)

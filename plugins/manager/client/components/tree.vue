@@ -40,16 +40,17 @@
 <script lang="ts" setup>
 
 import { computed, ref, onActivated, nextTick, watch, VNodeRef } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import type { ElScrollbar, ElTree } from 'element-plus'
 import type { FilterNodeMethodFunction, TreeOptionProps } from 'element-plus/es/components/tree/src/tree.type'
 import type TreeNode from 'element-plus/es/components/tree/src/model/node'
-import { send, router, useContext, useMenu, deepEqual } from '@cordisjs/client'
+import { send, useContext, useMenu, deepEqual } from '@cordisjs/client'
 import { getStatusClass } from '../utils'
 import { EntryData } from '../../src'
 
 const ctx = useContext()
 const route = useRoute()
+const router = useRouter()
 const trigger = useMenu('config.tree')
 const plugins = computed(() => ctx.manager.plugins.value)
 

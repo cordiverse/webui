@@ -119,6 +119,7 @@ export default async function () {
     build: {
       outDir: dist,
       emptyOutDir: false,
+      chunkSizeWarningLimit: 1024 * 1024,
       rollupOptions: {
         input: {
           'client': cwd + '/packages/client/client/index.ts',

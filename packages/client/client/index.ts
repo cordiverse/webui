@@ -32,9 +32,3 @@ export const root = new Context()
 root.app.use(install)
 
 root.on('activity', data => !data)
-
-/** @deprecated use `useRouter()` */
-export const router = root.$router.router
-
-/** @deprecated use `useRouter()` */
-export const activities = root.$router.pages

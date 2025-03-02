@@ -1,4 +1,5 @@
-import { Context, Logger } from 'cordis'
+import { Context } from 'cordis'
+import { Logger } from 'cordis/logger'
 import { IncomingMessage } from 'node:http'
 import { WebSocket } from './types.ts'
 import { mapValues } from 'cosmokit'

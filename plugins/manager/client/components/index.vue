@@ -72,11 +72,13 @@
 <script setup lang="ts">
 
 import { computed, ref, watch } from 'vue'
-import { useContext, router, send } from '@cordisjs/client'
+import { useRouter } from 'vue-router'
+import { useContext, send } from '@cordisjs/client'
 import TreeView from './tree.vue'
 import type { SubRoute } from '..'
 
 const ctx = useContext()
+const router = useRouter()
 
 const currentEntry = computed(() => ctx.manager.currentEntry)
 const currentRoute = computed(() => ctx.manager.currentRoute)

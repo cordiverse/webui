@@ -17,7 +17,8 @@
 <script setup lang="ts">
 
 import { ref, computed, watch } from 'vue'
-import { send, useContext, router } from '@cordisjs/client'
+import { useRouter } from 'vue-router'
+import { send, useContext } from '@cordisjs/client'
 import { useAutoFocus } from '../utils'
 
 const input = ref('')
@@ -25,6 +26,7 @@ const inputEl = ref()
 
 const show = ref(false)
 const ctx = useContext()
+const router = useRouter()
 
 const handleOpen = useAutoFocus(inputEl)
 

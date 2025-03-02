@@ -42,11 +42,13 @@
 <script setup lang="ts">
 
 import { computed } from 'vue'
-import { send, router, useContext } from '@cordisjs/client'
+import { useRouter } from 'vue-router'
+import { send, useContext } from '@cordisjs/client'
 import { getStatusClass } from '../utils'
 import { EntryData } from '../../src'
 
 const ctx = useContext()
+const router = useRouter()
 const plugins = computed(() => ctx.manager.plugins.value)
 
 const local = computed(() => ctx.manager.data.value.packages[ctx.manager.dialogFork!])

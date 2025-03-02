@@ -1,6 +1,6 @@
 import { Context, Dict } from '@cordisjs/client'
 import { Ref } from 'vue'
-import type { Logger } from 'cordis'
+import type { Logger } from 'cordis/logger'
 import {} from '../src'
 import Logs from './index.vue'
 import Settings from './settings.vue'
@@ -36,7 +36,7 @@ export function apply(ctx: Context, data: Ref<Dict<Logger.Record[]>>) {
   //       for (let index = data.value.length - 1; index > 0; --index) {
   //         if (data.value[index].id >= last) break
   //         last = data.value[index].id
-  //         if (!data.value[index].meta.paths?.includes(entry.id)) continue
+  //         if (data.value[index].meta.entryId !== entry.id) continue
   //         return false
   //       }
   //       return true

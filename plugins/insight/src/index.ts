@@ -1,5 +1,6 @@
 import { Context, EffectScope, Plugin, Schema, ScopeStatus } from 'cordis'
 import { camelize, capitalize } from 'cosmokit'
+import {} from '@cordisjs/plugin-timer'
 import {} from '@cordisjs/plugin-webui'
 import {} from 'cordis/loader'
 import assert from 'node:assert'
@@ -46,7 +47,7 @@ function getSourceId(child: EffectScope) {
 
 export const name = 'insight'
 
-export const inject = ['webui']
+export const inject = ['webui', 'timer']
 
 export interface Config {}
 
@@ -63,8 +64,7 @@ export function apply(ctx: Context) {
   }, getGraph)
 
   const update = ctx.debounce(() => entry.refresh(), 0)
-  ctx.on('internal/fork', update)
-  ctx.on('internal/runtime', update)
+  ctx.on('internal/plugin', update)
   ctx.on('internal/service', update)
   ctx.on('internal/status', update)
 

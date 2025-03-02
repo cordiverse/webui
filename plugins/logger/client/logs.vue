@@ -13,8 +13,8 @@
           <code v-html="renderLine(record)"></code>
           <router-link
             class="log-link inline-flex items-center justify-center absolute w-20px h-20px bottom-0 right-1"
-            v-if="showLink && ctx.manager && record.meta?.paths?.length"
-            :to="'/plugins/' + record.meta.paths[0].replace(/\./, '/')"
+            v-if="showLink && ctx.manager && record.meta?.entryId"
+            :to="'/plugins/' + record.meta.entryId"
           >
             <k-icon name="arrow-right"/>
           </router-link>

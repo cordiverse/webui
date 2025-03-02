@@ -1,4 +1,5 @@
-import { Context, Logger, Schema } from 'cordis'
+import { Context, Schema } from 'cordis'
+import { Logger } from 'cordis/logger'
 import { Dict, remove, Time } from 'cosmokit'
 import { resolve } from 'path'
 import { mkdir, readdir, readFile, rm } from 'fs/promises'
@@ -14,7 +15,7 @@ declare module '@cordisjs/plugin-webui' {
 declare module 'reggol' {
   namespace Logger {
     interface Meta {
-      paths?: string[]
+      entryId?: string
     }
   }
 }
@@ -114,7 +115,7 @@ export async function apply(ctx: Context, config: Config) {
     record: (record: Logger.Record) => {
       record.meta ||= {}
       if (record.meta.ctx) {
-        record.meta.paths = loader?.locate(record.meta.ctx)
+        record.meta.entryId = loader?.locate(record.meta.ctx)
       }
       const date = new Date(record.timestamp).toISOString().slice(0, 10)
       if (writer.date !== date) {

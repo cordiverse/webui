@@ -14,7 +14,7 @@
 <script lang="ts" setup>
 
 import { ref } from 'vue'
-import type { Logger } from 'cordis'
+import type { Logger } from 'cordis/logger'
 import Logs from './logs.vue'
 
 const input = ref('')

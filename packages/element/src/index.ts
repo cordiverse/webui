@@ -51,8 +51,6 @@ interface Element {
   [kElement]: true
   type: string
   attrs: Dict
-  /** @deprecated use `attrs` instead */
-  data: Dict
   children: Element[]
   source?: string
   toString(strip?: boolean): string
@@ -61,10 +59,6 @@ interface Element {
 interface ElementConstructor extends Element { }
 
 class ElementConstructor {
-  get data() {
-    return this.attrs
-  }
-
   getTagName() {
     if (this.type === 'component') {
       return this.attrs.is?.name ?? 'component'
@@ -197,21 +191,6 @@ namespace Element {
       .replace(/&#(\d+);/g, (_, code) => code === '38' ? _ : String.fromCharCode(+code))
       .replace(/&#x([0-9a-f]+);/gi, (_, code) => code === '26' ? _ : String.fromCharCode(parseInt(code, 16)))
       .replace(/&(amp|#38|#x26);/g, '&')
-  }
-
-  export interface FindOptions {
-    type?: string
-    caret?: boolean
-  }
-
-  /** @deprecated use `Element.select()` instead */
-  export function from(source: string, options: FindOptions = {}): Element | undefined {
-    const elements = parse(source)
-    if (options.caret) {
-      if (options.type && elements[0]?.type !== options.type) return
-      return elements[0]
-    }
-    return select(elements, options.type || '*')[0]
   }
 
   type Combinator = ' ' | '>' | '+' | '~'

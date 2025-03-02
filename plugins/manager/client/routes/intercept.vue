@@ -1,13 +1,13 @@
 <template>
   <k-content v-if="currentEntry && info">
     <k-comment
-      :type="info.location ? 'success' : info.required ? 'warning' : 'primary'">
-      <p>{{ info.required ? '必需' : '可选' }}服务 {{ name }} {{ info.location ? '已加载' : '未加载' }}。</p>
+      :type="info.provider ? 'success' : info.required ? 'warning' : 'primary'">
+      <p>{{ info.required ? '必需' : '可选' }}服务 {{ name }} {{ info.provider ? '已加载' : '未加载' }}。</p>
     </k-comment>
     <k-form
-      v-if="info.schema"
+      v-if="info.provider?.schema"
       v-bind="formProps"
-      :schema="info.schema"
+      :schema="info.provider?.schema"
       :initial="currentEntry.intercept?.[name]"
       v-model="ctx.manager.changes[currentEntry.id].intercept![name]"
     />

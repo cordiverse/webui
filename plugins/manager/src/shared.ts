@@ -1,9 +1,10 @@
-import { Context, Inject, MainScope, Plugin, Schema, ScopeStatus, Service } from 'cordis'
+import { Context, Inject, Plugin, ScopeStatus, Service, z } from 'cordis'
 import { readFile } from 'fs/promises'
 import { Dict, pick } from 'cosmokit'
 import { EntryOptions } from 'cordis/loader'
 import { Entry as ClientEntry } from '@cordisjs/plugin-webui'
 import { Dependency, LocalObject } from '@cordisjs/registry'
+import {} from '@cordisjs/plugin-timer'
 import {} from '@cordisjs/plugin-hmr'
 
 declare module 'cordis' {
@@ -25,7 +26,7 @@ declare module '@cordisjs/plugin-webui' {
     'manager.config.create'(options: Omit<EntryOptions, 'id'> & EntryLocation): Promise<string>
     'manager.config.update'(options: Omit<EntryOptions, 'name'> & EntryLocation): void
     'manager.config.remove'(options: { id: string }): void
-    'manager.config.eval'(options: { id: string; expr: string; schema: Schema }): Promise<EvalResult>
+    'manager.config.eval'(options: { id: string; expr: string; schema: z }): Promise<EvalResult>
     'manager.dependency.list'(): Promise<Dependency[]>
     'manager.package.list'(): Promise<LocalObject[]>
     'manager.package.runtime'(options: { name: string }): Promise<RuntimeData | null>
@@ -51,15 +52,15 @@ export interface EntryData extends EntryOptions, Required<EntryLocation> {
   status?: ScopeStatus
 }
 
-export interface ServiceInfo {
-  location?: string[]
-  schema?: Schema
+export interface Provider {
+  location?: string
+  schema?: z
 }
 
 export interface ServiceData {
-  root?: ServiceInfo
-  local: Dict<ServiceInfo>
-  global: Dict<ServiceInfo>
+  root?: Provider
+  local: Dict<Provider>
+  global: Dict<Provider>
 }
 
 export interface Data {
@@ -69,10 +70,9 @@ export interface Data {
 }
 
 export interface RuntimeData {
-  id?: number | null
   filter?: boolean // FIXME
   forkable?: boolean
-  schema?: Schema
+  schema?: z
   usage?: string
   inject?: Dict<Inject.Meta>
 }
@@ -83,7 +83,7 @@ export interface EntryLocation {
 }
 
 export abstract class Manager extends Service {
-  static inject = ['loader']
+  static inject = ['loader', 'timer']
 
   public entry?: ClientEntry<Data>
 
@@ -94,7 +94,7 @@ export abstract class Manager extends Service {
   private flushTimer?: NodeJS.Timeout
 
   constructor(public ctx: Context) {
-    super(ctx, '_manager', true)
+    super(ctx, '_manager')
   }
 
   getEntries() {
@@ -105,11 +105,11 @@ export abstract class Manager extends Service {
       parent: entry.parent.ctx.scope.entry?.id ?? null,
       position: entry.parent.data.indexOf(entry.options),
       isGroup: !!entry.subgroup,
-      status: entry.fork?.status,
+      status: entry.scope?.status,
     }))
   }
 
-  private getServiceInfo(ctx: Context, name: string) {
+  private getServiceInfo(ctx: Context, name: string): Provider | undefined {
     const key = ctx[Context.isolate][name]
     const item = ctx[Context.store][key]
     // FIXME
@@ -117,8 +117,8 @@ export abstract class Manager extends Service {
     // 2. experimental `schema`
     if (!item?.source) return
     const location = this.ctx.loader.locate(item.source)
-    const schema = Reflect.getOwnPropertyDescriptor(item.value, 'schema')?.value
-    return { location, schema } as ServiceInfo
+    const schema = Reflect.getOwnPropertyDescriptor(item.value, 'Intercept')?.value
+    return { location, schema }
   }
 
   getServices() {
@@ -170,8 +170,12 @@ export abstract class Manager extends Service {
       this.entry?.patch({ services: this.getServices() })
     }, 0))
 
-    this.ctx.on('internal/runtime', scope => this.updateRuntime(scope.runtime))
-    this.ctx.on('internal/fork', scope => this.updateRuntime(scope.runtime))
+    this.ctx.on('internal/plugin', (scope) => {
+      const name = this.plugins.get(scope.runtime!.callback)
+      if (!name || !this.packages[name].runtime) return
+      this.flushPackage(name)
+    })
+
     this.ctx.on('internal/status', updateEntries)
 
     this.ctx.on('hmr/reload', (reloads) => {
@@ -198,7 +202,7 @@ export abstract class Manager extends Service {
 
     this.ctx.webui.addListener('manager.config.eval', async ({ id, expr, schema }) => {
       const entry = this.ctx.loader.resolve(id)
-      schema = Schema(schema)
+      schema = z(schema)
       let value: any
       try {
         value = entry.evaluate(expr)
@@ -277,24 +281,12 @@ export abstract class Manager extends Service {
     this.flushPackage(name)
   }
 
-  updateRuntime(main: MainScope) {
-    const name = this.plugins.get(main.plugin)
-    if (!name || !this.packages[name].runtime) return
-    this.parseRuntime(main, this.packages[name].runtime!)
-    this.flushPackage(name)
-  }
-
-  parseRuntime(main: MainScope, runtime: RuntimeData) {
-    runtime.id = main.uid
-    runtime.forkable = main.isForkable
-  }
-
   async parseExports(name: string) {
     try {
       const exports = await this.ctx.loader.import(name)
       const plugin = this.ctx.loader.unwrapExports(exports)
       if (plugin) this.plugins.set(plugin, name)
-      const result: RuntimeData = { id: null, inject: {} }
+      const result: RuntimeData = { inject: {} }
       result.schema = plugin?.Config || plugin?.schema
       result.usage = plugin?.usage
       result.filter = plugin?.filter
@@ -302,11 +294,6 @@ export abstract class Manager extends Service {
 
       // make sure that result can be serialized into json
       JSON.stringify(result)
-
-      if (plugin) {
-        const runtime = this.ctx.registry.get(plugin)
-        if (runtime) this.parseRuntime(runtime, result)
-      }
       return result
     } catch (error) {
       this.ctx.logger.warn('failed to load %c', name)
@@ -318,6 +305,4 @@ export abstract class Manager extends Service {
 
 export namespace Manager {
   export interface Config {}
-
-  export const Config: Schema<Config> = Schema.object({})
 }

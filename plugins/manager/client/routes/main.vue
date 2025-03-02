@@ -9,12 +9,13 @@
       <k-slot-item :order="1000">
         <k-slot name="plugin-dependency" single>
           <k-comment
-            v-for="({ required, location }, name) in env.using" :key="name"
-            :type="location ? 'success' : required ? 'warning' : 'primary'">
+            v-for="({ required, provider }, name) in env.using" :key="name"
+            :type="provider ? 'success' : required ? 'warning' : 'primary'">
             <p>
               {{ required ? '必需' : '可选' }}服务：{{ name }}
-              <template v-if="location">
-                (<span :class="{ 'k-link': location.length }" @click="gotoProvider(location)">已加载</span>)
+              <template v-if="provider">
+                (<span v-if="provider.location" class="k-link" @click="gotoProvider(provider.location)">已加载</span>
+                <span v-else>已加载</span>)
               </template>
               <template v-else>(未加载)</template>
             </p>
@@ -36,9 +37,6 @@
 
       <!-- reusability -->
       <k-slot-item :order="600">
-        <k-comment v-if="local.runtime.id && !local.runtime.forkable && current.disabled" type="warning">
-          <p>此插件已在运行且不可重用，启用可能会导致非预期的问题。</p>
-        </k-comment>
         <k-comment v-if="ctx.manager.plugins.value.forks[current.name]?.length > 1" type="primary">
           <p>此插件存在多份配置，<span class="k-link" @click.stop="ctx.manager.dialogFork = current.name">点击前往管理</span>。</p>
         </k-comment>
@@ -93,9 +91,8 @@ const desc = computed(() => {
   return tt(local?.value.runtime?.usage ?? local?.value.manifest.description)
 })
 
-function gotoProvider(location: string[]) {
-  if (!location.length) return
-  router.push('/plugins/' + location[0])
+function gotoProvider(location: string) {
+  router.push('/plugins/' + location)
 }
 
 const configState = computed(() => {

@@ -1,6 +1,6 @@
-import { clone, Context, Dict, Inject, message, remove, router, Schema, send, Service } from '@cordisjs/client'
+import { clone, Context, Dict, Inject, message, remove, Schema, send, Service } from '@cordisjs/client'
 import { computed, reactive, ref, Ref, watch } from 'vue'
-import type { Data, EntryData, ServiceInfo } from '../src'
+import type { Data, EntryData, Provider } from '../src'
 import { hasSchema } from './utils'
 import Settings from './components/index.vue'
 import Forks from './dialogs/forks.vue'
@@ -37,7 +37,9 @@ export interface Node extends EntryData {
   children?: Node[]
 }
 
-interface DepInfo extends ServiceInfo, Inject.Meta {}
+interface DepInfo extends Inject.Meta {
+  provider?: Provider
+}
 
 export interface EnvInfo {
   impl: string[]
@@ -107,7 +109,7 @@ export default class Manager extends Service {
   }
 
   get currentEntry() {
-    const { path } = router.currentRoute.value
+    const { path } = this.ctx.$router.router.currentRoute.value
     if (!path.startsWith('/plugins/')) return
     const [id] = path.slice(9).split('/', 1)
     return this.plugins.value.entries[id]
@@ -116,7 +118,7 @@ export default class Manager extends Service {
   get currentRoute() {
     const entry = this.currentEntry
     if (!entry) return
-    const { path } = router.currentRoute.value
+    const { path } = this.ctx.$router.router.currentRoute.value
     const rest = path.slice(9 + entry.id.length + 1)
     for (const route of this.routes) {
       const regexp = new RegExp('^' + route.path.replace(/:(\w+)/g, (_, $1) => `(?<${$1}>[^/]+)`) + '$')
@@ -366,7 +368,7 @@ export default class Manager extends Service {
           parent: config.tree.parent,
           position: config.tree.position + 1,
         })
-        router.replace(`/plugins/${id}`)
+        this.ctx.$router.router.replace(`/plugins/${id}`)
       },
     })
 
@@ -484,9 +486,9 @@ export default class Manager extends Service {
     if (!forks?.length) {
       const key = Math.random().toString(36).slice(2, 8)
       send('manager.config.create', { name, disabled: true })
-      if (!passive) router.push('/plugins/' + key)
+      if (!passive) this.ctx.$router.router.push('/plugins/' + key)
     } else if (forks.length === 1) {
-      if (!passive) router.push('/plugins/' + forks[0])
+      if (!passive) this.ctx.$router.router.push('/plugins/' + forks[0])
     } else {
       if (!passive) this.dialogFork = name
     }
@@ -500,7 +502,7 @@ export default class Manager extends Service {
         await send('manager.config.remove', { id: options.id })
       }
     } else {
-      await router.replace('/plugins/' + (options.parent ?? ''))
+      await this.ctx.$router.router.replace('/plugins/' + (options.parent ?? ''))
       await send('manager.config.remove', { id: options.id })
     }
   }
@@ -537,7 +539,7 @@ export default class Manager extends Service {
         }
         break
       }
-      result.using[name] = { ...meta, ...provider }
+      result.using[name] = { ...meta, provider }
     }
 
     for (const [name, info] of Object.entries(Inject.resolve(local.runtime.inject))) {

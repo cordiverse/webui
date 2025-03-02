@@ -17,7 +17,7 @@ const ctx = useContext()
 
 const notifiers = computed(() => {
   return data.value.notifiers.filter((item) => {
-    return item.paths?.includes(ctx.manager.currentEntry!.id) && item.content
+    return item.entryId === ctx.manager.currentEntry!.id && item.content
   })
 })
 

@@ -8,9 +8,9 @@
 
     <h2>依赖项</h2>
     <k-comment
-      v-for="({ required, location }, name) in env.using" :key="name"
-      :type="location ? 'success' : required ? 'warning' : 'primary'">
-      <p>{{ required ? '必需' : '可选' }}服务 {{ name }} {{ location ? '已加载' : '未加载' }}。</p>
+      v-for="({ required, provider }, name) in env.using" :key="name"
+      :type="provider ? 'success' : required ? 'warning' : 'primary'">
+      <p>{{ required ? '必需' : '可选' }}服务 {{ name }} {{ provider ? '已加载' : '未加载' }}。</p>
     </k-comment>
     <el-button @click="showAddDependency = true">添加依赖项</el-button>
 

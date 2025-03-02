@@ -1,4 +1,4 @@
-import { Context, Schema } from 'cordis'
+import { Context, z } from 'cordis'
 import { Dict, makeArray, noop, Time } from 'cosmokit'
 import { WebSocketLayer } from '@cordisjs/plugin-server'
 import { FileSystemServeOptions, ViteDevServer } from 'vite'
@@ -42,27 +42,36 @@ interface HeartbeatConfig {
   timeout?: number
 }
 
-class NodeWebUI extends WebUI<NodeWebUI.Config> {
+class NodeWebUI extends WebUI {
   static inject = {
-    required: ['server'],
-    optional: ['webui'], // FIXME
+    server: {
+      required: true,
+    },
+    loader: {
+      required: false,
+    },
+    logger: {
+      required: true,
+      config: {
+        name: 'webui',
+      },
+    },
   }
 
   public vite!: ViteDevServer
   public root: string
   public layer: WebSocketLayer
 
-  constructor(public ctx: Context, config: NodeWebUI.Config) {
-    super(ctx, config)
+  constructor(public ctx: Context, public config: NodeWebUI.Config) {
+    super(ctx)
 
     this.layer = ctx.server.ws(config.apiPath, (socket, request) => {
-      this.accept(socket, request)
+      this.accept(socket as any, request)
     })
 
     ctx.on('webui/connection', () => {
-      const loader = ctx.get('loader')
-      if (!loader) return
-      loader.envData.clientCount = this.layer.clients.size
+      if (!ctx.loader) return
+      ctx.loader.envData.clientCount = this.layer.clients.size
     })
 
     this.root = fileURLToPath(config.devMode
@@ -88,7 +97,7 @@ class NodeWebUI extends WebUI<NodeWebUI.Config> {
 
     this.ctx.on('server/ready', () => {
       const target = this.ctx.server.selfUrl + this.config.uiPath
-      if (this.config.open && !this.ctx.get('loader')?.envData.clientCount && !process.env.CORDIS_AGENT) {
+      if (this.config.open && !this.ctx.loader?.envData.clientCount && !process.env.CORDIS_AGENT) {
         open(target)
       }
       this.ctx.logger.info('webui is available at %c', target)
@@ -252,7 +261,7 @@ class NodeWebUI extends WebUI<NodeWebUI.Config> {
   }
 
   stop() {
-    this.layer.close()
+    this.layer?.close()
   }
 }
 
@@ -261,12 +270,12 @@ namespace NodeWebUI {
     fs: FileSystemServeOptions
   }
 
-  export const Dev: Schema<Dev> = Schema.object({
-    fs: Schema.object({
-      strict: Schema.boolean().default(true),
+  export const Dev: z<Dev> = z.object({
+    fs: z.object({
+      strict: z.boolean().default(true),
       // FIXME fix typings
-      allow: Schema.array(String).default(null as any),
-      deny: Schema.array(String).default(null as any),
+      allow: z.array(String).default(null as any),
+      deny: z.array(String).default(null as any),
     }).hidden(),
   })
 
@@ -276,44 +285,44 @@ namespace NodeWebUI {
     content?: string
   }
 
-  export const Head: Schema<Head> = Schema.intersect([
-    Schema.object({
-      tag: Schema.union([
+  export const Head: z<Head> = z.intersect([
+    z.object({
+      tag: z.union([
         'title',
         'link',
         'meta',
         'script',
         'style',
-        Schema.string(),
+        z.string(),
       ]).required(),
     }),
-    Schema.union([
-      Schema.object({
-        tag: Schema.const('title').required(),
-        content: Schema.string().role('textarea'),
+    z.union([
+      z.object({
+        tag: z.const('title').required(),
+        content: z.string().role('textarea'),
       }),
-      Schema.object({
-        tag: Schema.const('link').required(),
-        attrs: Schema.dict(Schema.string()).role('table'),
+      z.object({
+        tag: z.const('link').required(),
+        attrs: z.dict(z.string()).role('table'),
       }),
-      Schema.object({
-        tag: Schema.const('meta').required(),
-        attrs: Schema.dict(Schema.string()).role('table'),
+      z.object({
+        tag: z.const('meta').required(),
+        attrs: z.dict(z.string()).role('table'),
       }),
-      Schema.object({
-        tag: Schema.const('script').required(),
-        attrs: Schema.dict(Schema.string()).role('table'),
-        content: Schema.string().role('textarea'),
+      z.object({
+        tag: z.const('script').required(),
+        attrs: z.dict(z.string()).role('table'),
+        content: z.string().role('textarea'),
       }),
-      Schema.object({
-        tag: Schema.const('style').required(),
-        attrs: Schema.dict(Schema.string()).role('table'),
-        content: Schema.string().role('textarea'),
+      z.object({
+        tag: z.const('style').required(),
+        attrs: z.dict(z.string()).role('table'),
+        content: z.string().role('textarea'),
       }),
-      Schema.object({
-        tag: Schema.string().required(),
-        attrs: Schema.dict(Schema.string()).role('table'),
-        content: Schema.string().role('textarea'),
+      z.object({
+        tag: z.string().required(),
+        attrs: z.dict(z.string()).role('table'),
+        content: z.string().role('textarea'),
       }),
     ]),
   ])
@@ -330,19 +339,19 @@ namespace NodeWebUI {
     dev?: Dev
   }
 
-  export const Config: Schema<Config> = Schema.intersect([
-    Schema.object({
-      uiPath: Schema.string().default(''),
-      apiPath: Schema.string().default('/api'),
-      selfUrl: Schema.string().role('link').default(''),
-      open: Schema.boolean(),
-      head: Schema.array(Head),
-      heartbeat: Schema.object({
-        interval: Schema.number().default(Time.second * 30),
-        timeout: Schema.number().default(Time.minute),
+  export const Config: z<Config> = z.intersect([
+    z.object({
+      uiPath: z.string().default(''),
+      apiPath: z.string().default('/api'),
+      selfUrl: z.string().role('link').default(''),
+      open: z.boolean(),
+      head: z.array(Head),
+      heartbeat: z.object({
+        interval: z.number().default(Time.second * 30),
+        timeout: z.number().default(Time.minute),
       }),
-      devMode: Schema.boolean().default(process.env.NODE_ENV === 'development').hidden(),
-      cacheDir: Schema.string().default('cache/vite').hidden(),
+      devMode: z.boolean().default(process.env.NODE_ENV === 'development').hidden(),
+      cacheDir: z.string().default('cache/vite').hidden(),
       dev: Dev,
     }),
   ])

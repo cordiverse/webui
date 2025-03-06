@@ -1,13 +1,13 @@
 import { FileHandle, open } from 'fs/promises'
-import { Logger } from 'cordis/logger'
+import { Message } from 'cordis/logger'
 import { Buffer } from 'buffer'
 
 export class LogFile {
-  public data: Logger.Record[] = []
+  public data: Message[] = []
   public task: Promise<FileHandle>
   public size: number = 0
 
-  private temp: Logger.Record[] = []
+  private temp: Message[] = []
 
   constructor(public date: string, public name: string, public path: string) {
     this.task = open(path, 'a+').then(async (handle) => {
@@ -32,7 +32,7 @@ export class LogFile {
   }
 
   static parse(text: string) {
-    return text.split('\n').map<Logger.Record>((line) => {
+    return text.split('\n').map<Message>((line) => {
       try {
         return JSON.parse(line)
       } catch {}
@@ -44,7 +44,7 @@ export class LogFile {
     return this.data
   }
 
-  write(record: Logger.Record) {
+  write(record: Message) {
     this.temp.push(record)
     this.flush()
   }

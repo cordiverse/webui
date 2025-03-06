@@ -12,13 +12,13 @@
 
 import { useContext } from '@cordisjs/client'
 import {} from '@cordisjs/plugin-manager/client'
-import type { Logger } from 'cordis/logger'
+import { Message } from 'reggol'
 import Logs from './logs.vue'
 
 const ctx = useContext()
 
-function filter(record: Logger.Record) {
-  return record.meta.entryId === ctx.manager?.currentEntry?.id
+function filter(message: Message) {
+  return message.entryId === ctx.manager?.currentEntry?.id
 }
 
 </script>

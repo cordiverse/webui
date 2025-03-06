@@ -8,13 +8,13 @@
       :max-height="maxHeight"
       @top="onTop"
     >
-      <template #="record">
-        <div :class="{ line: true, start: record.start }">
-          <code v-html="renderLine(record)"></code>
+      <template #="message">
+        <div :class="{ line: true, start: message.start }">
+          <code v-html="renderLine(message)"></code>
           <router-link
             class="log-link inline-flex items-center justify-center absolute w-20px h-20px bottom-0 right-1"
-            v-if="showLink && ctx.manager && record.meta?.entryId"
-            :to="'/plugins/' + record.meta.entryId"
+            v-if="showLink && ctx.manager && message?.entryId"
+            :to="'/plugins/' + message.entryId"
           >
             <k-icon name="arrow-right"/>
           </router-link>
@@ -33,21 +33,21 @@ import { computed } from 'vue'
 import { Dict, Time, VirtualList, useContext, useRpc, send } from '@cordisjs/client'
 import {} from '@cordisjs/plugin-manager/client'
 import { AnsiUp } from 'ansi_up'
-import Logger from 'reggol'
+import { Logger, Message } from 'reggol'
 
 defineOptions({
   inheritAttrs: false,
 })
 
 const props = defineProps<{
-  filter?: (record: Logger.Record) => boolean,
+  filter?: (message: Message) => boolean,
   showHistory?: boolean,
   showLink?: boolean,
   maxHeight?: string,
 }>()
 
 const ctx = useContext()
-const data = useRpc<Dict<Logger.Record[] | null>>()
+const data = useRpc<Dict<Message[] | null>>()
 
 const converter = new AnsiUp()
 
@@ -57,17 +57,17 @@ function renderColor(code: number, value: any, decoration = '') {
 
 const showTime = 'yyyy-MM-dd hh:mm:ss'
 
-function renderLine(record: Logger.Record) {
-  const prefix = `[${record.type[0].toUpperCase()}]`
+function renderLine(message: Message) {
+  const prefix = `[${message.type[0].toUpperCase()}]`
   const space = ' '
   let indent = 3 + space.length, output = ''
   indent += showTime.length + space.length
-  output += renderColor(8, Time.template(showTime, new Date(record.timestamp))) + space
-  const code = Logger.code(record.name, { colors: 3 })
-  const label = renderColor(code, record.name, ';1')
-  const padLength = label.length - record.name.length
+  output += renderColor(8, Time.template(showTime, new Date(message.ts))) + space
+  const code = Logger.code(message.name, 3)
+  const label = renderColor(code, message.name, ';1')
+  const padLength = label.length - message.name.length
   output += prefix + space + label.padEnd(padLength) + space
-  output += record.content.replace(/\n/g, '\n' + ' '.repeat(indent))
+  output += message.body.replace(/\n/g, '\n' + ' '.repeat(indent))
   return converter.ansi_to_html(output)
 }
 
@@ -75,16 +75,16 @@ const logs = computed(() => {
   const keys = Object.keys(data.value).filter(key => data.value[key]).sort((a, b) => {
     return a.slice(0, 11).localeCompare(b.slice(0, 11)) || +a.slice(11) - +b.slice(11)
   }).reverse()
-  const result: (Logger.Record & { start?: boolean })[] = []
+  const result: (Message & { start?: boolean })[] = []
   for (const key of keys) {
     const curr = data.value[key]!
-    if (result.length && curr[curr.length - 1].id > result[0].id) {
+    if (result.length && curr[curr.length - 1].sn > result[0].sn) {
       if (!props.showHistory) break
       result[0].start = true
     }
     result.unshift(...data.value[key]!
-      .filter(record => !props.filter || props.filter(record))
-      .map(record => ({ ...record })))
+      .filter(message => !props.filter || props.filter(message))
+      .map(message => ({ ...message })))
   }
   return result
 })

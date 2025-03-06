@@ -1,22 +1,21 @@
 import { Context, Schema } from 'cordis'
-import { Logger } from 'cordis/logger'
+import { Exporter, Logger, Message } from 'cordis/logger'
 import { Dict, remove, Time } from 'cosmokit'
 import { resolve } from 'path'
 import { mkdir, readdir, readFile, rm } from 'fs/promises'
 import {} from '@cordisjs/plugin-webui'
+import {} from '@cordisjs/plugin-timer'
 import { LogFile } from './file'
 
 declare module '@cordisjs/plugin-webui' {
   interface Events {
-    'log.read'(options: { name: string }): Promise<Logger.Record[]>
+    'log.read'(options: { name: string }): Promise<Message[]>
   }
 }
 
 declare module 'reggol' {
-  namespace Logger {
-    interface Meta {
-      entryId?: string
-    }
+  interface Message {
+    entryId?: string
   }
 }
 
@@ -37,7 +36,7 @@ export const Config: Schema<Config> = Schema.object({
   maxSize: Schema.natural().default(1024 * 100).description('单个日志文件的最大大小。'),
 })
 
-export const inject = ['webui']
+export const inject = ['webui', 'timer', 'logger']
 
 export async function apply(ctx: Context, config: Config) {
   const root = resolve(ctx.baseDir, config.root)
@@ -77,7 +76,7 @@ export async function apply(ctx: Context, config: Config) {
   const date = new Date().toISOString().slice(0, 10)
   createFile(date, Math.max(...files[date] ?? [0]) + 1)
 
-  const entry = ctx.webui.addEntry<Dict<Logger.Record[] | null>>({
+  const entry = ctx.webui.addEntry<Dict<Message[] | null>>({
     base: import.meta.url,
     dev: '../client/index.ts',
     prod: [
@@ -108,24 +107,22 @@ export async function apply(ctx: Context, config: Config) {
 
   const flushThrottled = ctx.throttle(flush, 100)
 
-  let buffer: Logger.Record[] = []
-  const loader = ctx.get('loader')
-  const target: Logger.Target = {
+  let buffer: Message[] = []
+  const exporter: Exporter = {
     colors: 3,
-    record: (record: Logger.Record) => {
-      record.meta ||= {}
-      if (record.meta.ctx) {
-        record.meta.entryId = loader?.locate(record.meta.ctx)
+    export: (message: Message) => {
+      if (message.ctx) {
+        message.entryId = ctx.get('loader')?.locate(message.ctx.deref())
       }
-      const date = new Date(record.timestamp).toISOString().slice(0, 10)
+      const date = new Date(message.ts).toISOString().slice(0, 10)
       if (writer.date !== date) {
         flush()
         writer.close()
         files[date] = [1]
         createFile(date, 1)
       }
-      writer.write(record)
-      buffer.push(record)
+      writer.write(message)
+      buffer.push(message)
       flushThrottled()
       if (writer.size >= config.maxSize) {
         flush()
@@ -138,16 +135,13 @@ export async function apply(ctx: Context, config: Config) {
     },
   }
 
-  ctx.effect(() => {
-    Logger.targets.push(target)
-    return () => {
-      remove(Logger.targets, target)
-      if (loader) loader.prolog = []
-      writer?.close()
-    }
+  ctx.logger.exporter(exporter)
+
+  ctx.effect(() => () => {
+    writer?.close()
   })
 
-  for (const record of loader?.prolog || []) {
-    target.record!(record)
+  for (const message of ctx.logger.buffer || []) {
+    exporter.export!(message)
   }
 }

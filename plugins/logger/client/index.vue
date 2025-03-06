@@ -14,13 +14,13 @@
 <script lang="ts" setup>
 
 import { ref } from 'vue'
-import type { Logger } from 'cordis/logger'
+import { Message } from 'reggol'
 import Logs from './logs.vue'
 
 const input = ref('')
 
-function filter(record: Logger.Record) {
-  return !input.value || record.content.includes(input.value)
+function filter(record: Message) {
+  return !input.value || record.body.includes(input.value)
 }
 
 </script>

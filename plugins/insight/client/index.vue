@@ -52,9 +52,9 @@ const root = ref<HTMLElement>()
 const { width, height } = useElementSize(root)
 
 const tooltip = useTooltip()
-const dragged = ref<Node>(null)
-const fNode = ref<Node>(null) 
-const fLink = ref<Link>(null)
+const dragged = ref<Node>()
+const fNode = ref<Node>() 
+const fLink = ref<Link>()
 
 const data = useRpc<Data>()
 
@@ -65,10 +65,10 @@ const svgAttrs = computed(() => {
   // fix all the nodes in the root element
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
   for (const node of nodes) {
-    minX = Math.min(minX, node.x)
-    minY = Math.min(minY, node.y)
-    maxX = Math.max(maxX, node.x)
-    maxY = Math.max(maxY, node.y)
+    minX = Math.min(minX, node.x!)
+    minY = Math.min(minY, node.y!)
+    maxX = Math.max(maxX, node.x!)
+    maxY = Math.max(maxY, node.y!)
   }
   const vpWidth = maxX - minX + 200
   const vpHeight = maxY - minY + 200
@@ -190,7 +190,7 @@ function onMouseEnterNode(node: Node, event: MouseEvent) {
 
 function onMouseLeaveNode(node: Node, event: MouseEvent) {
   if (dragged.value === node) return
-  fNode.value = null
+  fNode.value = undefined
   tooltip.deactivate(300)
 }
 
@@ -202,7 +202,7 @@ function onMouseEnterLink(link: Link, event: MouseEvent) {
 }
 
 function onMouseLeaveLink(link: Link, event: MouseEvent) {
-  fLink.value = null
+  fLink.value = undefined
   tooltip.deactivate(300)
 }
 
@@ -220,8 +220,8 @@ function onDragMove(event: MouseEvent | TouchEvent) {
   const node = dragged.value
   if (!node) return
   const point = getEventPoint(event)
-  node.fx += point.clientX - node.lastX
-  node.fy += point.clientY - node.lastY
+  node.fx! += point.clientX - node.lastX!
+  node.fy! += point.clientY - node.lastY!
   node.lastX = point.clientX
   node.lastY = point.clientY
 }
@@ -232,8 +232,8 @@ function onDragEnd(event: MouseEvent | TouchEvent) {
   if (!node) return
   node.fx = null
   node.fy = null
-  fNode.value = null
-  dragged.value = null
+  fNode.value = undefined
+  dragged.value = undefined
 }
 
 interface Graph {

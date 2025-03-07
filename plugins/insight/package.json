@@ -1,7 +1,7 @@
 {
   "name": "@cordisjs/plugin-insight",
   "description": "Show plugin dependency graph for Cordis",
-  "version": "3.5.4",
+  "version": "4.0.0",
   "type": "module",
   "main": "lib/index.js",
   "files": [
@@ -44,7 +44,7 @@
   },
   "peerDependencies": {
     "@cordisjs/plugin-webui": "^0.2.0",
-    "cordis": "^4.0.0-alpha.1"
+    "cordis": "^4.0.0-alpha.2"
   },
   "devDependencies": {
     "@cordisjs/client": "^0.2.0",

@@ -35,15 +35,6 @@ function getName(plugin: Plugin) {
   return format(plugin.name)
 }
 
-function getSourceId(child: EffectScope) {
-  const { scope } = child.parent
-  if (scope.runtime.isForkable) {
-    return scope.uid
-  } else {
-    return scope.runtime.uid
-  }
-}
-
 export const name = 'insight'
 
 export const inject = ['webui', 'timer']
@@ -78,7 +69,7 @@ export function apply(ctx: Context) {
       if (!(instance instanceof Object)) continue
       const ctx2: Context = Reflect.getOwnPropertyDescriptor(instance, Context.current)?.value
       if (ctx2?.scope.uid) {
-        (services[ctx2.scope.uid] ||= []).push(key)
+        (services[ctx2.scope.uid] ??= []).push(key)
       }
     }
 
@@ -86,73 +77,38 @@ export function apply(ctx: Context) {
       const { uid, entry, disposables, status, runtime } = scope
       assert(uid !== null)
       const weight = disposables.length
-      const isGroup = !!runtime.plugin?.[Symbol.for('cordis.group')]
+      const isGroup = !!runtime?.callback?.[Symbol.for('cordis.group')]
       const isRoot = uid === 0
-      const name = getName(runtime.plugin)
+      const name = getName(runtime?.callback!)
       const node = { uid, name, weight, status, isGroup, isRoot, services: services[uid!] }
       if (entry) node.name += ` [${entry.options.id}]`
       nodes.push(node)
     }
 
-    function addEdge(type: 'dashed' | 'solid', source: number | null, target: number | null) {
-      assert(source !== null)
-      assert(target !== null)
+    function addEdge(type: 'dashed' | 'solid', source: number, target: number) {
       edges.push({ type, source, target })
     }
 
+    function isActive(scope: EffectScope) {
+      // exclude plugins that don't work due to missing dependencies
+      return scope.checkInject()
+    }
+
+    addNode(ctx.root.scope)
+
     for (const runtime of ctx.registry.values()) {
-      // Suppose we have the following types of nodes:
-      // - A, B: parent plugin scopes
-      // - X, Y: target fork scopes
-      // - M:    target main scope
-      // - S:    service dependencies
-
-      // We can divide plugins into three categories:
-      // 1. fully reusable plugins
-      //    will be displayed as A -> X -> S, B -> Y -> S
-      // 2. partially reusable plugins
-      //    will be displayed as A -> X -> M -> S, B -> Y -> M -> S
-      // 3. non-reusable plugins
-      //    will be displayed as A -> M -> S, B -> M -> S
-
-      function isActive(scope: EffectScope) {
-        // exclude plugins that don't work due to missing dependencies
-        // return runtime.using.every(name => scope.ctx[name])
-        return true
-      }
-
-      const addDeps = (scope: EffectScope) => {
-        for (const [name, meta] of Object.entries(runtime.inject)) {
+      for (const scope of runtime.scopes) {
+        if (!isActive(scope)) continue
+        addNode(scope)
+        addEdge('solid', scope.parent.scope.uid!, scope.uid!)
+        for (const [name, meta] of Object.entries(scope.inject)) {
           if (!meta.required) continue
           const instance = ctx.get(name)
           if (!(instance instanceof Object)) continue
           const ctx2: Context = Reflect.getOwnPropertyDescriptor(instance, Context.current)?.value
           const uid = ctx2?.scope.uid
           if (!uid) continue
-          addEdge('dashed', uid, scope.uid)
-        }
-      }
-
-      const isReusable = runtime.plugin?.reusable
-      if (!isReusable) {
-        if (!isActive(runtime)) continue
-        addNode(runtime)
-        addDeps(runtime)
-      }
-
-      for (const fork of runtime.children) {
-        if (runtime.isForkable) {
-          if (!isActive(fork)) continue
-          addNode(fork)
-          addEdge('solid', getSourceId(fork), fork.uid)
-          if (!isReusable) {
-            addEdge('solid', fork.uid, runtime.uid)
-          } else {
-            addDeps(fork)
-          }
-        } else {
-          nodes[nodes.length - 1].weight += fork.disposables.length
-          addEdge('solid', getSourceId(fork), runtime.uid)
+          addEdge('dashed', uid!, scope.uid!)
         }
       }
     }

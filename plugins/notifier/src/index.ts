@@ -1,7 +1,6 @@
 import { Context, Service } from 'cordis'
 import { Dict, isNullable, remove } from 'cosmokit'
 import { h } from '@cordisjs/element'
-import {} from 'cordis/loader'
 import type { Entry } from '@cordisjs/plugin-webui'
 
 declare module 'cordis' {
@@ -108,12 +107,10 @@ class NotifierService extends Service {
       ctx.on('dispose', () => this.entry = undefined)
 
       this.entry = ctx.webui.addEntry({
+        path: '@cordisjs/plugin-insight/dist',
         base: import.meta.url,
         dev: '../client/index.ts',
-        prod: [
-          '../dist/index.js',
-          '../dist/style.css',
-        ],
+        prod: '../dist/manifest.json',
       }, () => ({
         notifiers: this.store.map(notifier => notifier.toJSON()),
       }))

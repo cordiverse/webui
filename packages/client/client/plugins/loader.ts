@@ -57,7 +57,7 @@ const loaders: Dict<LoaderFactory> = {
 }
 
 export interface LoadState {
-  forks: EffectScope[]
+  forks: Dict<EffectScope>
   entryId?: string
   done: Ref<boolean>
   data: Ref
@@ -106,7 +106,7 @@ export default class LoaderService extends Service {
       await Promise.all(Object.entries(entries).map(([key, body]) => {
         if (this.entries[key]) {
           if (body) return console.warn(`Entry ${key} already exists`)
-          for (const fork of this.entries[key].forks) {
+          for (const fork of Object.values(this.entries[key].forks)) {
             fork.dispose()
           }
           delete this.entries[key]
@@ -119,19 +119,20 @@ export default class LoaderService extends Service {
           done: ref(false),
           entryId,
           data: ref(data),
-          forks: [],
+          forks: {},
         }
 
-        const task = Promise.all(files.map(async (url, index) => {
+        const task = Promise.all(files.map(async (url) => {
           for (const ext in loaders) {
             if (!url.endsWith(ext)) continue
             try {
-              ctx.$entry.forks[index] = await loaders[ext](ctx, url)
+              ctx.$entry.forks[url] = await loaders[ext](ctx, url)
             } catch (e) {
               console.error(e)
             }
             return
           }
+          console.error(`No loader found for ${url}`)
         }))
         task.then(() => this.entries[key].done.value = true)
       }))

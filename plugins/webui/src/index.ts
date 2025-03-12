@@ -1,9 +1,9 @@
 import { Context, z } from 'cordis'
-import { Dict, makeArray, noop, Time } from 'cosmokit'
+import { Dict, noop, Time } from 'cosmokit'
 import { WebSocketLayer } from '@cordisjs/plugin-server'
-import { FileSystemServeOptions, ViteDevServer } from 'vite'
-import { extname, resolve } from 'node:path'
-import { createReadStream, existsSync, Stats } from 'node:fs'
+import type { FileSystemServeOptions, Manifest, ViteDevServer } from 'vite'
+import { basename, extname, resolve } from 'node:path'
+import { createReadStream, existsSync, readFileSync, Stats } from 'node:fs'
 import { readFile, stat } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { parse } from 'es-module-lexer'
@@ -118,22 +118,21 @@ class NodeWebUI extends WebUI {
     })
   }
 
-  private getPaths(files: Entry.Files) {
-    if (this.config.devMode && files.dev) {
-      const filename = fileURLToPath(new URL(files.dev, files.base))
-      if (existsSync(filename)) return [filename]
+  getEntryFiles(entry: Entry) {
+    if (this.config.devMode && entry.files.dev) {
+      const filename = fileURLToPath(new URL(entry.files.dev, entry.files.base))
+      if (existsSync(filename)) return [`/vite/@fs/${filename}`]
     }
-    return makeArray(files.prod).map(url => fileURLToPath(new URL(url, files.base)))
-  }
-
-  resolveEntry(files: Entry.Files, key: string) {
-    return this.getPaths(files).map((path, index) => {
-      if (this.config.devMode) {
-        return `/vite/@fs/${path}`
-      } else {
-        return `${this.config.uiPath}/@vendor/${key}/${index}${extname(path)}`
-      }
-    })
+    const filename = fileURLToPath(new URL(entry.files.prod, entry.files.base))
+    return Object.values(entry.getManifest())
+      // TODO filter entry files
+      .map((chunk) => {
+        if (this.config.devMode) {
+          return `/vite/@fs/${resolve(filename, '..', chunk.file)}`
+        } else {
+          return `${this.config.uiPath}/-/modules/${entry.files.path ?? entry.id}/${chunk.file}`
+        }
+      })
   }
 
   private serveAssets() {
@@ -154,22 +153,28 @@ class NodeWebUI extends WebUI {
         return ctx.body = createReadStream(filename)
       }
 
-      if (name.startsWith('@vendor/')) {
-        const [key, value] = name.slice(8).split('/')
-        if (!this.entries[key]) return ctx.status = 404
-        const paths = this.getPaths(this.entries[key].files)
-        const type = extname(value)
-        const index = value.slice(0, -type.length)
-        if (!paths[index]) return ctx.status = 404
-        const filename = paths[index]
-        ctx.type = type
-        if (this.config.devMode || ctx.type !== 'application/javascript') {
-          return sendFile(filename)
-        }
+      if (name.startsWith('-/modules/')) {
+        for (const entry of Object.values(this.entries)) {
+          const key = entry.files.path ?? entry.id
+          if (!name.startsWith(`-/modules/${key}/`)) continue
 
-        // we only transform js imports in production mode
-        const source = await readFile(filename, 'utf8')
-        return ctx.body = await this.transformImport(source)
+          const file = name.slice(11 + key.length)
+          const prodBase = fileURLToPath(new URL(entry.files.prod, entry.files.base))
+          const manifest: Manifest = JSON.parse(readFileSync(prodBase, 'utf-8'))
+          const chunkNames = Object.values(manifest).map(chunk => chunk.file)
+          if (!chunkNames.includes(file)) return ctx.status = 404
+
+          ctx.type = extname(file)
+          const filename = resolve(prodBase, '..', file)
+          if (this.config.devMode || ctx.type !== 'application/javascript') {
+            return sendFile(filename)
+          }
+
+          // we only transform js imports in production mode
+          const source = await readFile(filename, 'utf8')
+          return ctx.body = await this.transformImport(source)
+        }
+        return ctx.status = 404
       }
 
       const filename = resolve(this.root, name)
@@ -235,14 +240,15 @@ class NodeWebUI extends WebUI {
       plugins: [{
         name: 'cordis-hmr',
         transform: (code, id, options) => {
-          for (const [key, { files }] of Object.entries(this.entries)) {
-            const index = this.getPaths(files).indexOf(id)
-            if (index < 0) continue
+          for (const [key, entry] of Object.entries(this.entries)) {
+            if (!entry.files.dev) continue
+            const filename = fileURLToPath(new URL(entry.files.dev, entry.files.base))
+            if (id !== filename) continue
             code += [
               'if (import.meta.hot) {',
               '  import.meta.hot.accept(async (module) => {',
               '    const { root } = await import("@cordisjs/client");',
-              `    const fork = root.$loader.entries["${key}"]?.forks[${index}];`,
+              `    const fork = root.$loader.entries["${key}"]?.forks["${id}"];`,
               '    return fork?.update(module, true);',
               '  });',
               '}',

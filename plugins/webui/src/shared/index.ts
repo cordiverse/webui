@@ -44,7 +44,7 @@ export abstract class WebUI extends Service {
     this.ctx.emit('webui/connection', client)
   }
 
-  abstract resolveEntry(files: Entry.Files, key: string): string[]
+  abstract getEntryFiles(entry: Entry): string[]
   abstract addListener<K extends keyof Events>(event: K, callback: Events[K]): void
 
   addEntry<T>(files: Entry.Files, data?: (client: Client) => T) {

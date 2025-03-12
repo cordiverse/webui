@@ -77,12 +77,10 @@ export async function apply(ctx: Context, config: Config) {
   createFile(date, Math.max(...files[date] ?? [0]) + 1)
 
   const entry = ctx.webui.addEntry<Dict<Message[] | null>>({
+    path: '@cordisjs/plugin-insight/dist',
     base: import.meta.url,
     dev: '../client/index.ts',
-    prod: [
-      '../dist/index.js',
-      '../dist/style.css',
-    ],
+    prod: '../dist/manifest.json',
   }, () => ({
     ...Object.fromEntries(Object.entries(files).flatMap(([date, indices]) => {
       return indices.map(index => [`${date}-${index}.log`, null] as const)

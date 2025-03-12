@@ -45,12 +45,10 @@ export const Config: Schema<Config> = Schema.object({})
 
 export function apply(ctx: Context) {
   const entry = ctx.webui.addEntry({
+    path: '@cordisjs/plugin-insight/dist',
     base: import.meta.url,
     dev: '../client/index.ts',
-    prod: [
-      '../dist/index.js',
-      '../dist/style.css',
-    ],
+    prod: '../dist/manifest.json',
   }, getGraph)
 
   const update = ctx.debounce(() => entry.refresh(), 0)

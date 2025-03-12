@@ -1,5 +1,4 @@
 import { Schema } from 'cordis'
-import { makeArray } from 'cosmokit'
 import { Entry, Events, WebUI } from './shared/index.ts'
 import {} from 'cordis/loader'
 
@@ -14,8 +13,10 @@ class BrowserWebUI extends WebUI {
     // TODO
   }
 
-  resolveEntry(files: Entry.Files) {
-    return makeArray(files.prod).map(url => new URL(url, files.base).href)
+  getEntryFiles(entry: Entry) {
+    return Object.values(entry.getManifest())
+      // TODO filter entry files
+      .map((chunk) => new URL(chunk.file, entry.files.base).href)
   }
 }
 

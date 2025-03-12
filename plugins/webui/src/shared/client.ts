@@ -1,11 +1,8 @@
 import { Context } from 'cordis'
-import { Logger } from 'cordis/logger'
 import { IncomingMessage } from 'node:http'
 import { WebSocket } from './types.ts'
 import { mapValues } from 'cosmokit'
 import { Entry } from './entry.ts'
-
-const logger = new Logger('webui')
 
 export interface ClientEvents {
   'entry:init'(data: Entry.Init): void
@@ -35,7 +32,7 @@ export class Client {
     const { type, body } = JSON.parse(data.data.toString())
     const listener = this.ctx.get('webui')!.listeners[type]
     if (!listener) {
-      logger.info('unknown message:', type, body)
+      this.ctx.logger('webui').info('receive unknown message:', type, body)
       return
     }
     return listener.call(this, body)

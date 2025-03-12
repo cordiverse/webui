@@ -1,12 +1,16 @@
 import { Context } from 'cordis'
 import { Client } from './index.ts'
 import { Dict } from 'cosmokit'
+import type { Manifest } from 'vite'
+import { fileURLToPath } from 'node:url'
+import { readFileSync } from 'node:fs'
 
 export namespace Entry {
   export interface Files {
-    base?: string
-    dev: string
-    prod: string | string[]
+    path?: string
+    base: string
+    dev?: string
+    prod: string
   }
 
   export interface Data {
@@ -35,6 +39,8 @@ export class Entry<T = any> {
   public id = Math.random().toString(36).slice(2)
   public dispose: () => void
 
+  private _manifest: Manifest | undefined
+
   constructor(public ctx: Context, public files: Entry.Files, public data?: (client: Client) => T) {
     ctx.webui.entries[this.id] = this
     ctx.webui.broadcast('entry:init', (client: Client) => ({
@@ -56,6 +62,13 @@ export class Entry<T = any> {
     })
   }
 
+  getManifest() {
+    if (this._manifest) return this._manifest
+    const prodBase = fileURLToPath(new URL(this.files.prod, this.files.base))
+    const manifest: Manifest = JSON.parse(readFileSync(prodBase, 'utf-8'))
+    return this._manifest = manifest
+  }
+
   refresh() {
     this.ctx.webui.broadcast('entry:update', (client: Client) => ({
       id: this.id,
@@ -74,7 +87,7 @@ export class Entry<T = any> {
   toJSON(client: Client): Entry.Data | undefined {
     try {
       return {
-        files: this.ctx.webui.resolveEntry(this.files, this.id),
+        files: this.ctx.webui.getEntryFiles(this),
         entryId: this.ctx.get('loader')?.locate(),
         data: JSON.parse(JSON.stringify(this.data?.(client))),
       }

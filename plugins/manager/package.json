@@ -56,17 +56,17 @@
     }
   },
   "peerDependencies": {
-    "@cordisjs/plugin-webui": "^0.2.0",
-    "cordis": "^4.0.0-alpha.1"
+    "@cordisjs/plugin-webui": "^0.2.1",
+    "cordis": "^4.0.0-alpha.5"
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.2.0",
+    "@cordisjs/client": "^0.2.1",
     "@cordisjs/plugin-hmr": "^1.0.0-alpha.1",
-    "@cordisjs/plugin-webui": "^0.2.0",
-    "cordis": "^4.0.0-alpha.1"
+    "@cordisjs/plugin-webui": "^0.2.1",
+    "cordis": "^4.0.0-alpha.5"
   },
   "dependencies": {
     "@cordisjs/registry": "^7.2.1",
-    "cosmokit": "^1.7.2"
+    "cosmokit": "^1.7.3"
   }
 }

@@ -6,8 +6,7 @@
   "main": "lib/index.js",
   "files": [
     "lib",
-    "dist",
-    "src"
+    "dist"
   ],
   "author": "Shigma <shigma10826@gmail.com>",
   "license": "MIT",
@@ -43,15 +42,15 @@
     }
   },
   "peerDependencies": {
-    "@cordisjs/plugin-webui": "^0.2.0",
-    "cordis": "^4.0.0-alpha.2"
+    "@cordisjs/plugin-webui": "^0.2.1",
+    "cordis": "^4.0.0-alpha.5"
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.2.0",
+    "@cordisjs/client": "^0.2.1",
     "@types/d3-force": "^3.0.9",
     "d3-force": "^3.0.0"
   },
   "dependencies": {
-    "cosmokit": "^1.7.2"
+    "cosmokit": "^1.7.3"
   }
 }

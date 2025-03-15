@@ -24,8 +24,8 @@ export async function send(type: string, ...args: any[]) {
     method: 'POST',
     body: JSON.stringify(args[0]),
     headers: new Headers({
-      'Content-Type': 'application/json',
-      'X-Client-ID': clientId.value ?? '',
+      'content-type': 'application/json',
+      'x-client-id': clientId.value ?? '',
     }),
   })
   if (!response.ok) {

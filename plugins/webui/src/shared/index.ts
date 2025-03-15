@@ -34,8 +34,8 @@ export abstract class WebUI extends Service {
     }
   }
 
-  protected accept(socket: WebSocket, request?: IncomingMessage) {
-    const client = new Client(this.ctx, socket, request)
+  protected accept(socket: WebSocket) {
+    const client = new Client(this.ctx, socket)
     socket.addEventListener('close', () => {
       delete this.clients[client.id]
       this.ctx.emit('webui/connection', client)

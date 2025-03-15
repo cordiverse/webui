@@ -1,12 +1,13 @@
 import { Context, z } from 'cordis'
-import { Dict, noop, Time } from 'cosmokit'
-import { WebSocketLayer } from '@cordisjs/plugin-server'
+import { Dict, Time } from 'cosmokit'
+import { WsRoute } from '@cordisjs/plugin-server'
 import type { FileSystemServeOptions, Manifest, ViteDevServer } from 'vite'
-import { basename, extname, resolve } from 'node:path'
-import { createReadStream, existsSync, readFileSync, Stats } from 'node:fs'
+import { extname, join, resolve } from 'node:path'
+import { existsSync, readFileSync } from 'node:fs'
 import { readFile, stat } from 'node:fs/promises'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { parse } from 'es-module-lexer'
+import fetchFile from '@cordisjs/fetch-file'
 import { Entry, Events, WebUI } from './shared'
 import open from 'open'
 
@@ -60,18 +61,19 @@ class NodeWebUI extends WebUI {
 
   public vite!: ViteDevServer
   public root: string
-  public layer: WebSocketLayer
+  public wsRoute: WsRoute
 
   constructor(public ctx: Context, public config: NodeWebUI.Config) {
     super(ctx)
 
-    this.layer = ctx.server.ws(config.apiPath, (socket, request) => {
-      this.accept(socket as any, request)
+    this.wsRoute = ctx.server.ws(config.apiPath, async (req, next) => {
+      const socket = await next()
+      this.accept(socket as any)
     })
 
     ctx.on('webui/connection', () => {
       if (!ctx.loader) return
-      ctx.loader.envData.clientCount = this.layer.clients.size
+      ctx.loader.envData.clientCount = this.clients.size
     })
 
     this.root = fileURLToPath(config.devMode
@@ -105,15 +107,15 @@ class NodeWebUI extends WebUI {
   }
 
   addListener<K extends keyof Events>(event: K, callback: Events[K]) {
-    this.ctx.server.post(`${this.config.apiPath}/${event}`, async (koa) => {
-      const { body, headers } = koa.request
+    this.ctx.server.post(`${this.config.apiPath}/${event}`, async (req, res, next) => {
+      const body = await req.json()
       try {
-        koa.body = JSON.stringify(await (callback as any).call(headers, body) ?? {})
-        koa.type = 'application/json'
-        koa.status = 200
+        res.body = JSON.stringify(await (callback as any)(body) ?? {})
+        res.headers.set('content-type', 'application/json; charset=utf-8')
+        res.status = 200
       } catch (error) {
         this.ctx.logger.warn(error)
-        koa.status = 500
+        res.status = 500
       }
     })
   }
@@ -136,23 +138,11 @@ class NodeWebUI extends WebUI {
   }
 
   private serveAssets() {
-    const { uiPath } = this.config
-
-    this.ctx.server.get(uiPath + '(.*)', async (ctx, next) => {
+    this.ctx.server.get('{/*path}', async (req, res, next) => {
       await next()
-      if (ctx.body || ctx.response.body) return
+      if (res.bodyUsed) return
 
-      // add trailing slash and redirect
-      if (ctx.path === uiPath && !uiPath.endsWith('/')) {
-        return ctx.redirect(ctx.path + '/')
-      }
-
-      const name = ctx.path.slice(uiPath.length).replace(/^\/+/, '')
-      const sendFile = (filename: string) => {
-        ctx.type = extname(filename)
-        return ctx.body = createReadStream(filename)
-      }
-
+      const name = req.params.path ?? ''
       if (name.startsWith('-/modules/')) {
         for (const entry of Object.values(this.entries)) {
           const key = entry.files.path ?? entry.id
@@ -162,31 +152,46 @@ class NodeWebUI extends WebUI {
           const prodBase = fileURLToPath(new URL(entry.files.prod, entry.files.base))
           const manifest: Manifest = JSON.parse(readFileSync(prodBase, 'utf-8'))
           const chunkNames = Object.values(manifest).map(chunk => chunk.file)
-          if (!chunkNames.includes(file)) return ctx.status = 404
+          if (!chunkNames.includes(file)) continue
 
-          ctx.type = extname(file)
           const filename = resolve(prodBase, '..', file)
-          if (this.config.devMode || ctx.type !== 'application/javascript') {
-            return sendFile(filename)
+          if (this.config.devMode || !['.js', '.mjs'].includes(extname(file))) {
+            return fetchFile(pathToFileURL(filename), {}, {
+              onError: this.ctx.logger.warn,
+            })
           }
 
           // we only transform js imports in production mode
-          const source = await readFile(filename, 'utf8')
-          return ctx.body = await this.transformImport(source)
+          const source = await readFile(filename, 'utf-8')
+          res.status = 200
+          res.headers.set('content-type', 'application/javascript; charset=utf-8')
+          res.body = await this.transformImport(source)
+          return
         }
-        return ctx.status = 404
+        res.status = 404
+        return
       }
 
-      const filename = resolve(this.root, name)
+      const filename = join(this.root, name)
       if (!filename.startsWith(this.root) && !filename.includes('node_modules')) {
-        return ctx.status = 403
+        res.status = 404
+        return
       }
 
-      const stats = await stat(filename).catch<Stats>(noop)
-      if (stats?.isFile()) return sendFile(filename)
-      const template = await readFile(resolve(this.root, 'index.html'), 'utf8')
-      ctx.type = 'html'
-      ctx.body = await this.transformHtml(template)
+      const response = await fetchFile(pathToFileURL(filename), {}, {
+        onError: this.ctx.logger.warn,
+      })
+      if (response.status !== 404) return response
+
+      // fallback to index.html
+      if (!req.accepts('text/html; charset=utf-8')) {
+        res.status = 404
+        return
+      }
+      const template = await readFile(resolve(this.root, 'index.html'), 'utf-8')
+      res.status = 200
+      res.headers.set('content-type', 'text/html; charset=utf-8')
+      res.body = await this.transformHtml(template)
     })
   }
 
@@ -259,15 +264,11 @@ class NodeWebUI extends WebUI {
       }],
     })
 
-    this.ctx.server.all('/vite(.*)', (ctx) => new Promise((resolve) => {
-      this.vite.middlewares(ctx.req, ctx.res, resolve)
-    }))
+    this.ctx.server.all('/vite{/*path}', async (req, res, next) => {
+      return this.vite.middlewares(req._req, res._res, next)
+    })
 
     this.ctx.on('dispose', () => this.vite.close())
-  }
-
-  stop() {
-    this.layer?.close()
   }
 }
 

@@ -13,7 +13,7 @@ export interface ClientEvents {
 export class Client {
   readonly id = Math.random().toString(36).slice(2)
 
-  constructor(readonly ctx: Context, public socket: WebSocket, public request?: IncomingMessage) {
+  constructor(readonly ctx: Context, public socket: WebSocket) {
     socket.addEventListener('message', this.receive)
     const webui = this.ctx.get('webui')!
     const body: Entry.Init = {

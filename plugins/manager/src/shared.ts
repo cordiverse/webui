@@ -1,4 +1,4 @@
-import { Context, Inject, Plugin, ScopeStatus, Service, z } from 'cordis'
+import { Context, EffectMeta, Inject, Plugin, ScopeStatus, Service, z } from 'cordis'
 import { readFile } from 'fs/promises'
 import { Dict, pick } from 'cosmokit'
 import { EntryOptions } from 'cordis/loader'
@@ -50,6 +50,7 @@ export interface EvalResult {
 export interface EntryData extends EntryOptions, Required<EntryLocation> {
   isGroup?: boolean
   status?: ScopeStatus
+  effects?: EffectMeta[]
 }
 
 export interface Provider {
@@ -106,6 +107,7 @@ export abstract class Manager extends Service {
       position: entry.parent.data.indexOf(entry.options),
       isGroup: !!entry.subgroup,
       status: entry.scope?.status,
+      effects: [...entry.scope?.disposables ?? []].map(EffectMeta),
     }))
   }
 

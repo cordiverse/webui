@@ -11,6 +11,7 @@ import Remove from './dialogs/remove.vue'
 import MainPage from './routes/main.vue'
 import ReadmePage from './routes/readme.vue'
 import ConfigPage from './routes/config.vue'
+import EffectsPage from './routes/effects.vue'
 import ServicesPage from './routes/services.vue'
 import InterceptPage from './routes/intercept.vue'
 
@@ -263,6 +264,14 @@ export default class Manager extends Service {
       hidden: (entry) => {
         return !hasSchema(this.data.value.packages[entry.name]?.runtime?.schema)
       },
+    })
+
+    this.subroute({
+      path: 'effects',
+      title: '作用',
+      component: EffectsPage,
+      // hidden: (entry) => !!entry.effects,
+      order: 1000,
     })
 
     this.subroute({

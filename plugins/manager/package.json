@@ -1,7 +1,7 @@
 {
   "name": "@cordisjs/plugin-manager",
   "description": "Manage your bots and plugins with console",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "type": "module",
   "exports": {
     ".": {
@@ -56,14 +56,14 @@
     }
   },
   "peerDependencies": {
-    "@cordisjs/plugin-webui": "^0.2.1",
-    "cordis": "^4.0.0-alpha.5"
+    "@cordisjs/plugin-webui": "^0.2.2",
+    "cordis": "^4.0.0-alpha.6"
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.2.1",
+    "@cordisjs/client": "^0.2.2",
     "@cordisjs/plugin-hmr": "^1.0.0-alpha.1",
-    "@cordisjs/plugin-webui": "^0.2.1",
-    "cordis": "^4.0.0-alpha.5"
+    "@cordisjs/plugin-webui": "^0.2.2",
+    "cordis": "^4.0.0-alpha.6"
   },
   "dependencies": {
     "@cordisjs/registry": "^7.2.1",

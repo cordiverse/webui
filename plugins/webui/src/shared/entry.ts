@@ -39,6 +39,7 @@ export class Entry<T = any> {
   public id = Math.random().toString(36).slice(2)
   public dispose: () => void
 
+  private _disposed = false
   private _manifest: Manifest | undefined
 
   constructor(public ctx: Context, public files: Entry.Files, public data?: (client: Client) => T) {
@@ -51,6 +52,7 @@ export class Entry<T = any> {
       },
     }))
     this.dispose = ctx.effect(() => () => {
+      this._disposed = true
       delete this.ctx.webui.entries[this.id]
       ctx.webui.broadcast('entry:init', (client: Client) => ({
         serverId: ctx.webui.id,
@@ -59,7 +61,7 @@ export class Entry<T = any> {
           [this.id]: null,
         },
       }))
-    })
+    }, 'ctx.webui.addEntry()')
   }
 
   getManifest() {
@@ -70,6 +72,7 @@ export class Entry<T = any> {
   }
 
   refresh() {
+    if (this._disposed) return
     this.ctx.webui.broadcast('entry:update', (client: Client) => ({
       id: this.id,
       data: this.data?.(client),
@@ -77,6 +80,7 @@ export class Entry<T = any> {
   }
 
   patch(data: any, key?: string) {
+    if (this._disposed) return
     this.ctx.webui.broadcast('entry:patch', {
       id: this.id,
       data,

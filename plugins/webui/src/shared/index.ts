@@ -1,7 +1,6 @@
 import { Context, Service } from 'cordis'
 import { Dict } from 'cosmokit'
 import { Client } from './client.ts'
-import { IncomingMessage } from 'node:http'
 import { Entry } from './entry.ts'
 import { WebSocket } from './types.ts'
 

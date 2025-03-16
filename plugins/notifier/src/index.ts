@@ -104,8 +104,6 @@ class NotifierService extends Service {
     super(ctx, 'notifier')
 
     ctx.inject(['webui'], (ctx) => {
-      ctx.on('dispose', () => this.entry = undefined)
-
       this.entry = ctx.webui.addEntry({
         path: '@cordisjs/plugin-insight/dist',
         base: import.meta.url,

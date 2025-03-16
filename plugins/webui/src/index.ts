@@ -1,5 +1,5 @@
 import { Context, z } from 'cordis'
-import { Dict, Time } from 'cosmokit'
+import { Dict, isNullable, Time } from 'cosmokit'
 import { WsRoute } from '@cordisjs/plugin-server'
 import type { FileSystemServeOptions, Manifest, ViteDevServer } from 'vite'
 import { extname, join, resolve } from 'node:path'
@@ -59,7 +59,7 @@ class NodeWebUI extends WebUI {
     },
   }
 
-  public vite!: ViteDevServer
+  public vite?: ViteDevServer
   public root: string
   public wsRoute: WsRoute
 
@@ -140,7 +140,7 @@ class NodeWebUI extends WebUI {
   private serveAssets() {
     this.ctx.server.get('{/*path}', async (req, res, next) => {
       await next()
-      if (res.bodyUsed) return
+      if (!isNullable(res.body)) return
 
       const name = req.params.path ?? ''
       if (name.startsWith('-/modules/')) {
@@ -264,11 +264,13 @@ class NodeWebUI extends WebUI {
       }],
     })
 
-    this.ctx.server.all('/vite{/*path}', async (req, res, next) => {
-      return this.vite.middlewares(req._req, res._res, next)
+    this.ctx.server.use(async (req, res, next) => {
+      if (!req.url.startsWith('/vite/')) return next()
+      res.legacyMode = true
+      this.vite!.middlewares(req._req, res._res, next)
     })
 
-    this.ctx.on('dispose', () => this.vite.close())
+    this.ctx.effect(() => () => this.vite?.close(), 'vite.createServer()')
   }
 }
 

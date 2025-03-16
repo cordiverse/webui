@@ -30,10 +30,12 @@ function jsLoader(ctx: Context, exports: {}) {
 }
 
 function cssLoader(ctx: Context, link: HTMLLinkElement) {
-  document.head.appendChild(link)
-  ctx.on('dispose', () => {
-    document.head.removeChild(link)
-  })
+  ctx.effect(() => {
+    document.head.appendChild(link)
+    return () => {
+      document.head.removeChild(link)
+    }
+  }, 'Node.appendChild')
   return new Promise((resolve, reject) => {
     link.onload = resolve
     link.onerror = reject

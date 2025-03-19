@@ -201,9 +201,7 @@ export default class Manager extends Service {
         delete this.changes[key]
       }
     }, { immediate: true })
-  }
 
-  start() {
     this.ctx.slot({
       type: 'global',
       component: Select,
@@ -270,7 +268,7 @@ export default class Manager extends Service {
       path: 'effects',
       title: '作用',
       component: EffectsPage,
-      // hidden: (entry) => !!entry.effects,
+      hidden: (entry) => !entry.effects,
       order: 1000,
     })
 

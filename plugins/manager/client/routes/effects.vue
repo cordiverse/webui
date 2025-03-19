@@ -8,7 +8,7 @@
       </el-button>
     </div>
 
-    <effect-tree :effects="currentEntry.effects!"/>
+    <effect-tree :effects="currentEntry.effects ?? []"/>
   </k-content>
 </template>
 

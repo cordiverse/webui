@@ -107,7 +107,7 @@ export abstract class Manager extends Service {
       position: entry.parent.data.indexOf(entry.options),
       isGroup: !!entry.subgroup,
       status: entry.scope?.status,
-      effects: [...entry.scope?.disposables ?? []].map(EffectMeta),
+      effects: entry.scope?.getEffects?.(),
     }))
   }
 

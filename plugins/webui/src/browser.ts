@@ -1,11 +1,11 @@
-import { Schema } from 'cordis'
+import { Context, Schema } from 'cordis'
 import { Entry, Events, WebUI } from './shared/index.ts'
 import {} from 'cordis/loader'
 
 export * from './shared/index.ts'
 
 class BrowserWebUI extends WebUI {
-  start() {
+  [Context.init]() {
     this.accept(this.ctx.loader[Symbol.for('cordis.webui.socket')])
   }
 

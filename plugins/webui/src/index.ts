@@ -93,7 +93,7 @@ class NodeWebUI extends WebUI {
     return global
   }
 
-  async start() {
+  async [Context.init]() {
     if (this.config.devMode) await this.createVite()
     this.serveAssets()
 

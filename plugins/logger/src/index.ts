@@ -1,6 +1,6 @@
 import { Context, Schema } from 'cordis'
-import { Exporter, Logger, Message } from 'cordis/logger'
-import { Dict, remove, Time } from 'cosmokit'
+import { Exporter, Message } from 'cordis/logger'
+import { Dict, Time } from 'cosmokit'
 import { resolve } from 'path'
 import { mkdir, readdir, readFile, rm } from 'fs/promises'
 import {} from '@cordisjs/plugin-webui'
@@ -38,7 +38,7 @@ export const Config: Schema<Config> = Schema.object({
 
 export const inject = ['webui', 'timer', 'logger']
 
-export async function apply(ctx: Context, config: Config) {
+export async function* apply(ctx: Context, config: Config) {
   const root = resolve(ctx.baseDir, config.root)
   await mkdir(root, { recursive: true })
 
@@ -51,6 +51,8 @@ export async function apply(ctx: Context, config: Config) {
   }
 
   let writer: LogFile
+  yield () => writer?.close()
+
   function createFile(date: string, index: number) {
     const name = `${date}-${index}.log`
     writer = new LogFile(date, name, `${root}/${name}`)
@@ -134,10 +136,6 @@ export async function apply(ctx: Context, config: Config) {
   }
 
   ctx.logger.exporter(exporter)
-
-  ctx.effect(() => () => {
-    writer?.close()
-  })
 
   for (const message of ctx.logger.buffer || []) {
     exporter.export!(message)

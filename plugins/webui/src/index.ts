@@ -4,7 +4,7 @@ import { WsRoute } from '@cordisjs/plugin-server'
 import type { FileSystemServeOptions, Manifest, ViteDevServer } from 'vite'
 import { extname, join, resolve } from 'node:path'
 import { existsSync, readFileSync } from 'node:fs'
-import { readFile, stat } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { parse } from 'es-module-lexer'
 import fetchFile from '@cordisjs/fetch-file'
@@ -140,7 +140,7 @@ class NodeWebUI extends WebUI {
   private serveAssets() {
     this.ctx.server.get('{/*path}', async (req, res, next) => {
       await next()
-      if (!isNullable(res.body)) return
+      if (res.bodyUsed) return
 
       const name = req.params.path ?? ''
       if (name.startsWith('-/modules/')) {

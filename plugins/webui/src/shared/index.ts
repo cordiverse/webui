@@ -1,4 +1,4 @@
-import { Context, Service } from 'cordis'
+import { Context, Inject, Service } from 'cordis'
 import { Dict } from 'cosmokit'
 import { Client } from './client.ts'
 import { Entry } from './entry.ts'
@@ -19,6 +19,7 @@ declare module 'cordis' {
 
 export type SocketListener = (this: Client, ...args: any[]) => void
 
+@Inject('logger', true, { name: 'webui' })
 export abstract class WebUI extends Service {
   public id = Math.random().toString(36).slice(2)
 

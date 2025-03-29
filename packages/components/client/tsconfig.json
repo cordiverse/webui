@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "rootDir": ".",
-    "target": "es2023",
+    "target": "es2024",
     "module": "esnext",
     "declaration": true,
     "jsx": "preserve",

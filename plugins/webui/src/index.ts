@@ -1,6 +1,6 @@
-import { Context, z } from 'cordis'
-import { Dict, isNullable, Time } from 'cosmokit'
-import { WsRoute } from '@cordisjs/plugin-server'
+import { Context, Inject, Service, z } from 'cordis'
+import { Dict, Time } from 'cosmokit'
+import type {} from '@cordisjs/plugin-server'
 import type { FileSystemServeOptions, Manifest, ViteDevServer } from 'vite'
 import { extname, join, resolve } from 'node:path'
 import { existsSync, readFileSync } from 'node:fs'
@@ -43,30 +43,16 @@ interface HeartbeatConfig {
   timeout?: number
 }
 
+@Inject('server')
+@Inject('loader', false)
 class NodeWebUI extends WebUI {
-  static inject = {
-    server: {
-      required: true,
-    },
-    loader: {
-      required: false,
-    },
-    logger: {
-      required: true,
-      config: {
-        name: 'webui',
-      },
-    },
-  }
-
   public vite?: ViteDevServer
   public root: string
-  public wsRoute: WsRoute
 
   constructor(public ctx: Context, public config: NodeWebUI.Config) {
     super(ctx)
 
-    this.wsRoute = ctx.server.ws(config.apiPath, async (req, next) => {
+    ctx.server.ws(config.apiPath, async (req, next) => {
       const socket = await next()
       this.accept(socket as any)
     })
@@ -93,7 +79,7 @@ class NodeWebUI extends WebUI {
     return global
   }
 
-  async [Context.init]() {
+  async [Service.init]() {
     if (this.config.devMode) await this.createVite()
     this.serveAssets()
 

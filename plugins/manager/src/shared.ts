@@ -75,7 +75,7 @@ export interface RuntimeData {
   forkable?: boolean
   schema?: z
   usage?: string
-  inject?: Dict<Inject.Meta>
+  inject?: Dict<Inject.Meta | undefined>
 }
 
 export interface EntryLocation {
@@ -83,9 +83,9 @@ export interface EntryLocation {
   position?: number
 }
 
+@Inject('loader')
+@Inject('timer')
 export abstract class Manager extends Service {
-  static inject = ['loader', 'timer']
-
   public entry?: ClientEntry<Data>
 
   protected packages: Dict<LocalObject> = Object.create(null)
@@ -147,7 +147,7 @@ export abstract class Manager extends Service {
     return result
   }
 
-  @Inject(['webui'])
+  @Inject('webui')
   injectWebUI() {
     this.entry = this.ctx.webui.addEntry({
       path: '@cordisjs/plugin-insight/dist',

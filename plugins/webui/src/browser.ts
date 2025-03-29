@@ -1,11 +1,11 @@
-import { Context, Schema } from 'cordis'
+import { z, Service } from 'cordis'
 import { Entry, Events, WebUI } from './shared/index.ts'
 import {} from 'cordis/loader'
 
 export * from './shared/index.ts'
 
 class BrowserWebUI extends WebUI {
-  [Context.init]() {
+  [Service.init]() {
     this.accept(this.ctx.loader[Symbol.for('cordis.webui.socket')])
   }
 
@@ -23,7 +23,7 @@ class BrowserWebUI extends WebUI {
 namespace BrowserWebUI {
   export interface Config {}
 
-  export const Config: Schema<Config> = Schema.object({})
+  export const Config: z<Config> = z.object({})
 }
 
 export default BrowserWebUI

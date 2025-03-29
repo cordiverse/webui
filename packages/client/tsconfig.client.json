@@ -1,7 +1,7 @@
 {
   // We do not use "extends" here because dev mode cannot access the root tsconfig.
   "compilerOptions": {
-    "target": "es2023",
+    "target": "es2024",
     "module": "esnext",
     "declaration": true,
     "jsx": "preserve",

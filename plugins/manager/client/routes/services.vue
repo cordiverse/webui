@@ -58,7 +58,7 @@
 
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { send, useContext, Inject } from '@cordisjs/client'
+import { send, useContext } from '@cordisjs/client'
 
 const ctx = useContext()
 const router = useRouter()
@@ -86,7 +86,7 @@ function addDependency() {
   send('manager.config.update', {
     id: currentEntry.value.id,
     inject: {
-      ...Inject.resolve(currentEntry.value.inject),
+      ...currentEntry.value.inject,
       [input.value]: { required: isRequired.value },
     },
   })

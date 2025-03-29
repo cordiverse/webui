@@ -76,14 +76,13 @@ export class Context extends cordis.Context {
       if (ref2) ref2.value = Symbol(name)
     }, { global: true })
 
-    this.on('internal/inject', function (name) {
+    this.on('internal/inject', function (name, key) {
       // track
-      const ref = this._store[this[Context.isolate][name] ?? name] ??= customRef((get, set) => ({ get, set }))
+      const ref = this._store[key ?? name] ??= customRef((get, set) => ({ get, set }))
       return ref.value, false
     }, { prepend: true })
 
-    this.on('ready', async () => {
-      await this.$loader.initTask
+    this.$loader.initTask.then(() => {
       this.app.use(this.$i18n.i18n)
       this.app.use(this.$router.router)
       this.app.mount('#app')

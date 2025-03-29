@@ -42,15 +42,15 @@
     }
   },
   "peerDependencies": {
-    "@cordisjs/plugin-webui": "^0.2.5",
-    "cordis": "^4.0.0-alpha.7"
+    "@cordisjs/plugin-webui": "^0.3.0",
+    "cordis": "^4.0.0-beta.0"
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.2.5",
-    "@types/d3-force": "^3.0.9",
+    "@cordisjs/client": "^0.3.0",
+    "@types/d3-force": "^3.0.10",
     "d3-force": "^3.0.0"
   },
   "dependencies": {
-    "cosmokit": "^1.7.4"
+    "cosmokit": "^1.8.0"
   }
 }

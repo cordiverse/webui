@@ -4,48 +4,11 @@ declare global {
   namespace JSX {
     interface IntrinsicElements {
       [key: string]: any
-      message: {
-        id?: string
-        forward?: boolean
-        children?: any[]
-      }
-      quote: {
-        id?: string
-        name?: string
-        avatar?: string
-        children?: any[]
-      }
-      at: {
-        id?: string
-        name?: string
-        avatar?: string
-        role?: string
-        type?: string
-      }
-      sharp: {
-        id?: string
-        name?: string
-        avatar?: string
-      }
-      img: ResourceElement
-      audio: ResourceElement
-      video: ResourceElement
-      file: ResourceElement
-    }
-
-    interface ResourceElement {
-      [key: string]: any
-      src?: string
-      title?: string
-      width?: string | number
-      height?: string | number
-      duration?: string | number
-      poster?: string
     }
   }
 }
 
-const kElement = Symbol.for('satori.element')
+const kElement = Symbol.for('cordis.element')
 
 interface Element {
   [kElement]: true
@@ -93,10 +56,12 @@ class ElementConstructor {
 defineProperty(ElementConstructor, 'name', 'Element')
 defineProperty(ElementConstructor.prototype, kElement, true)
 
-type RenderFunction = Element.Render<Element.Fragment, any>
+export type Fragment = string | Element | (string | Element)[]
+export type Render<T, S> = (attrs: Dict, children: Element[], session: S) => T
+type RenderFunction = Render<Fragment, any>
 
-function Element(type: string | RenderFunction, ...children: (Element.Fragment | undefined)[]): Element
-function Element(type: string | RenderFunction, attrs: Dict, ...children: (Element.Fragment | undefined)[]): Element
+function Element(type: string | RenderFunction, ...children: (Fragment | undefined)[]): Element
+function Element(type: string | RenderFunction, attrs: Dict, ...children: (Fragment | undefined)[]): Element
 function Element(type: string | RenderFunction, ...args: any[]) {
   const el = Object.create(ElementConstructor.prototype)
   const attrs: Dict = {}, children: Element[] = []
@@ -137,9 +102,7 @@ namespace Element {
   export const jsxDEV = Element
   export const Fragment = 'template'
 
-  export type Fragment = string | Element | (string | Element)[]
   export type Visit<T, S> = (element: Element, session?: S) => T
-  export type Render<T, S> = (attrs: Dict, children: Element[], session: S) => T
   export type SyncTransformer<S = never> = boolean | Fragment | Render<boolean | Fragment, S>
   export type Transformer<S = never> = boolean | Fragment | Render<Awaitable<boolean | Fragment>, S>
 
@@ -161,7 +124,7 @@ namespace Element {
     }
   }
 
-  export function toElementArray(content: Element.Fragment) {
+  export function toElementArray(content: Fragment) {
     if (Array.isArray(content)) {
       return content.map(toElement).filter((x): x is Element => !!x)
     } else {
@@ -174,10 +137,10 @@ namespace Element {
   }
 
   export function escape(source: string, inline = false) {
-    const result
-      = (source ?? '').replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
+    const result = (source ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
     return inline
       ? result.replace(/"/g, '&quot;')
       : result

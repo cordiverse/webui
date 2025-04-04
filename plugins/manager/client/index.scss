@@ -13,7 +13,7 @@
     &.pending {
       background-color: var(--k-color-warning);
     }
-    &.loading {
+    &.loading, &.unloading {
       animation: status-flash 1s infinite;
       background-color: var(--k-color-warning);
     }

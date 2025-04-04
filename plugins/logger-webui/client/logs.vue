@@ -13,7 +13,7 @@
           <code v-html="renderLine(message)"></code>
           <router-link
             class="log-link inline-flex items-center justify-center absolute w-20px h-20px bottom-0 right-1"
-            v-if="showLink && ctx.manager && message?.entryId"
+            v-if="showLink && ctx.get('manager') && message?.entryId"
             :to="'/plugins/' + message.entryId"
           >
             <k-icon name="arrow-right"/>

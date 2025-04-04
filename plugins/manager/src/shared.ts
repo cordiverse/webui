@@ -1,4 +1,4 @@
-import { Context, EffectMeta, Inject, Plugin, ScopeStatus, Service, z } from 'cordis'
+import { Context, EffectMeta, Inject, Plugin, FiberState, Service, z } from 'cordis'
 import { readFile } from 'fs/promises'
 import { Dict, pick } from 'cosmokit'
 import { EntryOptions } from 'cordis/loader'
@@ -49,7 +49,7 @@ export interface EvalResult {
 
 export interface EntryData extends EntryOptions, Required<EntryLocation> {
   isGroup?: boolean
-  status?: ScopeStatus
+  state?: FiberState
   effects?: EffectMeta[]
 }
 
@@ -103,29 +103,29 @@ export abstract class Manager extends Service {
       ...entry.options,
       id: entry.id,
       config: entry.subgroup?.data === entry.options.config ? undefined : entry.options.config,
-      parent: entry.parent.ctx.scope.entry?.id ?? null,
+      parent: entry.parent.ctx.fiber.entry?.id ?? null,
       position: entry.parent.data.indexOf(entry.options),
       isGroup: !!entry.subgroup,
-      status: entry.scope?.status,
-      effects: entry.scope?.getEffects?.(),
+      state: entry.fiber?.state,
+      effects: entry.fiber?.getEffects?.(),
     }))
   }
 
   private getServiceInfo(ctx: Context, name: string): Provider | undefined {
     const key = ctx[Context.isolate][name]
-    const item = ctx[Context.store][key]
+    const impl = ctx.reflect.store[key]
     // FIXME
-    // 1. check `item` instead of `item?.source`
+    // 1. check `impl` instead of `impl?.source`
     // 2. experimental `schema`
-    if (!item?.source) return
-    const location = this.ctx.loader.locate(item.source)
-    const schema = Reflect.getOwnPropertyDescriptor(item.value, 'Intercept')?.value
+    if (!impl?.fiber) return
+    const location = this.ctx.loader.locate(impl.fiber)
+    const schema = Reflect.getOwnPropertyDescriptor(impl.value, 'Intercept')?.value
     return { location, schema }
   }
 
   getServices() {
     const result = Object.create(null) as Dict<ServiceData>
-    for (const [name, { type }] of Object.entries(this.ctx.root[Context.internal])) {
+    for (const [name, { type }] of Object.entries(this.ctx.reflect.props)) {
       if (type !== 'service') continue
       result[name] = {
         root: this.getServiceInfo(this.ctx.root, name),
@@ -170,8 +170,8 @@ export abstract class Manager extends Service {
       this.entry?.patch({ services: this.getServices() })
     }, 0))
 
-    this.ctx.on('internal/plugin', (scope) => {
-      const name = this.plugins.get(scope.runtime!.callback)
+    this.ctx.on('internal/plugin', (fiber) => {
+      const name = this.plugins.get(fiber.runtime!.callback)
       if (!name || !this.packages[name].runtime) return
       this.flushPackage(name)
     })

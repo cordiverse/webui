@@ -1,14 +1,15 @@
-import { Schema, ScopeStatus } from '@cordisjs/client'
+import { Schema, FiberState } from '@cordisjs/client'
 import { nextTick, Ref } from 'vue'
 import { EntryData } from '../src'
 
 export function getStatusClass(entry: EntryData) {
-  switch (entry?.status) {
-    case ScopeStatus.PENDING: return 'pending'
-    case ScopeStatus.LOADING: return 'loading'
-    case ScopeStatus.ACTIVE: return 'active'
-    case ScopeStatus.FAILED: return 'failed'
-    case ScopeStatus.DISPOSED: return 'disposed'
+  switch (entry?.state) {
+    case FiberState.PENDING: return 'pending'
+    case FiberState.LOADING: return 'loading'
+    case FiberState.ACTIVE: return 'active'
+    case FiberState.FAILED: return 'failed'
+    case FiberState.DISPOSED: return 'disposed'
+    case FiberState.UNLOADING: return 'unloading'
     default: return 'disabled'
   }
 }

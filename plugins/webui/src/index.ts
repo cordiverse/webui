@@ -239,8 +239,8 @@ class NodeWebUI extends WebUI {
               'if (import.meta.hot) {',
               '  import.meta.hot.accept(async (module) => {',
               '    const { root } = await import("@cordisjs/client");',
-              `    const fork = root.$loader.entries["${key}"]?.forks["${id}"];`,
-              '    return fork?.update(module, true);',
+              `    const fiber = root.$loader.entries["${key}"]?.forks["${id}"];`,
+              '    return fiber?.update(module, true);',
               '  });',
               '}',
             ].join('\n') + '\n'

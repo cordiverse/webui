@@ -111,9 +111,8 @@ export async function* apply(ctx: Context, config: Config) {
   const exporter: Exporter = {
     colors: 3,
     export: (message: Message) => {
-      if (message.ctx) {
-        message.entryId = ctx.get('loader')?.locate(message.ctx.deref())
-      }
+      const fiber = message.fiber?.deref()
+      message.entryId = fiber && ctx.get('loader')?.locate(fiber)
       const date = new Date(message.ts).toISOString().slice(0, 10)
       if (writer.date !== date) {
         flush()

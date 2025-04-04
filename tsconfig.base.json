@@ -13,7 +13,6 @@
     "noImplicitAny": false,
     "types": [
       "node",
-      "yml-register/types",
     ],
   },
 }

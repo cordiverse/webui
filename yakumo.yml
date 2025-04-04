@@ -10,4 +10,4 @@
 - name: yakumo-esbuild
 - name: yakumo-mocha
 - name: yakumo-tsc
-- name: '@cordisjs/client/lib'
+- name: '@cordisjs/client/yakumo'

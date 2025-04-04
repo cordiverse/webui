@@ -1,6 +1,6 @@
 import { Context, Service } from 'cordis'
 import { Dict, isNullable, remove } from 'cosmokit'
-import { h } from '@cordisjs/element'
+import { Fragment, h } from '@cordisjs/element'
 import type { Entry } from '@cordisjs/plugin-webui'
 
 declare module 'cordis' {
@@ -21,7 +21,7 @@ export class Notifier {
 
   private actionKeys: string[] = []
 
-  constructor(public ctx: Context, options: h.Fragment | Notifier.Options) {
+  constructor(public ctx: Context, options: Fragment | Notifier.Options) {
     this.options = {
       type: 'primary',
       content: [],
@@ -45,7 +45,7 @@ export class Notifier {
     this.actionKeys = []
   }
 
-  update(options: h.Fragment | Notifier.Options) {
+  update(options: Fragment | Notifier.Options) {
     if (typeof options === 'string' || h.isElement(options) || Array.isArray(options)) {
       options = { content: options }
     }
@@ -80,7 +80,7 @@ export class Notifier {
 export namespace Notifier {
   export type Type = 'primary' | 'success' | 'warning' | 'danger'
 
-  export interface Options<T = h.Fragment> {
+  export interface Options<T = Fragment> {
     type?: Type
     content?: T
   }
@@ -127,7 +127,7 @@ class NotifierService extends Service {
     this.ctx.get('console').broadcast('notifier/message', options)
   }
 
-  create(options: h.Fragment | Notifier.Options) {
+  create(options: Fragment | Notifier.Options) {
     return new Notifier(this.ctx, options)
   }
 }

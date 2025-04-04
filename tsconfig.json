@@ -3,15 +3,9 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@cordisjs/client/lib": [
-        "packages/client/src",
-      ],
-      "@cordisjs/plugin-*": [
-        "plugins/*/src",
-      ],
-      "@cordisjs/*": [
-        "packages/*/src",
-      ],
+      "@cordisjs/client/yakumo": ["packages/client/src/yakumo"],
+      "@cordisjs/plugin-*": ["plugins/*/src"],
+      "@cordisjs/*": ["packages/*/src"],
     },
   },
   "files": [],

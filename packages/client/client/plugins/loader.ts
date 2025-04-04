@@ -1,14 +1,14 @@
 import { Ref, ref, shallowReactive } from 'vue'
 import { Context } from '../context'
 import { Service } from '../utils'
-import { EffectScope } from 'cordis'
+import { Fiber } from 'cordis'
 import { defineProperty, Dict } from 'cosmokit'
 import { clientId } from '../data'
 
 declare module '../context' {
   interface Context {
     $loader: LoaderService
-    $entry: LoadState
+    $entry: LoadState | undefined
   }
 }
 
@@ -23,10 +23,10 @@ export function unwrapExports(module: any) {
   return module?.default || module
 }
 
-type LoaderFactory = (ctx: Context, url: string) => Promise<EffectScope>
+type LoaderFactory = (ctx: Context, url: string) => Promise<Fiber>
 
 function jsLoader(ctx: Context, exports: {}) {
-  return ctx.plugin(unwrapExports(exports), ctx.$entry.data)
+  return ctx.plugin(unwrapExports(exports), ctx.$entry!.data)
 }
 
 function cssLoader(ctx: Context, link: HTMLLinkElement) {
@@ -59,19 +59,24 @@ const loaders: Dict<LoaderFactory> = {
 }
 
 export interface LoadState {
-  forks: Dict<EffectScope>
+  fibers: Dict<Fiber>
   entryId?: string
   done: Ref<boolean>
   data: Ref
 }
 
-export default class LoaderService extends Service {
+export default class LoaderService {
   public id?: string
 
   public entries: Dict<LoadState> = shallowReactive({})
 
-  constructor(ctx: Context) {
-    super(ctx, '$loader')
+  public initTask: Promise<void>
+
+  constructor(public ctx: Context) {
+    console.log(this.ctx)
+    defineProperty(this, Service.tracker, {
+      property: 'ctx',
+    })
 
     ctx.on('entry:update', ({ id, data }) => {
       const entry = this.entries[id]
@@ -94,52 +99,52 @@ export default class LoaderService extends Service {
         Object.assign(node, data)
       }
     })
-  }
 
-  initTask = new Promise<void>((resolve) => {
-    this.ctx.on('entry:init', async (value) => {
-      const { serverId, entries } = value
-      clientId.value = value.clientId
-      if (this.id && serverId && this.id !== serverId as unknown) {
-        return window.location.reload()
-      }
-      this.id = serverId
-
-      await Promise.all(Object.entries(entries).map(([key, body]) => {
-        if (this.entries[key]) {
-          if (body) return console.warn(`Entry ${key} already exists`)
-          for (const fork of Object.values(this.entries[key].forks)) {
-            fork.dispose()
-          }
-          delete this.entries[key]
-          return
+    this.initTask = new Promise((resolve) => {
+      this.ctx.on('entry:init', async (value) => {
+        const { serverId, entries } = value
+        clientId.value = value.clientId
+        if (this.id && serverId && this.id !== serverId as unknown) {
+          return window.location.reload()
         }
-
-        const { files, entryId, data } = body
-        const ctx = this.ctx.isolate('$entry')
-        ctx.$entry = this.entries[key] = {
-          done: ref(false),
-          entryId,
-          data: ref(data),
-          forks: {},
-        }
-
-        const task = Promise.all(files.map(async (url) => {
-          for (const ext in loaders) {
-            if (!url.endsWith(ext)) continue
-            try {
-              ctx.$entry.forks[url] = await loaders[ext](ctx, url)
-            } catch (e) {
-              console.error(e)
+        this.id = serverId
+  
+        await Promise.all(Object.entries(entries).map(([key, body]) => {
+          if (this.entries[key]) {
+            if (body) return console.warn(`Entry ${key} already exists`)
+            for (const fiber of Object.values(this.entries[key].fibers)) {
+              fiber.dispose()
             }
+            delete this.entries[key]
             return
           }
-          console.error(`No loader found for ${url}`)
+  
+          const { files, entryId, data } = body
+          const $entry = this.entries[key] = {
+            done: ref(false),
+            entryId,
+            data: ref(data),
+            fibers: {},
+          }
+          const ctx = this.ctx.extend({ $entry })
+  
+          const task = Promise.all(files.map(async (url) => {
+            for (const ext in loaders) {
+              if (!url.endsWith(ext)) continue
+              try {
+                ctx.$entry!.fibers[url] = await loaders[ext](ctx, url)
+              } catch (e) {
+                console.error(e)
+              }
+              return
+            }
+            console.error(`No loader found for ${url}`)
+          }))
+          task.then(() => this.entries[key].done.value = true)
         }))
-        task.then(() => this.entries[key].done.value = true)
-      }))
-
-      if (serverId) resolve()
+  
+        if (serverId) resolve()
+      })
     })
-  })
+  }
 }

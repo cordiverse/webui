@@ -2,7 +2,7 @@ import { Schema, SchemaBase } from '@cordisjs/components'
 import { RemovableRef, useLocalStorage } from '@vueuse/core'
 import { Context } from '../context'
 import { insert, Ordered, Service } from '../utils'
-import { Dict, remove } from 'cosmokit'
+import { defineProperty, Dict, remove } from 'cosmokit'
 import { Component, computed, markRaw, reactive, ref, watch } from 'vue'
 import { Config } from '..'
 
@@ -58,9 +58,12 @@ export const resolved = ref({} as Config)
 
 export const useConfig = (useOriginal = false) => useOriginal ? original : resolved
 
-export default class SettingService extends Service {
-  constructor(ctx: Context) {
-    super(ctx, '$setting')
+export default class SettingService {
+  constructor(public ctx: Context) {
+    defineProperty(this, Service.tracker, {
+      property: 'ctx',
+    })
+
     ctx.mixin('$setting', {
       settings: 'settings',
       extendSchema: 'schema',

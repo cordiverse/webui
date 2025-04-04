@@ -1,6 +1,6 @@
 import { markRaw, MaybeRefOrGetter, reactive, shallowReactive, toValue } from 'vue'
 import { Context, useContext } from '../context'
-import { Dict, Intersect, remove } from 'cosmokit'
+import { defineProperty, Dict, Intersect, remove } from 'cosmokit'
 import { insert, Service } from '../utils'
 import { ActionContext } from '..'
 
@@ -75,9 +75,12 @@ export function useMenu<K extends keyof ActionContext>(id: K) {
   }
 }
 
-export default class ActionService extends Service {
-  constructor(ctx: Context) {
-    super(ctx, '$action')
+export default class ActionService {
+  constructor(public ctx: Context) {
+    defineProperty(this, Service.tracker, {
+      property: 'ctx',
+    })
+
     ctx.mixin('$action', ['action', 'menu', 'define'])
 
     ctx.internal.scope = shallowReactive({})

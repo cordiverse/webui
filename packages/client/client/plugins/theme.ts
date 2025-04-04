@@ -1,4 +1,4 @@
-import { Dict } from 'cosmokit'
+import { defineProperty, Dict } from 'cosmokit'
 import { Schema } from '@cordisjs/components'
 import { Context } from '../context'
 import { Component, computed, markRaw, reactive, watchEffect } from 'vue'
@@ -49,9 +49,12 @@ const colorMode = computed(() => {
 
 export const useColorMode = () => colorMode
 
-export default class ThemeService extends Service {
-  constructor(ctx: Context) {
-    super(ctx, '$theme')
+export default class ThemeService {
+  constructor(public ctx: Context) {
+    defineProperty(this, Service.tracker, {
+      property: 'ctx',
+    })
+
     ctx.mixin('$theme', ['theme'])
 
     ctx.internal.themes = reactive({})

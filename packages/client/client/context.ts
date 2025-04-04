@@ -24,9 +24,9 @@ const kContext = Symbol('context') as InjectionKey<Context>
 
 export function useContext() {
   const parent = inject(kContext)!
-  const fork = parent.plugin(() => {})
-  onScopeDispose(fork.dispose)
-  return fork.ctx
+  const fiber = parent.plugin(() => {})
+  onScopeDispose(fiber.dispose)
+  return fiber.ctx
 }
 
 export function useInject<K extends string & keyof Context>(name: K): Ref<Context[K]> {
@@ -40,13 +40,13 @@ export function useInject<K extends string & keyof Context>(name: K): Ref<Contex
 
 export function useRpc<T>(): Ref<T> {
   const parent = inject(kContext)!
-  return parent.$entry.data
+  return parent.$entry!.data
 }
 
 export interface Internal {}
 
 export class Context extends cordis.Context {
-  app: App
+  public app: App
 
   private _store: Record<string | symbol, Ref<any>> = Object.create(null)
 
@@ -60,13 +60,14 @@ export class Context extends cordis.Context {
       ],
     }))
     this.app.provide(kContext, this)
+    this.$entry = undefined
 
-    this.plugin(ActionService)
-    this.plugin(I18nService)
-    this.plugin(LoaderService)
-    this.plugin(RouterService)
-    this.plugin(SettingService)
-    this.plugin(ThemeService)
+    this.$action = new ActionService(this)
+    this.$i18n = new I18nService(this)
+    this.$loader = new LoaderService(this)
+    this.$router = new RouterService(this)
+    this.$setting = new SettingService(this)
+    this.$theme = new ThemeService(this)
 
     this.on('internal/service', function (name) {
       // trigger
@@ -76,10 +77,10 @@ export class Context extends cordis.Context {
       if (ref2) ref2.value = Symbol(name)
     }, { global: true })
 
-    this.on('internal/inject', function (name, key) {
+    this.on('internal/get', (ctx, name, error, next) => {
       // track
-      const ref = this._store[key ?? name] ??= customRef((get, set) => ({ get, set }))
-      return ref.value, false
+      const ref = this._store[ctx.reflect.store[name] ?? name] ??= customRef((get, set) => ({ get, set }))
+      return ref.value, next()
     }, { prepend: true })
 
     this.$loader.initTask.then(() => {
@@ -108,7 +109,7 @@ export class Context extends cordis.Context {
     return markRaw(defineComponent((props, { slots }) => {
       provide(kContext, this)
       onErrorCaptured((e, instance, info) => {
-        return this.scope.uid !== null
+        return this.fiber.uid !== null
       })
       return () => h(component, props, slots)
     }))
@@ -116,4 +117,4 @@ export class Context extends cordis.Context {
 }
 
 markRaw(cordis.Context.prototype)
-markRaw(cordis.EffectScope.prototype)
+markRaw(cordis.Fiber.prototype)

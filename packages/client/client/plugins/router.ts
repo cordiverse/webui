@@ -3,7 +3,7 @@ import { Context } from '../context'
 import { insert, Service } from '../utils'
 import { Component, MaybeRefOrGetter, reactive, ref, toValue } from 'vue'
 import { global } from '../data'
-import { Dict, omit, remove } from 'cosmokit'
+import { defineProperty, Dict, omit, remove } from 'cosmokit'
 import { Disposable } from 'cordis'
 import { SlotOptions } from '../components'
 
@@ -105,7 +105,7 @@ export class Activity {
   }
 }
 
-export default class RouterService extends Service {
+export default class RouterService {
   public views = reactive<Dict<SlotOptions[]>>({})
   public cache = reactive<Record<keyof any, string>>({})
   public pages = reactive<Dict<Activity>>({})
@@ -115,8 +115,11 @@ export default class RouterService extends Service {
     routes: [],
   })
 
-  constructor(ctx: Context) {
-    super(ctx, '$router')
+  constructor(public ctx: Context) {
+    defineProperty(this, Service.tracker, {
+      property: 'ctx',
+    })
+
     ctx.mixin('$router', ['slot', 'page'])
 
     ctx.effect(() => {

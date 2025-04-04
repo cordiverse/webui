@@ -17,7 +17,7 @@ export * from './components'
 export * from './context'
 export * from './data'
 export { Service } from './utils'
-export { Inject, ScopeStatus } from 'cordis'
+export { Inject, FiberState } from 'cordis'
 
 export default install
 

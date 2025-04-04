@@ -1,6 +1,6 @@
 import { Context, Fiber, Plugin, Schema, FiberState } from 'cordis'
 import { camelize, capitalize } from 'cosmokit'
-import {} from '@cordisjs/plugin-timer'
+import type {} from '@cordisjs/plugin-timer'
 import {} from '@cordisjs/plugin-webui'
 import assert from 'node:assert'
 

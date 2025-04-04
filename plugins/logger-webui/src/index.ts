@@ -4,7 +4,7 @@ import { Dict, Time } from 'cosmokit'
 import { resolve } from 'path'
 import { mkdir, readdir, readFile, rm } from 'fs/promises'
 import {} from '@cordisjs/plugin-webui'
-import {} from '@cordisjs/plugin-timer'
+import type {} from '@cordisjs/plugin-timer'
 import { LogFile } from './file'
 
 declare module '@cordisjs/plugin-webui' {

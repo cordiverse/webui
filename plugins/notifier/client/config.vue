@@ -7,7 +7,7 @@
 <script setup lang="ts">
 
 import { Element } from '@cordisjs/element'
-import {} from '@cordisjs/plugin-manager/client'
+import type {} from '@cordisjs/plugin-manager/client'
 import { useContext, useRpc, send } from '@cordisjs/client'
 import type NotifierService from '../src'
 import { h, computed, resolveComponent, FunctionalComponent } from 'vue'

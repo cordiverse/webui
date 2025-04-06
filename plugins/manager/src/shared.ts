@@ -4,8 +4,9 @@ import { Dict, pick } from 'cosmokit'
 import { EntryOptions } from 'cordis/loader'
 import { Entry as ClientEntry } from '@cordisjs/plugin-webui'
 import { Dependency, LocalObject } from '@cordisjs/registry'
+import type {} from '@cordisjs/plugin-logger'
 import type {} from '@cordisjs/plugin-timer'
-import {} from '@cordisjs/plugin-hmr'
+import type {} from '@cordisjs/plugin-hmr'
 
 declare module 'cordis' {
   interface Context {

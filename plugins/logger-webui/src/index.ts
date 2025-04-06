@@ -3,7 +3,7 @@ import { Exporter, Message } from 'cordis/logger'
 import { Dict, Time } from 'cosmokit'
 import { resolve } from 'path'
 import { mkdir, readdir, readFile, rm } from 'fs/promises'
-import {} from '@cordisjs/plugin-webui'
+import type {} from '@cordisjs/plugin-webui'
 import type {} from '@cordisjs/plugin-timer'
 import { LogFile } from './file'
 

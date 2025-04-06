@@ -42,13 +42,13 @@
     }
   },
   "peerDependencies": {
-    "@cordisjs/plugin-timer": "^1.1.0",
+    "@cordisjs/plugin-timer": "^1.1.1",
     "@cordisjs/plugin-webui": "^0.3.1",
     "cordis": "^4.0.0-beta.1"
   },
   "devDependencies": {
     "@cordisjs/client": "^0.3.1",
-    "@cordisjs/plugin-timer": "^1.1.0",
+    "@cordisjs/plugin-timer": "^1.1.1",
     "@cordisjs/plugin-webui": "^0.3.1",
     "@types/d3-force": "^3.0.10",
     "cordis": "^4.0.0-beta.1",

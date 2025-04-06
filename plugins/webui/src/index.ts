@@ -1,5 +1,6 @@
 import { Context, Inject, Service, z } from 'cordis'
 import { Dict, Time } from 'cosmokit'
+import type {} from '@cordisjs/plugin-logger'
 import type {} from '@cordisjs/plugin-server'
 import type { FileSystemServeOptions, Manifest, ViteDevServer } from 'vite'
 import { extname, join, resolve } from 'node:path'

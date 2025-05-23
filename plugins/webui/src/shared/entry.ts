@@ -93,7 +93,7 @@ export class Entry<T = any> {
       return {
         files: this.ctx.webui.getEntryFiles(this),
         entryId: this.ctx.get('loader')?.locate(),
-        data: JSON.parse(JSON.stringify(this.data?.(client))),
+        data: structuredClone(this.data?.(client)) ?? null,
       }
     } catch (e) {
       this.ctx.logger.error(e)

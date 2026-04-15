@@ -52,7 +52,7 @@
   },
   "peerDependencies": {
     "@cordisjs/client": "^0.3.1",
-    "cordis": "^4.0.0-beta.1"
+    "cordis": "^4.0.0-rc.1"
   },
   "peerDependenciesMeta": {
     "@cordisjs/client": {
@@ -61,14 +61,16 @@
   },
   "devDependencies": {
     "@cordisjs/client": "^0.3.1",
+    "@cordisjs/plugin-loader": "^1.0.0-rc.1",
     "@cordisjs/plugin-server": "^1.2.0",
-    "cordis": "^4.0.0-beta.1",
-    "vite": "^6.2.2"
+    "cordis": "^4.0.0-rc.1",
+    "vite": "^6.4.1"
   },
   "dependencies": {
     "@cordisjs/fetch-file": "^1.0.3",
-    "cosmokit": "^1.8.0",
-    "es-module-lexer": "^1.6.0",
-    "open": "^10.1.0"
+    "cosmokit": "^1.8.1",
+    "es-module-lexer": "^1.7.0",
+    "open": "^10.2.0",
+    "schemastery": "^3.18.0"
   }
 }

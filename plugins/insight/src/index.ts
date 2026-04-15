@@ -1,7 +1,9 @@
-import { Context, Fiber, Plugin, Schema, FiberState } from 'cordis'
+import { Context, Fiber, Plugin, FiberState } from 'cordis'
 import { camelize, capitalize } from 'cosmokit'
 import type {} from '@cordisjs/plugin-timer'
 import type {} from '@cordisjs/plugin-webui'
+import type {} from '@cordisjs/plugin-loader'
+import z from 'schemastery'
 import assert from 'node:assert'
 
 export interface Data {
@@ -40,7 +42,7 @@ export const inject = ['webui', 'timer']
 
 export interface Config {}
 
-export const Config: Schema<Config> = Schema.object({})
+export const Config: z<Config> = z.object({})
 
 export function apply(ctx: Context) {
   const entry = ctx.webui.addEntry({

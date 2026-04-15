@@ -1,6 +1,7 @@
-import { z, Service } from 'cordis'
+import { Service } from 'cordis'
 import { Entry, Events, WebUI } from './shared/index.ts'
-import {} from 'cordis/loader'
+import {} from '@cordisjs/plugin-loader'
+import z from 'schemastery'
 
 export * from './shared/index.ts'
 

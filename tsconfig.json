@@ -1,11 +1,10 @@
 {
   "extends": "./tsconfig.base",
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
-      "@cordisjs/client/yakumo": ["packages/client/src/yakumo"],
-      "@cordisjs/plugin-*": ["plugins/*/src"],
-      "@cordisjs/*": ["packages/*/src"],
+      "@cordisjs/client/yakumo": ["./packages/client/src/yakumo"],
+      "@cordisjs/plugin-*": ["./plugins/*/src"],
+      "@cordisjs/*": ["./packages/*/src"],
     },
   },
   "files": [],

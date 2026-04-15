@@ -1,11 +1,12 @@
-import { Context, Schema } from 'cordis'
-import { Exporter, Message } from 'cordis/logger'
+import { Context } from 'cordis'
+import { Exporter, Message } from '@cordisjs/plugin-logger'
 import { Dict, Time } from 'cosmokit'
 import { resolve } from 'path'
 import { mkdir, readdir, readFile, rm } from 'fs/promises'
 import type {} from '@cordisjs/plugin-webui'
 import type {} from '@cordisjs/plugin-timer'
 import { LogFile } from './file'
+import z from 'schemastery'
 
 declare module '@cordisjs/plugin-webui' {
   interface Events {
@@ -27,13 +28,13 @@ export interface Config {
   maxSize: number
 }
 
-export const Config: Schema<Config> = Schema.object({
-  root: Schema.string().role('path', {
+export const Config: z<Config> = z.object({
+  root: z.string().role('path', {
     filters: ['directory'],
     allowCreate: true,
   }).default('data/logs').description('存放输出日志的本地目录。'),
-  maxAge: Schema.natural().default(30).description('日志文件保存的最大天数。'),
-  maxSize: Schema.natural().default(1024 * 100).description('单个日志文件的最大大小。'),
+  maxAge: z.natural().default(30).description('日志文件保存的最大天数。'),
+  maxSize: z.natural().default(1024 * 100).description('单个日志文件的最大大小。'),
 })
 
 export const inject = ['webui', 'timer', 'logger']

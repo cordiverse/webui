@@ -39,7 +39,7 @@ watch(createGroup, (value) => {
 
 async function action() {
   const id = await send('manager.config.create', {
-    name: 'cordis/group',
+    name: '@cordisjs/plugin-group',
     parent: createGroup.value,
     label: input.value || undefined,
     config: [],

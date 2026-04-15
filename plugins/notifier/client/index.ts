@@ -8,7 +8,7 @@ interface NotifierMessage {
 }
 
 declare module '@cordisjs/client' {
-  interface Events<C> {
+  interface Events {
     'notifier/message'(this: C, payload: NotifierMessage): void
   }
 }

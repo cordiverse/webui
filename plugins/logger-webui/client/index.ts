@@ -1,6 +1,6 @@
 import { Context, Dict } from '@cordisjs/client'
 import { Ref } from 'vue'
-import type { Logger } from 'cordis/logger'
+import type { Message } from '@cordisjs/plugin-logger'
 import {} from '../src'
 import Logs from './index.vue'
 import Settings from './settings.vue'
@@ -11,7 +11,7 @@ export const inject = {
   manager: false,
 }
 
-export function apply(ctx: Context, data: Ref<Dict<Logger.Record[]>>) {
+export function apply(ctx: Context, data: Ref<Dict<Message[]>>) {
   ctx.page({
     path: '/logs',
     name: '日志',

@@ -1,12 +1,13 @@
-import { Context, EffectMeta, Inject, Plugin, FiberState, Service, z } from 'cordis'
-import { readFile } from 'fs/promises'
+import { Context, EffectMeta, Inject, Plugin, FiberState, Service } from 'cordis'
+import { readFile } from 'node:fs/promises'
 import { Dict, pick } from 'cosmokit'
-import { EntryOptions } from 'cordis/loader'
+import { EntryOptions } from '@cordisjs/plugin-loader'
 import { Entry as ClientEntry } from '@cordisjs/plugin-webui'
 import { Dependency, LocalObject } from '@cordisjs/registry'
 import type {} from '@cordisjs/plugin-logger'
 import type {} from '@cordisjs/plugin-timer'
 import type {} from '@cordisjs/plugin-hmr'
+import z from 'schemastery'
 
 declare module 'cordis' {
   interface Context {
@@ -14,7 +15,7 @@ declare module 'cordis' {
   }
 }
 
-declare module 'cordis/loader' {
+declare module '@cordisjs/plugin-loader' {
   interface EntryOptions {
     label?: string | null
     collapse?: boolean | null
@@ -86,6 +87,7 @@ export interface EntryLocation {
 
 @Inject('loader')
 @Inject('timer')
+@Inject('logger')
 export abstract class Manager extends Service {
   public entry?: ClientEntry<Data>
 

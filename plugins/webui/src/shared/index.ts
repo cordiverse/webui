@@ -13,7 +13,7 @@ declare module 'cordis' {
   }
 
   interface Events {
-    'webui/connection'(client: Client): void
+    'webui/connection'(this: WebUI, client: Client): void
   }
 }
 
@@ -38,10 +38,10 @@ export abstract class WebUI extends Service {
     const client = new Client(this.ctx, socket)
     socket.addEventListener('close', () => {
       delete this.clients[client.id]
-      this.ctx.emit('webui/connection', client)
+      this.ctx.emit(this, 'webui/connection', client)
     })
     this.clients[client.id] = client
-    this.ctx.emit('webui/connection', client)
+    this.ctx.emit(this, 'webui/connection', client)
   }
 
   abstract getEntryFiles(entry: Entry): string[]

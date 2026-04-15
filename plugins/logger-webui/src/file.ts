@@ -1,5 +1,5 @@
 import { FileHandle, open } from 'fs/promises'
-import { Message } from 'cordis/logger'
+import { Message } from '@cordisjs/plugin-logger'
 import { Buffer } from 'buffer'
 
 export class LogFile {

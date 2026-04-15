@@ -1,7 +1,8 @@
-import { Context, Inject, Service, z } from 'cordis'
+import { Context, Inject, Service } from 'cordis'
 import { Dict, Time } from 'cosmokit'
 import type {} from '@cordisjs/plugin-logger'
 import type {} from '@cordisjs/plugin-server'
+import type { EntryOptions } from '@cordisjs/plugin-loader'
 import type { FileSystemServeOptions, Manifest, ViteDevServer } from 'vite'
 import { extname, join, resolve } from 'node:path'
 import { existsSync, readFileSync } from 'node:fs'
@@ -11,6 +12,7 @@ import { parse } from 'es-module-lexer'
 import fetchFile from '@cordisjs/fetch-file'
 import { Entry, Events, WebUI } from './shared'
 import open from 'open'
+import z from 'schemastery'
 
 declare module 'cordis' {
   interface EnvData {
@@ -37,6 +39,7 @@ export interface ClientConfig {
   static?: boolean
   heartbeat?: HeartbeatConfig
   proxyBase?: string
+  entries?: EntryOptions[]
 }
 
 interface HeartbeatConfig {

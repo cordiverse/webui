@@ -1,27 +1,16 @@
 import { Schema, SchemaBase } from '@cordisjs/components'
 import { RemovableRef, useLocalStorage } from '@vueuse/core'
-import { Context } from '../context'
-import { insert, Ordered, Service } from '../utils'
+import { Context, Service } from 'cordis'
+import { insert, Ordered } from '../utils'
 import { defineProperty, Dict, remove } from 'cosmokit'
 import { Component, computed, markRaw, reactive, ref, watch } from 'vue'
 import { Config } from '..'
 
-declare module '@cordisjs/schema' {
-  interface SchemaService {
-    component(extension: SchemaBase.Extension): () => void
-  }
-}
-
-declare module '../context' {
-  interface Context {
-    $setting: SettingService
-    settings(options: SettingOptions): () => void
-  }
-
-  interface Internal {
-    settings: Dict<SettingOptions[]>
-  }
-}
+// declare module '@cordisjs/schema' {
+//   interface SchemaService {
+//     component(extension: SchemaBase.Extension): () => void
+//   }
+// }
 
 interface SettingOptions extends Ordered {
   id: string
@@ -59,17 +48,12 @@ export const resolved = ref({} as Config)
 export const useConfig = (useOriginal = false) => useOriginal ? original : resolved
 
 export default class SettingService {
+  _settings: Dict<SettingOptions[]> = reactive({})
+
   constructor(public ctx: Context) {
     defineProperty(this, Service.tracker, {
       property: 'ctx',
     })
-
-    ctx.mixin('$setting', {
-      settings: 'settings',
-      extendSchema: 'schema',
-    })
-
-    ctx.internal.settings = reactive({})
 
     this.settings({
       id: '',
@@ -82,7 +66,7 @@ export default class SettingService {
 
     const schema = computed(() => {
       const list: Schema[] = []
-      for (const settings of Object.values(ctx.internal.settings)) {
+      for (const settings of Object.values(this._settings)) {
         for (const options of settings) {
           if (options.schema) {
             list.push(options.schema)
@@ -115,8 +99,8 @@ export default class SettingService {
     ctx.effect(() => watch(schema, update))
   }
 
-  extendSchema(extension: SchemaBase.Extension) {
-    extension.component = this.ctx.wrapComponent(extension.component)
+  schema(extension: SchemaBase.Extension) {
+    extension.component = this.ctx.client.wrapComponent(extension.component)
     return this.ctx.effect(() => {
       SchemaBase.extensions.add(extension)
       return () => SchemaBase.extensions.delete(extension)
@@ -126,13 +110,13 @@ export default class SettingService {
   settings(options: SettingOptions) {
     markRaw(options)
     options.order ??= 0
-    options.component = this.ctx.wrapComponent(options.component)
+    options.component = this.ctx.client.wrapComponent(options.component)
     return this.ctx.effect(() => {
-      const list = this.ctx.internal.settings[options.id] ||= []
+      const list = this._settings[options.id] ||= []
       insert(list, options)
       return () => {
         remove(list, options)
-        if (!list.length) delete this.ctx.internal.settings[options.id]
+        if (!list.length) delete this._settings[options.id]
       }
     })
   }

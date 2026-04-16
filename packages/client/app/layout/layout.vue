@@ -17,10 +17,10 @@
         <template #right>
           <slot name="menu">
             <template v-if="typeof menu === 'string'">
-              <template v-for="item in ctx.internal.menus[menu]" :key="menu">
+              <template v-for="item in ctx.client.action.menus[menu]" :key="menu">
                 <layout-menu-item
                   v-if="item.id !== '@separator'"
-                  :item="{ ...item, ...ctx.internal.actions[item.id.startsWith('.') ? menu + item.id : item.id] }"
+                  :item="{ ...item, ...ctx.client.action.actions[item.id.startsWith('.') ? menu + item.id : item.id] }"
                   :menu-key="menu" :menu-data="menuData"
                 />
               </template>

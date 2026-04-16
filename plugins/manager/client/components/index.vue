@@ -87,7 +87,7 @@ const local = computed(() => ctx.manager.data.value.packages[ctx.manager.current
 const visible = ref(false)
 const tree = ref<InstanceType<typeof TreeView>>()
 
-ctx.define('config.tree', currentEntry)
+ctx.client.action.define('config.tree', currentEntry)
 
 watch(local, (value) => {
   if (!value || value.runtime) return

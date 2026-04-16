@@ -12,7 +12,7 @@ export const inject = {
 }
 
 export function apply(ctx: Context, data: Ref<Dict<Message[]>>) {
-  ctx.page({
+  ctx.client.router.page({
     path: '/logs',
     name: '日志',
     icon: 'activity:logs',
@@ -20,7 +20,7 @@ export function apply(ctx: Context, data: Ref<Dict<Message[]>>) {
     component: Logs,
   })
 
-  ctx.slot({
+  ctx.client.router.slot({
     type: 'plugin-details',
     component: Settings,
     order: -800,

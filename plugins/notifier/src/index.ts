@@ -1,6 +1,6 @@
 import { Context, Service } from 'cordis'
 import { Dict, isNullable, remove } from 'cosmokit'
-import { Fragment, h } from '@cordisjs/element'
+import { Fragment, h, isElement, toElementArray, transform } from '@cordisjs/element'
 import type { Entry } from '@cordisjs/plugin-webui'
 
 declare module 'cordis' {
@@ -46,15 +46,15 @@ export class Notifier {
   }
 
   update(options: Fragment | Notifier.Options) {
-    if (typeof options === 'string' || h.isElement(options) || Array.isArray(options)) {
+    if (typeof options === 'string' || isElement(options) || Array.isArray(options)) {
       options = { content: options }
     }
     if (!isNullable(options?.content)) {
       this.clearActions()
       const content = typeof options.content === 'string'
         ? [h('p', options.content)]
-        : h.toElementArray(options.content)
-      options.content = h.transform(content, ({ type, attrs }) => {
+        : toElementArray(options.content)
+      options.content = transform(content, ({ type, attrs }) => {
         if (type === 'button' && typeof attrs.onClick === 'function') {
           const key = Math.random().toString(36).slice(2)
           this.ctx.notifier.actions[key] = attrs.onClick

@@ -2,7 +2,7 @@ import { Context, useConfig } from '@cordisjs/client'
 import App from './index.vue'
 
 export default function (ctx: Context) {
-  ctx.slot({
+  ctx.client.router.slot({
     type: 'root',
     component: App,
     order: -1000,
@@ -10,15 +10,15 @@ export default function (ctx: Context) {
 
   const config = useConfig()
 
-  ctx.action('theme.activity.settings', {
-    action: () => ctx.$router.router.push('/settings/activity'),
+  ctx.client.action.action('theme.activity.settings', {
+    action: () => ctx.client.router.router.push('/settings/activity'),
   })
 
-  ctx.action('theme.activity.reset', {
+  ctx.client.action.action('theme.activity.reset', {
     action: () => config.value.activities = {},
   })
 
-  ctx.menu('theme.activity', [{
+  ctx.client.action.menu('theme.activity', [{
   //   id: '.settings',
   //   label: '活动栏设置',
   // }, {

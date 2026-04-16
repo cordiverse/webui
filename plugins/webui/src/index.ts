@@ -232,6 +232,7 @@ class NodeWebUI extends WebUI {
       server: {
         fs: dev?.fs,
       },
+      // TODO: customLogger
       plugins: [{
         name: 'cordis-hmr',
         transform: (code, id, options) => {

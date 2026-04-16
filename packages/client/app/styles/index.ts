@@ -3,22 +3,22 @@ import { Context } from '@cordisjs/client'
 import './index.scss'
 
 export default function (ctx: Context) {
-  ctx.theme({
+  ctx.client.theme.theme({
     id: 'default-light',
     name: 'Default Light',
   })
 
-  ctx.theme({
+  ctx.client.theme.theme({
     id: 'default-dark',
     name: 'Default Dark',
   })
 
-  ctx.theme({
+  ctx.client.theme.theme({
     id: 'hc-light',
     name: 'High Contrast Light',
   })
 
-  ctx.theme({
+  ctx.client.theme.theme({
     id: 'hc-dark',
     name: 'High Contrast Dark',
   })

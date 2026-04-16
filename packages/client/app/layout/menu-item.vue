@@ -30,8 +30,10 @@ const disabled = computed(() => {
   return toValue(props.item.disabled)
 })
 
-const scope = computed(() => ctx.$action.createScope({
-  [props.menuKey]: props.menuData,
+const scope = computed(() => ctx.client.action.createScope({
+  ...props.menuKey ? {
+    [props.menuKey]: props.menuData,
+  } : {},
 }))
 
 function toValue<T>(getter: MaybeGetter<T>): T {

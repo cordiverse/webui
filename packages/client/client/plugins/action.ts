@@ -1,24 +1,9 @@
+import { Context, Service } from 'cordis'
 import { markRaw, MaybeRefOrGetter, reactive, shallowReactive, toValue } from 'vue'
-import { Context, useContext } from '../context'
+import { useContext } from '../context'
 import { defineProperty, Dict, Intersect, remove } from 'cosmokit'
-import { insert, Service } from '../utils'
+import { insert } from '../utils'
 import { ActionContext } from '..'
-
-declare module '../context' {
-  interface Context {
-    $action: ActionService
-    action(id: string, options: ActionOptions | ActionOptions['action']): () => void
-    menu(id: string, items: MenuItem[]): () => void
-    define<K extends keyof ActionContext>(key: K, value: MaybeRefOrGetter<ActionContext[K] | undefined>): () => void
-  }
-
-  interface Internal {
-    scope: Store<ActionContext>
-    menus: Dict<MenuItem[]>
-    actions: Dict<ActionOptions>
-    activeMenus: ActiveMenu[]
-  }
-}
 
 export interface ActionOptions {
   shortcut?: string
@@ -60,10 +45,10 @@ export interface ActiveMenu {
 export function useMenu<K extends keyof ActionContext>(id: K) {
   const ctx = useContext()
   return (event: MouseEvent, value?: MaybeRefOrGetter<ActionContext[K]>) => {
-    ctx.define(id, value)
+    ctx.client.action.define(id, value)
     event.preventDefault()
     const { clientX, clientY } = event
-    ctx.internal.activeMenus.splice(0, Infinity, {
+    ctx.client.action.activeMenus.splice(0, Infinity, {
       id,
       relative: {
         left: clientX,
@@ -76,21 +61,19 @@ export function useMenu<K extends keyof ActionContext>(id: K) {
 }
 
 export default class ActionService {
+  scope: Store<ActionContext> = shallowReactive({})
+  menus: Dict<MenuItem[]> = reactive({})
+  actions: Dict<ActionOptions> = reactive({})
+  activeMenus: ActiveMenu[] = reactive([])
+
   constructor(public ctx: Context) {
     defineProperty(this, Service.tracker, {
       property: 'ctx',
     })
 
-    ctx.mixin('$action', ['action', 'menu', 'define'])
-
-    ctx.internal.scope = shallowReactive({})
-    ctx.internal.menus = reactive({})
-    ctx.internal.actions = reactive({})
-    ctx.internal.activeMenus = reactive([])
-
-    ctx.addEventListener('keydown', (event) => {
+    ctx.client.addEventListener('keydown', (event) => {
       const scope = this.createScope()
-      for (const action of Object.values(ctx.internal.actions)) {
+      for (const action of Object.values(this.actions)) {
         if (!action.shortcut) continue
         const keys = action.shortcut.split('+').map(key => key.toLowerCase().trim())
         let ctrlKey = false, shiftKey = false, metaKey = false, code: string | undefined
@@ -124,31 +107,31 @@ export default class ActionService {
     if (typeof options === 'function') options = { action: options }
     markRaw(options)
     return this.ctx.effect(() => {
-      this.ctx.internal.actions[id] = options
-      return () => delete this.ctx.internal.actions[id]
+      this.actions[id] = options
+      return () => delete this.actions[id]
     })
   }
 
   menu(id: string, items: MenuItem[]) {
     return this.ctx.effect(() => {
-      const list = this.ctx.internal.menus[id] ||= []
+      const list = this.menus[id] ||= []
       items.forEach(item => insert(list, item))
       return () => {
         items.forEach(item => remove(list, item))
-        if (!list.length) delete this.ctx.internal.menus[id]
+        if (!list.length) delete this.menus[id]
       }
     })
   }
 
-  define<K extends keyof ActionContext>(key: K, value: MaybeRefOrGetter<ActionContext[K]>) {
+  define<K extends keyof ActionContext>(key: K, value?: MaybeRefOrGetter<ActionContext[K]>) {
     return this.ctx.effect(() => {
-      this.ctx.internal.scope[key] = value as any
-      return () => delete this.ctx.internal.scope[key]
+      this.scope[key] = value as any
+      return () => delete this.scope[key]
     })
   }
 
   createScope(override = {}) {
-    const scope = { ...this.ctx.internal.scope, ...override }
+    const scope = { ...this.scope, ...override }
     return createScope(scope)
   }
 }

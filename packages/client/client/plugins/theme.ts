@@ -1,21 +1,9 @@
 import { defineProperty, Dict } from 'cosmokit'
 import { Schema } from '@cordisjs/components'
-import { Context } from '../context'
+import { Context, Service } from 'cordis'
 import { Component, computed, markRaw, reactive, watchEffect } from 'vue'
 import { useConfig } from './setting'
-import { Service } from '../utils'
 import { usePreferredDark } from '@vueuse/core'
-
-declare module '../context' {
-  interface Context {
-    $theme: ThemeService
-    theme(options: ThemeOptions): () => void
-  }
-
-  interface Internal {
-    themes: Dict<ThemeOptions>
-  }
-}
 
 declare module '..' {
   interface Config {
@@ -50,16 +38,14 @@ const colorMode = computed(() => {
 export const useColorMode = () => colorMode
 
 export default class ThemeService {
+  _themes: Dict<ThemeOptions> = reactive({})
+
   constructor(public ctx: Context) {
     defineProperty(this, Service.tracker, {
       property: 'ctx',
     })
 
-    ctx.mixin('$theme', ['theme'])
-
-    ctx.internal.themes = reactive({})
-
-    ctx.settings({
+    ctx.client.setting.settings({
       id: 'appearance',
       title: '外观设置',
       order: 900,
@@ -91,15 +77,15 @@ export default class ThemeService {
   theme(options: ThemeOptions) {
     markRaw(options)
     for (const [type, component] of Object.entries(options.components || {})) {
-      this.ctx.slot({
+      this.ctx.client.router.slot({
         type,
         disabled: () => config.value.theme[colorMode.value] !== options.id,
         component,
       })
     }
     return this.ctx.effect(() => {
-      this.ctx.internal.themes[options.id] = options
-      return () => delete this.ctx.internal.themes[options.id]
+      this._themes[options.id] = options
+      return () => delete this._themes[options.id]
     })
   }
 }

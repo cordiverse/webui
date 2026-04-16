@@ -44,7 +44,7 @@
 
       <!-- implements -->
       <k-slot-item :order="400">
-        <template v-for="(activity, key) in ctx.$router.pages" :key="key">
+        <template v-for="(activity, key) in ctx.client.router.pages" :key="key">
           <k-comment type="success" v-if="activity.ctx.$entry?.entryId === current.id && !activity.disabled()">
             <p>
               <span>此插件提供了页面：</span>

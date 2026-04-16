@@ -1,18 +1,15 @@
 import { Ref, ref, shallowReactive } from 'vue'
-import { Context } from '../context'
-import { Service } from '../utils'
-import { Fiber } from 'cordis'
+import { Context, Fiber, Service } from 'cordis'
 import { defineProperty, Dict } from 'cosmokit'
 import { clientId } from '../data'
 
-declare module '../context' {
+declare module 'cordis' {
   interface Context {
     $loader: LoaderService
     $entry: LoadState | undefined
   }
 }
 
-export type Disposable = () => void
 export type Extension = (ctx: Context) => void
 
 export function defineExtension(callback: Extension) {
@@ -73,7 +70,6 @@ export default class LoaderService {
   public initTask: Promise<void>
 
   constructor(public ctx: Context) {
-    console.log(this.ctx)
     defineProperty(this, Service.tracker, {
       property: 'ctx',
     })

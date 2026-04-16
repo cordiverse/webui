@@ -110,7 +110,7 @@ export default class Manager extends Service {
   }
 
   get currentEntry() {
-    const { path } = this.ctx.$router.router.currentRoute.value
+    const { path } = this.ctx.client.router.router.currentRoute.value
     if (!path.startsWith('/plugins/')) return
     const [id] = path.slice(9).split('/', 1)
     return this.plugins.value.entries[id]
@@ -119,7 +119,7 @@ export default class Manager extends Service {
   get currentRoute() {
     const entry = this.currentEntry
     if (!entry) return
-    const { path } = this.ctx.$router.router.currentRoute.value
+    const { path } = this.ctx.client.router.router.currentRoute.value
     const rest = path.slice(9 + entry.id.length + 1)
     for (const route of this.routes) {
       const regexp = new RegExp('^' + route.path.replace(/:(\w+)/g, (_, $1) => `(?<${$1}>[^/]+)`) + '$')
@@ -202,32 +202,32 @@ export default class Manager extends Service {
       }
     }, { immediate: true })
 
-    this.ctx.slot({
+    this.ctx.client.router.slot({
       type: 'global',
       component: Select,
     })
 
-    this.ctx.slot({
+    this.ctx.client.router.slot({
       type: 'global',
       component: Forks,
     })
 
-    this.ctx.slot({
+    this.ctx.client.router.slot({
       type: 'global',
       component: Rename,
     })
 
-    this.ctx.slot({
+    this.ctx.client.router.slot({
       type: 'global',
       component: Remove,
     })
 
-    this.ctx.slot({
+    this.ctx.client.router.slot({
       type: 'global',
       component: Group,
     })
 
-    this.ctx.page({
+    this.ctx.client.router.page({
       id: 'plugins',
       path: '/plugins/:id*',
       name: '插件管理',
@@ -302,7 +302,7 @@ export default class Manager extends Service {
       indent: 1,
     })
 
-    this.ctx.menu('config.tree', [{
+    this.ctx.client.action.menu('config.tree', [{
       id: 'config.tree.toggle',
       type: ({ config }) => config.tree?.disabled ? '' : this.type.value,
       icon: ({ config }) => config.tree?.disabled ? 'play' : 'stop',
@@ -343,14 +343,14 @@ export default class Manager extends Service {
       label: '添加分组',
     }])
 
-    this.ctx.action('config.tree.rename', {
+    this.ctx.client.action.action('config.tree.rename', {
       hidden: ({ config }) => !config.tree,
       action: ({ config }) => {
         this.dialogRename = config.tree
       },
     })
 
-    this.ctx.action('config.tree.remove', {
+    this.ctx.client.action.action('config.tree.remove', {
       hidden: ({ config }) => !config.tree,
       disabled: ({ config }) => this.hasCoreDeps(config.tree),
       action: ({ config }) => {
@@ -358,14 +358,14 @@ export default class Manager extends Service {
       },
     })
 
-    this.ctx.action('config.tree.manage', {
+    this.ctx.client.action.action('config.tree.manage', {
       hidden: ({ config }) => !config.tree || !!config.tree.isGroup,
       action: async ({ config }) => {
         this.dialogFork = config.tree.name
       },
     })
 
-    this.ctx.action('config.tree.clone', {
+    this.ctx.client.action.action('config.tree.clone', {
       hidden: ({ config }) => !config.tree || !!config.tree.isGroup,
       action: async ({ config }) => {
         const id = await send('manager.config.create', {
@@ -375,23 +375,23 @@ export default class Manager extends Service {
           parent: config.tree.parent,
           position: config.tree.position + 1,
         })
-        this.ctx.$router.router.replace(`/plugins/${id}`)
+        this.ctx.client.router.router.replace(`/plugins/${id}`)
       },
     })
 
-    this.ctx.action('config.tree.add-plugin', {
+    this.ctx.client.action.action('config.tree.add-plugin', {
       hidden: ({ config }) => config.tree && !config.tree.isGroup,
       action: ({ config }) => this.dialogSelect = config.tree?.id ?? null,
     })
 
-    this.ctx.action('config.tree.add-group', {
+    this.ctx.client.action.action('config.tree.add-group', {
       hidden: ({ config }) => config.tree && !config.tree.isGroup,
       action: ({ config }) => {
         this.dialogCreateGroup = config.tree?.id ?? null
       },
     })
 
-    this.ctx.action('config.tree.save', {
+    this.ctx.client.action.action('config.tree.save', {
       shortcut: 'ctrl+s',
       hidden: ({ config }) => !config.tree,
       action: async ({ config: { tree } }) => {
@@ -408,7 +408,7 @@ export default class Manager extends Service {
       },
     })
 
-    this.ctx.action('config.tree.toggle', {
+    this.ctx.client.action.action('config.tree.toggle', {
       hidden: ({ config }) => !config.tree,
       disabled: ({ config }) => this.hasCoreDeps(config.tree),
       action: async ({ config: { tree } }) => {
@@ -476,7 +476,7 @@ export default class Manager extends Service {
 
   subroute(options: SubRoute) {
     options.order ??= 0
-    options.component = this.ctx.wrapComponent(options.component)
+    options.component = this.ctx.client.wrapComponent(options.component)
     return this.ctx.effect(() => {
       const index = this.routes.findIndex(route => route.order! > options.order!)
       if (index === -1) {
@@ -493,9 +493,9 @@ export default class Manager extends Service {
     if (!forks?.length) {
       const key = Math.random().toString(36).slice(2, 8)
       send('manager.config.create', { name, disabled: true })
-      if (!passive) this.ctx.$router.router.push('/plugins/' + key)
+      if (!passive) this.ctx.client.router.router.push('/plugins/' + key)
     } else if (forks.length === 1) {
-      if (!passive) this.ctx.$router.router.push('/plugins/' + forks[0])
+      if (!passive) this.ctx.client.router.router.push('/plugins/' + forks[0])
     } else {
       if (!passive) this.dialogFork = name
     }
@@ -509,7 +509,7 @@ export default class Manager extends Service {
         await send('manager.config.remove', { id: options.id })
       }
     } else {
-      await this.ctx.$router.router.replace('/plugins/' + (options.parent ?? ''))
+      await this.ctx.client.router.router.replace('/plugins/' + (options.parent ?? ''))
       await send('manager.config.remove', { id: options.id })
     }
   }

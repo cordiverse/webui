@@ -1,6 +1,6 @@
 <template>
   <div ref="el" class="k-menu" :style="getStyle()">
-    <template v-for="item of ctx.internal.menus[id]">
+    <template v-for="item of ctx.client.action.menus[id]">
       <div class="k-menu-separator" v-if="item.id === '@separator'"></div>
       <menu-item v-else v-bind="{ prefix: id, ...item }"></menu-item>
     </template>

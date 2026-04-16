@@ -35,7 +35,7 @@ const groups = computed(() => {
   const unit = width.value <= 768 ? 52 : 56
   const total = height.value - (width.value <= 768 ? 4 : 8)
   const available = Object.fromEntries(Object
-    .entries(ctx.$router.pages)
+    .entries(ctx.client.router.pages)
     .filter(([, data]) => !data.disabled())
     .map(([key, data]) => [key, [data]]))
   for (const id of Object.keys(available)) {

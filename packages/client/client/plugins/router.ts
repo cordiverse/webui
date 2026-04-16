@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory, RouteLocation, START_LOCATION } from 'vue-router'
-import { Context } from '../context'
-import { insert, Service } from '../utils'
+import { Context, Service } from 'cordis'
+import { insert } from '../utils'
 import { Component, MaybeRefOrGetter, reactive, ref, toValue } from 'vue'
 import { global } from '../data'
 import { defineProperty, Dict, omit, remove } from 'cosmokit'
@@ -13,13 +13,7 @@ declare module 'vue-router' {
   }
 }
 
-declare module '../context' {
-  interface Context {
-    $router: RouterService
-    slot(options: SlotOptions): () => void
-    page(options: Activity.Options): Activity
-  }
-
+declare module 'cordis' {
   interface Events {
     'activity'(activity: Activity): boolean
   }
@@ -61,28 +55,28 @@ export class Activity {
 
   *setup() {
     const { path, id = getActivityId(path), component } = this.options
-    yield this.ctx.$router.router.addRoute({ path, name: id, component, meta: { activity: this } })
+    yield this.ctx.client.router.router.addRoute({ path, name: id, component, meta: { activity: this } })
     this.id ??= id
     this.authority ??= 0
-    this.ctx.$router.pages[this.id] = this
-    yield () => delete this.ctx.$router.pages[this.id]
+    this.ctx.client.router.pages[this.id] = this
+    yield () => delete this.ctx.client.router.pages[this.id]
     this.handleUpdate()
     yield () => {
-      const { meta, fullPath } = this.ctx.$router.router.currentRoute.value
+      const { meta, fullPath } = this.ctx.client.router.router.currentRoute.value
       this._disposables.forEach(dispose => dispose())
       if (meta?.activity === this) {
         redirectTo.value = fullPath
-        this.ctx.$router.router.replace(this.ctx.$router.cache['home'] || '/')
+        this.ctx.client.router.router.replace(this.ctx.client.router.cache['home'] || '/')
       }
     }
   }
 
   handleUpdate() {
     if (redirectTo.value) {
-      const location = this.ctx.$router.router.resolve(redirectTo.value)
+      const location = this.ctx.client.router.router.resolve(redirectTo.value)
       if (location.matched.length) {
         redirectTo.value = undefined
-        this.ctx.$router.router.replace(location)
+        this.ctx.client.router.router.replace(location)
       }
     }
   }
@@ -120,8 +114,6 @@ export default class RouterService {
       property: 'ctx',
     })
 
-    ctx.mixin('$router', ['slot', 'page'])
-
     ctx.effect(() => {
       const initialTitle = document.title
       const dispose = this.router.afterEach((route) => {
@@ -147,7 +139,7 @@ export default class RouterService {
       }
 
       if (from === START_LOCATION) {
-        await ctx.$loader.initTask
+        await ctx.client.loader.initTask
         to = this.router.resolve(to)
         if (to.matched.length) return to
       }
@@ -161,7 +153,7 @@ export default class RouterService {
 
   slot(options: SlotOptions) {
     options.order ??= 0
-    options.component = this.ctx.wrapComponent(options.component)
+    options.component = this.ctx.client.wrapComponent(options.component)
     return this.ctx.effect(() => {
       const list = this.views[options.type] ||= []
       insert(list, options)
@@ -173,7 +165,7 @@ export default class RouterService {
   }
 
   page(options: Activity.Options) {
-    options.component = this.ctx.wrapComponent(options.component)
+    options.component = this.ctx.client.wrapComponent(options.component)
     return this.ctx.effect(() => {
       const activity = new Activity(this.ctx, options)
       return activity.setup()

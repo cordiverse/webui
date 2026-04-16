@@ -38,8 +38,8 @@ const ctx = useContext()
 
 function handleDrop(event: DragEvent) {
   hasDragOver.value = false
-  const text = event.dataTransfer.getData('text/plain')
-  if (!text.startsWith('activity:')) return
+  const text = event.dataTransfer?.getData('text/plain')
+  if (!text?.startsWith('activity:')) return
   const id = text.slice(9)
   const list = groups.value[props.position].map(([item]) => item)
   const oldIndex = list.findIndex(item => item.id === id)
@@ -47,7 +47,7 @@ function handleDrop(event: DragEvent) {
   event.preventDefault()
 
   let index = props.index
-  const item = ctx.$router.pages[id]
+  const item = ctx.client.router.pages[id]
   if (oldIndex < 0) {
     list.splice(index, 0, item)
   } else {

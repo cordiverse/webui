@@ -3,7 +3,7 @@ import Settings from './settings.vue'
 import Theme from './theme.vue'
 
 export default function (ctx: Context) {
-  ctx.page({
+  ctx.client.router.page({
     path: '/settings/:name*',
     name: '用户设置',
     icon: 'activity:settings',
@@ -12,13 +12,13 @@ export default function (ctx: Context) {
     component: Settings,
   })
 
-  ctx.schema({
+  ctx.client.setting.schema({
     type: 'string',
     role: 'theme',
     component: Theme,
   })
 
-  ctx.settings({
+  ctx.client.setting.settings({
     id: 'status',
     title: '状态栏设置',
     order: 800,

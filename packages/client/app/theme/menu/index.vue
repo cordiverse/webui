@@ -1,5 +1,5 @@
 <template>
-  <template v-for="menu of ctx.internal.activeMenus" :key="menu.id">
+  <template v-for="menu of ctx.client.action.activeMenus" :key="menu.id">
     <k-menu v-bind="menu"></k-menu>
   </template>
 </template>
@@ -13,11 +13,11 @@ import KMenu from './menu.vue'
 const ctx = useContext()
 
 useEventListener('click', () => {
-  ctx.internal.activeMenus.splice(0)
+  ctx.client.action.activeMenus.splice(0)
 })
 
 useEventListener('contextmenu', () => {
-  ctx.internal.activeMenus.splice(0)
+  ctx.client.action.activeMenus.splice(0)
 })
 
 </script>

@@ -4,14 +4,17 @@ import { useContext } from '../context'
 
 const KActivityLink = defineComponent({
   props: {
-    id: String,
+    id: {
+      type: String,
+      required: true,
+    },
   },
   setup(props, { slots }) {
     const ctx = useContext()
     return () => {
-      const activity = ctx.$router.pages[props.id]
+      const activity = ctx.client.router.pages[props.id]
       return h(RouterLink, {
-        to: ctx.$router.cache[activity?.id] || activity?.path.replace(/:.+/, ''),
+        to: ctx.client.router.cache[activity?.id] || activity?.path.replace(/:.+/, ''),
       }, {
         default: () => slots.default?.() ?? activity?.name,
       })

@@ -9,13 +9,13 @@ interface NotifierMessage {
 
 declare module '@cordisjs/client' {
   interface Events {
-    'notifier/message'(this: C, payload: NotifierMessage): void
+    'notifier/message'(this: Context, payload: NotifierMessage): void
   }
 }
 
 export default (ctx: Context) => {
   ctx.inject(['manager'], (ctx) => {
-    ctx.slot({
+    ctx.client.router.slot({
       type: 'plugin-details',
       component: Config,
       order: 0,

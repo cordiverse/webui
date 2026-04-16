@@ -1,7 +1,7 @@
 <template>
   <k-layout main="page-settings">
     <template #header>
-      {{ ctx.internal.settings[path][0]?.title }}
+      {{ ctx.client.setting._settings[path][0]?.title }}
     </template>
 
     <template #left>
@@ -17,7 +17,7 @@
 
     <keep-alive>
       <k-content :key="path">
-        <template v-for="item of ctx.internal.settings[path]">
+        <template v-for="item of ctx.client.setting._settings[path]">
           <template v-if="item.disabled?.()"></template>
           <component v-else-if="item.component" :is="item.component" />
           <k-form v-else-if="item.schema" :schema="item.schema" v-model="config" :initial="config" />
@@ -45,7 +45,7 @@ interface Tree {
   children?: Tree[]
 }
 
-const data = computed(() => Object.entries(ctx.internal.settings).map<Tree>(([id, [{ title }]]) => ({
+const data = computed(() => Object.entries(ctx.client.setting._settings).map<Tree>(([id, [{ title }]]) => ({
   id,
   label: title,
 })))
@@ -58,10 +58,10 @@ function handleClick(tree: Tree) {
 const path = computed({
   get() {
     const name = route.params.name?.toString()
-    return name in ctx.internal.settings ? name : ''
+    return name in ctx.client.setting._settings ? name : ''
   },
   set(value) {
-    if (!(value in ctx.internal.settings)) value = ''
+    if (!(value in ctx.client.setting._settings)) value = ''
     router.replace('/settings/' + value)
   },
 })

@@ -12,11 +12,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cordisjs/webui.git",
+    "url": "git+https://github.com/cordiverse/webui.git",
     "directory": "packages/components"
   },
   "bugs": {
-    "url": "https://github.com/cordisjs/webui/issues"
+    "url": "https://github.com/cordiverse/webui/issues"
   },
   "homepage": "https://koishi.chat",
   "keywords": [

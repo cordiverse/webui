@@ -73,8 +73,6 @@ export interface Data {
 }
 
 export interface RuntimeData {
-  filter?: boolean // FIXME
-  forkable?: boolean
   schema?: z
   usage?: string
   inject?: Dict<Inject.Meta | undefined>
@@ -87,7 +85,7 @@ export interface EntryLocation {
 
 @Inject('loader')
 @Inject('timer')
-@Inject('logger')
+@Inject('logger', false, { name: 'manager' })
 export abstract class Manager extends Service {
   public entry?: ClientEntry<Data>
 
@@ -292,7 +290,6 @@ export abstract class Manager extends Service {
       const result: RuntimeData = { inject: {} }
       result.schema = plugin?.Config || plugin?.schema
       result.usage = plugin?.usage
-      result.filter = plugin?.filter
       result.inject = Inject.resolve(plugin?.using || plugin?.inject)
 
       // make sure that result can be serialized into json

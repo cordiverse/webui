@@ -39,7 +39,7 @@ export interface ClientConfig {
   static?: boolean
   heartbeat?: HeartbeatConfig
   proxyBase?: string
-  entries?: EntryOptions[]
+  plugins?: EntryOptions[]
 }
 
 interface HeartbeatConfig {
@@ -227,8 +227,8 @@ class NodeWebUI extends WebUI {
     const { cacheDir, dev } = this.config
     const { createServer } = await import('@cordisjs/client/lib')
 
-    this.vite = await createServer(this.ctx.baseDir, {
-      cacheDir: cacheDir && resolve(this.ctx.baseDir, cacheDir),
+    this.vite = await createServer(fileURLToPath(this.ctx.baseUrl!), {
+      cacheDir: cacheDir && fileURLToPath(new URL(cacheDir, this.ctx.baseUrl)),
       server: {
         fs: dev?.fs,
       },

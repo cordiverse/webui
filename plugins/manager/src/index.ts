@@ -1,18 +1,25 @@
 import { Context } from 'cordis'
 import { LocalScanner } from '@cordisjs/registry'
+import { fileURLToPath } from 'node:url'
 import { Manager } from './shared'
+import type { ResolveResult } from '@cordisjs/plugin-loader'
 
 export * from './shared'
 
 export default class NodeManager extends Manager {
-  scanner = new LocalScanner(this.ctx.baseDir, {
+  scanner = new LocalScanner(fileURLToPath(this.ctx.baseUrl!), {
     onSuccess: async (object) => {
       const { name } = object.package
-      const { internal, url: parentURL } = this.ctx.loader
+      const { internal } = this.ctx.loader
       if (!internal) return
       try {
-        const { url } = await internal.resolve(name, parentURL, {})
-        if (internal.loadCache.has(url)) {
+        const baseUrl = this.ctx.baseUrl!
+        let resolved: ResolveResult
+        switch (internal.version) {
+          case 'v1': resolved = await internal.resolve(name, baseUrl, {}); break
+          case 'v2': resolved = internal.resolveSync(baseUrl, { specifier: name, attributes: {} }); break
+        }
+        if (internal.loadCache.has(resolved.url)) {
           object.runtime = await this.parseExports(name)
         }
       } catch (error) {

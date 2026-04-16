@@ -1,8 +1,8 @@
 import { Context } from 'cordis'
 import { Exporter, Message } from '@cordisjs/plugin-logger'
 import { Dict, Time } from 'cosmokit'
-import { resolve } from 'path'
 import { mkdir, readdir, readFile, rm } from 'fs/promises'
+import { fileURLToPath } from 'node:url'
 import type {} from '@cordisjs/plugin-webui'
 import type {} from '@cordisjs/plugin-timer'
 import { LogFile } from './file'
@@ -40,7 +40,7 @@ export const Config: z<Config> = z.object({
 export const inject = ['webui', 'timer', 'logger']
 
 export async function* apply(ctx: Context, config: Config) {
-  const root = resolve(ctx.baseDir, config.root)
+  const root = fileURLToPath(new URL(config.root, ctx.baseUrl))
   await mkdir(root, { recursive: true })
 
   const files: Dict<number[]> = {}

@@ -15,11 +15,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cordisjs/webui.git",
+    "url": "git+https://github.com/cordiverse/webui.git",
     "directory": "plugins/insight"
   },
   "bugs": {
-    "url": "https://github.com/cordisjs/webui/issues"
+    "url": "https://github.com/cordiverse/webui/issues"
   },
   "homepage": "https://koishi.chat/plugins/console/insight.html",
   "keywords": [
@@ -44,17 +44,18 @@
   "peerDependencies": {
     "@cordisjs/plugin-timer": "^1.1.1",
     "@cordisjs/plugin-webui": "^0.3.1",
-    "cordis": "^4.0.0-rc.1"
+    "cordis": "^4.0.0-rc.2"
   },
   "devDependencies": {
     "@cordisjs/client": "^0.3.1",
     "@cordisjs/plugin-timer": "^1.1.1",
     "@cordisjs/plugin-webui": "^0.3.1",
     "@types/d3-force": "^3.0.10",
-    "cordis": "^4.0.0-rc.1",
+    "cordis": "^4.0.0-rc.2",
     "d3-force": "^3.0.0"
   },
   "dependencies": {
-    "cosmokit": "^1.8.1"
+    "cosmokit": "^1.8.1",
+    "schemastery": "^3.18.0"
   }
 }

@@ -11,6 +11,7 @@
 ### Official plugins
 
 - @cordisjs/plugin-insight
-- @cordisjs/plugin-manager
+- @cordisjs/plugin-loader-webui
+- @cordisjs/plugin-logger-webui
 - @cordisjs/plugin-notifier
 - @cordisjs/plugin-webui

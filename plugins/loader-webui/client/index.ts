@@ -30,7 +30,7 @@ declare module '@cordisjs/client' {
 
 export const coreDeps = [
   '@cordisjs/plugin-webui',
-  '@cordisjs/plugin-manager',
+  '@cordisjs/plugin-loader-webui',
   '@cordisjs/plugin-server',
 ]
 

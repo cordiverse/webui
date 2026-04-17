@@ -1,5 +1,5 @@
 {
-  "name": "@cordisjs/plugin-manager",
+  "name": "@cordisjs/plugin-loader-webui",
   "description": "Manage your bots and plugins with console",
   "version": "0.5.1",
   "type": "module",

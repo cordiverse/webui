@@ -11,7 +11,7 @@
 <script setup lang="ts">
 
 import { useContext } from '@cordisjs/client'
-import type {} from '@cordisjs/plugin-manager/client'
+import type {} from '@cordisjs/plugin-loader-webui/client'
 import { Message } from 'reggol'
 import Logs from './logs.vue'
 

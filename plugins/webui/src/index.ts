@@ -10,7 +10,7 @@ import { readFile } from 'node:fs/promises'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { parse } from 'es-module-lexer'
 import fetchFile from '@cordisjs/fetch-file'
-import { Entry, Events, WebUI } from './shared'
+import { Entry, Events, WebUI } from './base'
 import open from 'open'
 import z from 'schemastery'
 
@@ -20,7 +20,7 @@ declare module 'cordis' {
   }
 }
 
-export * from './shared'
+export * from './base'
 
 function escapeHTML(source: string, inline = false) {
   const result = (source ?? '')

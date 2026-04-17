@@ -1,10 +1,10 @@
 import { Context, Fiber, Service } from 'cordis'
 import type {} from '@cordisjs/plugin-loader'
-import type { ClientEvents } from '@cordisjs/plugin-webui'
+import type * as shared from '@cordisjs/plugin-webui/shared'
 import { inject, InjectionKey, markRaw, onScopeDispose, Ref, ref } from 'vue'
 
 declare module 'cordis' {
-  interface Events extends ClientEvents {}
+  interface Events extends shared.Events {}
 }
 
 export const kContext = Symbol('context') as InjectionKey<Context>

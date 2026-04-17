@@ -1,30 +1,11 @@
-import { Context, Fiber, Plugin, FiberState } from 'cordis'
+import { Context, Fiber, Plugin } from 'cordis'
 import { camelize, capitalize } from 'cosmokit'
 import type {} from '@cordisjs/plugin-timer'
 import type {} from '@cordisjs/plugin-webui'
 import type {} from '@cordisjs/plugin-loader'
+import type { Node, Link } from '../shared'
 import z from 'schemastery'
 import assert from 'node:assert'
-
-export interface Data {
-  nodes: Node[]
-  edges: Link[]
-}
-
-export interface Node {
-  uid: number
-  name: string
-  state: FiberState
-  isGroup?: boolean
-  isRoot?: boolean
-  services?: string[]
-}
-
-export interface Link {
-  type: 'solid' | 'dashed'
-  source: number
-  target: number
-}
 
 function format(name: string) {
   return capitalize(camelize(name))

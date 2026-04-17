@@ -40,7 +40,7 @@
 
 import { onMounted, ref, computed, watch, reactive } from 'vue'
 import { useRpc } from '@cordisjs/client'
-import type { Data } from '../src'
+import type { Data } from '../shared'
 import { useTooltip, getEventPoint } from './tooltip'
 import { useElementSize, useEventListener, watchThrottled } from '@vueuse/core'
 import { Node, Link } from './utils'

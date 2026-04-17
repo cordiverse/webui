@@ -1,9 +1,9 @@
 import { Context } from 'cordis'
 import { Client } from './index.ts'
-import { Dict } from 'cosmokit'
 import type { Manifest } from 'vite'
 import { fileURLToPath } from 'node:url'
 import { readFileSync } from 'node:fs'
+import { EntryData } from '../../shared'
 
 export namespace Entry {
   export interface Files {
@@ -11,27 +11,6 @@ export namespace Entry {
     base: string
     dev?: string
     prod: string
-  }
-
-  export interface Data {
-    files: string[]
-    entryId?: string
-    data?: any
-  }
-
-  export interface Init {
-    entries: Dict<Entry.Data>
-    serverId: string
-    clientId: string
-  }
-
-  export interface Update extends Data {
-    id: string
-  }
-
-  export interface Patch extends Data {
-    id: string
-    key?: string
   }
 }
 
@@ -88,7 +67,7 @@ export class Entry<T = any> {
     })
   }
 
-  toJSON(client: Client): Entry.Data | undefined {
+  toJSON(client: Client): EntryData | undefined {
     try {
       return {
         files: this.ctx.webui.getEntryFiles(this),

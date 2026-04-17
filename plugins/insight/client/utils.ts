@@ -1,13 +1,13 @@
 import * as d3 from 'd3-force'
-import * as Insight from '../src'
+import * as shared from '../shared'
 
-export interface Node extends Insight.Node, d3.SimulationNodeDatum {
+export interface Node extends shared.Node, d3.SimulationNodeDatum {
   lastX?: number
   lastY?: number
   active?: boolean
 }
 
-export interface Link extends Omit<Insight.Link, 'source' | 'target'>, d3.SimulationLinkDatum<Node> {
+export interface Link extends Omit<shared.Link, 'source' | 'target'>, d3.SimulationLinkDatum<Node> {
   source: Node
   target: Node
 }

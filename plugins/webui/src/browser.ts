@@ -1,9 +1,9 @@
 import { Service } from 'cordis'
-import { Entry, Events, WebUI } from './shared/index.ts'
+import { Entry, Events, WebUI } from './base/index.ts'
 import {} from '@cordisjs/plugin-loader'
 import z from 'schemastery'
 
-export * from './shared/index.ts'
+export * from './base/index.ts'
 
 class BrowserWebUI extends WebUI {
   [Service.init]() {

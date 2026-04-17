@@ -1,5 +1,4 @@
 import { Context } from '@cordisjs/client'
-import {} from '../src'
 import Graph from './index.vue'
 import './icons'
 

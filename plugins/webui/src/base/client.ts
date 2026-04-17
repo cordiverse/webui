@@ -1,13 +1,7 @@
 import { Context } from 'cordis'
 import { WebSocket } from './types.ts'
 import { mapValues } from 'cosmokit'
-import { Entry } from './entry.ts'
-
-export interface ClientEvents {
-  'entry:init'(data: Entry.Init): void
-  'entry:update'(data: Entry.Update): void
-  'entry:patch'(data: Entry.Patch): void
-}
+import { EntryInit } from '../../shared'
 
 export class Client {
   readonly id = Math.random().toString(36).slice(2)
@@ -15,7 +9,7 @@ export class Client {
   constructor(readonly ctx: Context, public socket: WebSocket) {
     socket.addEventListener('message', this.receive)
     const webui = this.ctx.get('webui')!
-    const body: Entry.Init = {
+    const body: EntryInit = {
       entries: mapValues(webui.entries, entry => entry.toJSON(this)!),
       serverId: webui.id,
       clientId: this.id,

@@ -9,10 +9,11 @@
       "browser": "./lib/browser.js",
       "default": "./lib/index.js"
     },
-    "./shared": {
-      "types": "./lib/shared/index.d.ts",
-      "default": "./lib/shared/index.js"
+    "./base": {
+      "types": "./lib/base/index.d.ts",
+      "default": "./lib/base/index.js"
     },
+    "./shared": "./shared/index.d.ts",
     "./src/*": "./src/*",
     "./package.json": "./package.json"
   },

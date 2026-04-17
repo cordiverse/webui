@@ -1,7 +1,7 @@
 {
   "name": "@cordisjs/plugin-notifier",
   "description": "Notifier service for Cordis",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "exports": {
     ".": {
@@ -54,14 +54,14 @@
     }
   },
   "peerDependencies": {
-    "@cordisjs/plugin-webui": "^0.3.1",
-    "cordis": "^4.0.0-rc.2"
+    "@cordisjs/plugin-webui": "^0.4.1",
+    "cordis": "^4.0.0-rc.3"
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.3.1",
-    "@cordisjs/plugin-loader-webui": "^0.5.1",
-    "@cordisjs/plugin-webui": "^0.3.1",
-    "cordis": "^4.0.0-rc.2"
+    "@cordisjs/client": "^0.4.1",
+    "@cordisjs/plugin-loader-webui": "^0.6.0",
+    "@cordisjs/plugin-webui": "^0.4.1",
+    "cordis": "^4.0.0-rc.3"
   },
   "dependencies": {
     "@cordisjs/element": "^0.3.0",

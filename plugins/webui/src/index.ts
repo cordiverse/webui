@@ -3,7 +3,7 @@ import { Dict, Time } from 'cosmokit'
 import type {} from '@cordisjs/plugin-logger'
 import type {} from '@cordisjs/plugin-server'
 import type { EntryOptions } from '@cordisjs/plugin-loader'
-import type { FileSystemServeOptions, Manifest, ViteDevServer } from 'vite'
+import type { FileSystemServeOptions, Logger as ViteLogger, Manifest, ViteDevServer } from 'vite'
 import { extname, join, resolve } from 'node:path'
 import { existsSync, readFileSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
@@ -227,12 +227,36 @@ class NodeWebUI extends WebUI {
     const { cacheDir, dev } = this.config
     const { createServer } = await import('@cordisjs/client/lib')
 
+    const logger = this.ctx.logger('vite')
+    const loggedWarnings = new Set<string>()
+    const loggedErrors = new WeakSet<object>()
+    const customLogger: ViteLogger = {
+      hasWarned: false,
+      info: (msg) => logger.info(msg),
+      warn: (msg) => {
+        customLogger.hasWarned = true
+        logger.warn(msg)
+      },
+      warnOnce: (msg) => {
+        if (loggedWarnings.has(msg)) return
+        loggedWarnings.add(msg)
+        customLogger.hasWarned = true
+        logger.warn(msg)
+      },
+      error: (msg, opts) => {
+        if (opts?.error) loggedErrors.add(opts.error)
+        logger.error(msg)
+      },
+      clearScreen: () => {},
+      hasErrorLogged: (error) => loggedErrors.has(error),
+    }
+
     this.vite = await createServer(fileURLToPath(this.ctx.baseUrl!), {
       cacheDir: cacheDir && fileURLToPath(new URL(cacheDir, this.ctx.baseUrl)),
       server: {
         fs: dev?.fs,
       },
-      // TODO: customLogger
+      customLogger,
       plugins: [{
         name: 'cordis-hmr',
         transform: (code, id, options) => {

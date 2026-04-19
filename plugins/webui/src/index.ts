@@ -255,6 +255,7 @@ class NodeWebUI extends WebUI {
       cacheDir: cacheDir && fileURLToPath(new URL(cacheDir, this.ctx.baseUrl)),
       server: {
         fs: dev?.fs,
+        allowedHosts: true,
       },
       customLogger,
       plugins: [{

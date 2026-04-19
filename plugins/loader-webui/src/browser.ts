@@ -1,4 +1,4 @@
-import { SearchResult } from '@cordisjs/registry'
+import { SearchResult } from './types'
 import { Manager } from './shared'
 
 export * from './shared'

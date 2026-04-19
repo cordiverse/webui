@@ -31,7 +31,7 @@ const rename = computed(() => ctx.manager.dialogRename)
 
 function getDefault() {
   if (!rename.value) return ''
-  return rename.value.name === 'group' ? rename.value.id : rename.value.name
+  return rename.value.name === '@cordisjs/plugin-group' ? rename.value.id : rename.value.name
 }
 
 watch(rename, (value) => {

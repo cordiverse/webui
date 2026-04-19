@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import { Dict, pick } from 'cosmokit'
 import { EntryOptions } from '@cordisjs/plugin-loader'
 import { Entry as ClientEntry } from '@cordisjs/plugin-webui'
-import { Dependency, LocalObject } from '@cordisjs/registry'
+import { PackageJson, SearchObject } from './types.ts'
 import type {} from '@cordisjs/plugin-logger'
 import type {} from '@cordisjs/plugin-timer'
 import type {} from '@cordisjs/plugin-hmr'
@@ -37,11 +37,19 @@ declare module '@cordisjs/plugin-webui' {
   }
 }
 
-declare module '@cordisjs/registry' {
-  interface LocalObject {
-    runtime?: RuntimeData | null
-    readme?: Dict<string | null>
-  }
+export interface LocalObject extends Pick<SearchObject, 'shortname' | 'workspace' | 'manifest'> {
+  package: Pick<PackageJson, 'name' | 'version'>
+  readme?: Dict<string | null>
+  _readmeFiles?: Dict<string | Promise<string>>
+  runtime?: RuntimeData | null
+}
+
+export interface Dependency {
+  name: string
+  request: string
+  path?: string
+  workspace?: boolean
+  package?: PackageJson
 }
 
 export interface EvalResult {

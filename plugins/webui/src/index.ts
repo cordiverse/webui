@@ -282,8 +282,13 @@ class NodeWebUI extends WebUI {
 
     this.ctx.server.use(async (req, res, next) => {
       if (!req.url.startsWith('/vite/')) return next()
-      res.legacyMode = true
-      this.vite!.middlewares(req._req, res._res, next)
+      await new Promise<void>((resolve, reject) => {
+        res._res.once('close', () => resolve())
+        this.vite!.middlewares(req._req, res._res, (err: any) => {
+          if (err) return reject(err)
+          next().then(resolve, reject)
+        })
+      })
     })
 
     this.ctx.effect(() => () => this.vite?.close(), 'vite.createServer()')

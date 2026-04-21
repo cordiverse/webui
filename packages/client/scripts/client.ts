@@ -17,7 +17,7 @@ function findModulePath(id: string) {
 const cwd = resolve(fileURLToPath(import.meta.url), '../../../..')
 const dist = cwd + '/plugins/webui/dist'
 
-export async function build(root: string, config: vite.UserConfig = {}, isClient = false) {
+export async function build(root: string, config: vite.UserConfig = {}) {
   const { rollupOptions = {} } = config.build || {}
   return await vite.build({
     root,
@@ -62,12 +62,6 @@ export async function build(root: string, config: vite.UserConfig = {}, isClient
         'vue-router': root + '/vue-router.js',
         '@vueuse/core': root + '/vueuse.js',
         '@cordisjs/client': root + '/client.js',
-        ...isClient ? {
-          'vue-i18n': findModulePath('vue-i18n') + '/dist/vue-i18n.esm-browser.prod.js',
-          '@intlify/core-base': findModulePath('@intlify/core-base') + '/dist/core-base.esm-browser.prod.js',
-        } : {
-          'vue-i18n': root + '/client.js',
-        },
       },
     },
   }) as RollupOutput
@@ -132,7 +126,7 @@ export default async function () {
         preserveEntrySignatures: 'strict',
       },
     },
-  }, true)
+  })
 
   for (const file of output) {
     if (file.type === 'asset' && file.name === 'style.css') {

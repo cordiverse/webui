@@ -1,14 +1,25 @@
 import { SearchObject, User } from '@cordisjs/registry'
-import { InjectionKey } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { useI18n as useFormI18n } from '@cordisjs/client'
 import { Dict } from 'cosmokit'
+import { InjectionKey, markRaw, reactive } from 'vue'
 import zhCN from './locales/zh-CN.yml'
+import enUS from './locales/en-US.yml'
 
-export const useMarketI18n = () => useI18n({
-  messages: {
-    'zh-CN': zhCN,
-  },
+const messages = reactive<Dict<any>>({
+  'zh-CN': markRaw(zhCN),
+  'en-US': markRaw(enUS),
 })
+
+if (import.meta.hot) {
+  import.meta.hot.accept('./locales/zh-CN.yml', (m) => {
+    if (m) messages['zh-CN'] = markRaw(m.default)
+  })
+  import.meta.hot.accept('./locales/en-US.yml', (m) => {
+    if (m) messages['en-US'] = markRaw(m.default)
+  })
+}
+
+export const useI18n = () => useFormI18n(messages)
 
 export function getUsers(data: SearchObject) {
   const result: Record<string, User> = {}

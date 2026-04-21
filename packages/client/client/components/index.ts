@@ -20,7 +20,6 @@ export * from './layout'
 export * from './link'
 export * from './slot'
 
-export * from 'vue-i18n'
 export * from '@cordisjs/components'
 
 export { icons }

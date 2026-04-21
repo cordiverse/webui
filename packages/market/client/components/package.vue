@@ -67,10 +67,8 @@
 import { computed, inject } from 'vue'
 import { SearchObject } from '@cordisjs/registry'
 import { useI18nText } from '@cordisjs/components'
-import { badges, getUsers, validate } from '../utils'
+import { badges, getUsers, useI18n, validate } from '../utils'
 import { kConfig } from '../utils'
-import { useI18n } from 'vue-i18n'
-import zhCN from '../locales/zh-CN.yml'
 import MarketIcon from '../icons'
 import * as md5 from 'spark-md5'
 
@@ -115,11 +113,7 @@ function formatSize(value: number) {
   }
 }
 
-const { t, setLocaleMessage } = useI18n({
-  messages: {
-    'zh-CN': zhCN,
-  },
-})
+const t = useI18n()
 
 function timeAgo(time: string) {
   const now = new Date()
@@ -130,12 +124,6 @@ function timeAgo(time: string) {
   if (diff < 86400000) return t('time.hours-ago', [Math.floor(diff / 3600000)])
   if (diff < 604800000) return t('time.days-ago', [Math.floor(diff / 86400000)])
   return input.toLocaleDateString()
-}
-
-if (import.meta.hot) {
-  import.meta.hot.accept('../locales/zh-CN.yml', (module) => {
-    setLocaleMessage('zh-CN', module!.default)
-  })
 }
 
 </script>

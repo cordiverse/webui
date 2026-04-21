@@ -1,4 +1,3 @@
-/// <reference types="vue-i18n" />
 /// <reference types="vite/client" />
 /// <reference types="element-plus/global" />
 

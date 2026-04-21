@@ -35,6 +35,6 @@
   "dependencies": {
     "@satorijs/element": "^4.0.0-alpha.0",
     "cosmokit": "^1.8.1",
-    "schemastery-vue": "^7.3.7"
+    "schemastery-vue": "^8.0.0-alpha.0"
   }
 }

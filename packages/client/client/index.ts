@@ -1,15 +1,16 @@
 import { Context, Service } from 'cordis'
 import {
   App, Component, createApp, customRef, defineComponent, DefineComponent, h, markRaw,
-  onErrorCaptured, provide, Ref, resolveComponent,
+  onErrorCaptured, provide, Ref, resolveComponent, watchEffect,
 } from 'vue'
+import { locale } from '@cordisjs/components'
 import ActionService from './plugins/action'
-import I18nService from './plugins/i18n'
 import LoaderService from './plugins/loader'
 import RouterService from './plugins/router'
 import SettingService from './plugins/setting'
 import ThemeService from './plugins/theme'
 import { kContext } from './context'
+import { useConfig } from './plugins/setting'
 import type { LoadState } from './plugins/loader'
 import install from './components'
 
@@ -29,7 +30,6 @@ export class ClientService extends Service {
   public app: App
 
   public action: ActionService
-  public i18n: I18nService
   public loader: LoaderService
   public router: RouterService
   public setting: SettingService
@@ -55,7 +55,6 @@ export class ClientService extends Service {
 
     // Create sub-services (they register their own mixins for backward compat)
     this.action = new ActionService(ctx)
-    this.i18n = new I18nService(ctx)
     this.loader = new LoaderService(ctx)
     this.router = new RouterService(ctx)
     this.setting = new SettingService(ctx)
@@ -75,8 +74,12 @@ export class ClientService extends Service {
       return ref.value, next()
     }, { prepend: true })
 
+    const config = useConfig()
+    ctx.effect(() => watchEffect(() => {
+      locale.value = config.value.locale ?? 'en-US'
+    }, { flush: 'post' }))
+
     this.loader.initTask.then(() => {
-      this.app.use(this.i18n.i18n)
       this.app.use(this.router.router)
       this.app.mount('#app')
     })
@@ -109,7 +112,6 @@ export class ClientService extends Service {
 }
 
 export * from './plugins/action'
-export * from './plugins/i18n'
 export * from './plugins/loader'
 export * from './plugins/router'
 export * from './plugins/setting'

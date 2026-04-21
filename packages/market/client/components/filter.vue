@@ -40,7 +40,7 @@
 <script lang="ts" setup>
 
 import { computed, inject, ref, watch } from 'vue'
-import { Badge, badges, kConfig, validate, comparators, useMarketI18n } from '../utils'
+import { Badge, badges, kConfig, validate, comparators, useI18n } from '../utils'
 import { SearchObject } from '@cordisjs/registry'
 import MarketIcon from '../icons'
 
@@ -51,7 +51,7 @@ const props = defineProps<{
 
 const emit = defineEmits(['update:modelValue'])
 
-const { t } = useMarketI18n()
+const t = useI18n()
 
 const config = inject(kConfig, {})
 

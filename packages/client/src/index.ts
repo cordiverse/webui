@@ -77,7 +77,6 @@ export async function build(root: string, config: vite.UserConfig = {}) {
     ],
     resolve: {
       alias: {
-        'vue-i18n': '@cordisjs/client',
         '@cordisjs/components': '@cordisjs/client',
       },
     },

@@ -48,7 +48,6 @@ interface HeartbeatConfig {
 }
 
 @Inject('server')
-@Inject('loader', false)
 class NodeWebUI extends WebUI {
   public vite?: ViteDevServer
   public root: string
@@ -62,8 +61,9 @@ class NodeWebUI extends WebUI {
     })
 
     ctx.on('webui/connection', () => {
-      if (!ctx.loader) return
-      ctx.loader.envData.clientCount = this.clients.size
+      const loader = ctx.get('loader')
+      if (!loader) return
+      loader.envData.clientCount = this.clients.size
     })
 
     this.root = fileURLToPath(config.devMode
@@ -89,7 +89,8 @@ class NodeWebUI extends WebUI {
 
     this.ctx.on('server/ready', () => {
       const target = this.ctx.server.selfUrl + this.config.uiPath
-      if (this.config.open && !this.ctx.loader?.envData.clientCount && !process.env.CORDIS_AGENT) {
+      const loader = this.ctx.get('loader')
+      if (this.config.open && !loader?.envData.clientCount && !process.env.CORDIS_AGENT) {
         open(target)
       }
       this.ctx.logger.info('webui is available at %c', target)
@@ -130,7 +131,7 @@ class NodeWebUI extends WebUI {
   private serveAssets() {
     this.ctx.server.get('{/*path}', async (req, res, next) => {
       await next()
-      if (res.bodyUsed) return
+      if (res.claimed) return
 
       const name = req.params.path ?? ''
       if (name.startsWith('-/modules/')) {

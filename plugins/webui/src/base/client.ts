@@ -8,10 +8,9 @@ export class Client {
 
   constructor(readonly ctx: Context, public socket: WebSocket) {
     socket.addEventListener('message', this.receive)
-    const webui = this.ctx.get('webui')!
     const body: EntryInit = {
-      entries: mapValues(webui.entries, entry => entry.toJSON(this)!),
-      serverId: webui.id,
+      entries: mapValues(this.ctx.webui.entries, entry => entry.toJSON(this)!),
+      serverId: this.ctx.webui.id,
       clientId: this.id,
     }
     this.send({ type: 'entry:init', body })
@@ -23,7 +22,7 @@ export class Client {
 
   receive = async (data: WebSocket.MessageEvent) => {
     const { type, body } = JSON.parse(data.data.toString())
-    const listener = this.ctx.get('webui')!.listeners[type]
+    const listener = this.ctx.webui.listeners[type]
     if (!listener) {
       this.ctx.logger.info('receive unknown message:', type, body)
       return

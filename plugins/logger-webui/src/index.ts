@@ -1,136 +1,171 @@
 import { Context } from 'cordis'
 import { Exporter, Message } from '@cordisjs/plugin-logger'
-import { Dict, Time } from 'cosmokit'
-import { mkdir, readdir, readFile, rm } from 'fs/promises'
+import { Time } from 'cosmokit'
+import { mkdir } from 'node:fs/promises'
+import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { DatabaseSync } from 'node:sqlite'
 import type {} from '@cordisjs/plugin-webui'
 import type {} from '@cordisjs/plugin-timer'
-import { LogFile } from './file'
 import z from 'schemastery'
 
 declare module '@cordisjs/plugin-webui' {
   interface Events {
-    'log.read'(options: { name: string }): Promise<Message[]>
+    'log.read'(options: { before?: number; limit?: number }): Promise<Message[]>
   }
 }
 
 declare module 'reggol' {
   interface Message {
     entryId?: string
+    id?: number
   }
 }
 
 export const name = 'logger'
 
 export interface Config {
-  root: string
+  path: string
   maxAge: number
-  maxSize: number
+  bufferSize: number
 }
 
 export const Config: z<Config> = z.object({
-  root: z.string().role('path', {
-    filters: ['directory'],
-    allowCreate: true,
-  }).default('data/logs').description('存放输出日志的本地目录。'),
-  maxAge: z.natural().default(30).description('日志文件保存的最大天数。'),
-  maxSize: z.natural().default(1024 * 100).description('单个日志文件的最大大小。'),
+  path: z.string().role('path', { filters: ['file'] })
+    .default('data/logs.db')
+    .description('日志数据库文件路径。'),
+  maxAge: z.natural().default(30)
+    .description('日志保存的最大天数，0 表示永久保留。'),
+  bufferSize: z.natural().default(1000)
+    .description('客户端连接时预加载的最新日志条数。'),
 })
 
 export const inject = ['webui', 'timer', 'logger']
 
+export interface Data {
+  messages: Message[]
+  entryIds: string[]
+}
+
+interface Row {
+  id: number
+  sn: number
+  ts: number
+  type: string
+  level: number
+  name: string
+  body: string
+  entry_id: string | null
+}
+
+function rowToMessage(row: Row): Message {
+  const msg: Message = {
+    sn: row.sn,
+    ts: row.ts,
+    type: row.type as any,
+    level: row.level as any,
+    name: row.name,
+    body: row.body,
+  }
+  msg.id = row.id
+  if (row.entry_id) msg.entryId = row.entry_id
+  return msg
+}
+
 export async function* apply(ctx: Context, config: Config) {
-  const root = fileURLToPath(new URL(config.root, ctx.baseUrl))
-  await mkdir(root, { recursive: true })
+  const filename = fileURLToPath(new URL(config.path, ctx.baseUrl))
+  await mkdir(dirname(filename), { recursive: true })
 
-  const files: Dict<number[]> = {}
-  for (const filename of await readdir(root)) {
-    const capture = /^(\d{4}-\d{2}-\d{2})-(\d+)\.log$/.exec(filename)
-    if (!capture) continue
-    files[capture[1]] ??= []
-    files[capture[1]].push(+capture[2])
+  const db = new DatabaseSync(filename)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      sn INTEGER NOT NULL,
+      ts INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      level INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      body TEXT NOT NULL,
+      entry_id TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_logs_ts ON logs(ts);
+  `)
+
+  yield () => db.close()
+
+  if (config.maxAge) {
+    const cutoff = Date.now() - config.maxAge * Time.day
+    db.prepare('DELETE FROM logs WHERE ts < ?').run(cutoff)
   }
 
-  let writer: LogFile
-  yield () => writer?.close()
+  const insertStmt = db.prepare(
+    'INSERT INTO logs (sn, ts, type, level, name, body, entry_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+  )
+  const selectOlderStmt = db.prepare(
+    'SELECT * FROM logs WHERE id < ? ORDER BY id DESC LIMIT ?',
+  )
+  const selectRecentStmt = db.prepare(
+    'SELECT * FROM logs ORDER BY id DESC LIMIT ?',
+  )
 
-  function createFile(date: string, index: number) {
-    const name = `${date}-${index}.log`
-    writer = new LogFile(date, name, `${root}/${name}`)
-    cleanUp()
-  }
+  const initialRows = selectRecentStmt.all(config.bufferSize) as unknown as Row[]
+  const messages: Message[] = initialRows.reverse().map(rowToMessage)
 
-  function cleanUp() {
-    const { maxAge } = config
-    if (!maxAge) return
+  const distinctRows = db
+    .prepare('SELECT DISTINCT entry_id FROM logs WHERE entry_id IS NOT NULL')
+    .all() as unknown as { entry_id: string }[]
+  const entryIds = new Set<string>(distinctRows.map(row => row.entry_id))
 
-    const now = Date.now()
-    for (const date of Object.keys(files)) {
-      if (now - +new Date(date) < maxAge * Time.day) continue
-      for (const index of files[date]) {
-        rm(`${root}/${date}-${index}.log`).catch((error) => {
-          ctx.logger('logger').warn(error)
-        })
-      }
-      delete files[date]
-    }
-  }
-
-  const date = new Date().toISOString().slice(0, 10)
-  createFile(date, Math.max(...files[date] ?? [0]) + 1)
-
-  const entry = ctx.webui.addEntry<Dict<Message[] | null>>({
-    path: '@cordisjs/plugin-insight/dist',
+  const entry = ctx.webui.addEntry<Data>({
+    path: '@cordisjs/plugin-logger-webui/dist',
     base: import.meta.url,
     dev: '../client/index.ts',
     prod: '../dist/manifest.json',
-  }, () => ({
-    ...Object.fromEntries(Object.entries(files).flatMap(([date, indices]) => {
-      return indices.map(index => [`${date}-${index}.log`, null] as const)
-    })),
-    [writer.name]: writer.data,
-  }))
+  }, () => ({ messages, entryIds: [...entryIds] }))
 
   ctx.webui.addListener('log.read', async (options) => {
-    if (options.name === writer.name) {
-      return writer.data
-    } else {
-      const content = await readFile(`${root}/${options.name}`, 'utf8')
-      return LogFile.parse(content)
-    }
+    const limit = Math.min(options.limit ?? 500, 2000)
+    const before = options.before ?? Number.MAX_SAFE_INTEGER
+    const rows = selectOlderStmt.all(before, limit) as unknown as Row[]
+    return rows.reverse().map(rowToMessage)
   })
 
+  let pending: Message[] = []
   const flush = () => {
-    if (!buffer.length) return
-    entry.patch(buffer, writer.name)
-    buffer = []
+    if (!pending.length) return
+    entry.patch(pending, 'messages')
+    pending = []
   }
-
   const flushThrottled = ctx.throttle(flush, 100)
 
-  let buffer: Message[] = []
   const exporter: Exporter = {
     colors: 3,
     export: (message: Message) => {
       const fiber = message.fiber?.deref()
-      message.entryId = fiber && ctx.get('loader')?.locate(fiber)
-      const date = new Date(message.ts).toISOString().slice(0, 10)
-      if (writer.date !== date) {
-        flush()
-        writer.close()
-        files[date] = [1]
-        createFile(date, 1)
+      const entryId = fiber ? ctx.get('loader')?.locate(fiber) : undefined
+      if (entryId) message.entryId = entryId
+
+      const result = insertStmt.run(
+        message.sn,
+        message.ts,
+        message.type,
+        message.level,
+        message.name,
+        message.body,
+        entryId ?? null,
+      )
+      message.id = Number(result.lastInsertRowid)
+
+      messages.push(message)
+      if (messages.length > config.bufferSize) {
+        messages.splice(0, messages.length - config.bufferSize)
       }
-      writer.write(message)
-      buffer.push(message)
+      pending.push(message)
       flushThrottled()
-      if (writer.size >= config.maxSize) {
-        flush()
-        writer.close()
-        const index = Math.max(...files[date] ?? [0]) + 1
-        files[date] ??= []
-        files[date].push(index)
-        createFile(date, index)
+
+      if (entryId && !entryIds.has(entryId)) {
+        entryIds.add(entryId)
+        entry.patch([entryId], 'entryIds')
       }
     },
   }

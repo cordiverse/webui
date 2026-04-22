@@ -9,12 +9,12 @@
       @top="onTop"
     >
       <template #="message">
-        <div :class="{ line: true, start: message.start }">
+        <div class="line">
           <code v-html="renderLine(message)"></code>
           <router-link
+            v-if="showLink && getTarget(message)"
             class="log-link inline-flex items-center justify-center absolute w-20px h-20px bottom-0 right-1"
-            v-if="showLink && ctx.get('manager') && message?.entryId"
-            :to="'/plugins/' + message.entryId"
+            :to="getTarget(message)!"
           >
             <k-icon name="arrow-right"/>
           </router-link>
@@ -23,17 +23,22 @@
     </virtual-list>
   </template>
   <template v-else>
-    <slot name="empty"></slot>
+    <slot name="empty">
+      <div class="log-empty" v-bind="$attrs" :style="{ maxHeight, height: maxHeight }">
+        <span>暂无日志</span>
+      </div>
+    </slot>
   </template>
 </template>
 
 <script lang="ts" setup>
 
-import { computed } from 'vue'
-import { Dict, Time, VirtualList, useContext, useRpc, send } from '@cordisjs/client'
+import { computed, ref } from 'vue'
+import { Time, VirtualList, useContext, useRpc, send } from '@cordisjs/client'
 import type {} from '@cordisjs/plugin-loader-webui/client'
 import { AnsiUp } from 'ansi_up'
 import { Logger, Message } from 'reggol'
+import type { Data } from '../src'
 
 defineOptions({
   inheritAttrs: false,
@@ -47,7 +52,9 @@ const props = defineProps<{
 }>()
 
 const ctx = useContext()
-const data = useRpc<Dict<Message[] | null>>()
+const data = useRpc<Data>()
+const history = ref<Message[]>([])
+const exhausted = ref(false)
 
 const converter = new AnsiUp()
 
@@ -72,30 +79,32 @@ function renderLine(message: Message) {
 }
 
 const logs = computed(() => {
-  const keys = Object.keys(data.value).filter(key => data.value[key]?.length).sort((a, b) => {
-    return a.slice(0, 11).localeCompare(b.slice(0, 11)) || +a.slice(11) - +b.slice(11)
-  }).reverse()
-  const result: (Message & { start?: boolean })[] = []
-  for (const key of keys) {
-    const curr = data.value[key]!
-    if (result.length && curr[curr.length - 1].sn > result[0].sn) {
-      if (!props.showHistory) break
-      result[0].start = true
-    }
-    result.unshift(...data.value[key]!
-      .filter(message => !props.filter || props.filter(message))
-      .map(message => ({ ...message })))
-  }
-  return result
+  const all = [...history.value, ...(data.value?.messages ?? [])]
+  return all.filter(message => !props.filter || props.filter(message))
 })
 
 async function onTop() {
-  if (!props.showHistory) return
-  const keys = Object.keys(data.value).filter(key => !data.value[key]).sort((a, b) => {
-    return a.slice(0, 11).localeCompare(b.slice(0, 11)) || +a.slice(11) - +b.slice(11)
-  }).reverse()
-  if (!keys.length) return
-  data.value[keys[0]] = await send('log.read', { name: keys[0] })
+  if (!props.showHistory || exhausted.value) return
+  const cursor = (history.value[0] ?? data.value?.messages?.[0])?.id
+  if (!cursor) return
+  const page = await send('log.read', { before: cursor, limit: 500 })
+  if (!page.length) {
+    exhausted.value = true
+    return
+  }
+  history.value = [...page, ...history.value]
+}
+
+function getTarget(message: Message): string | null {
+  if (!message?.entryId) return null
+  const manager = ctx.get('manager')
+  if (!manager) return null
+  const prefix = manager.prefix
+  const local = prefix && message.entryId.startsWith(prefix)
+    ? message.entryId.slice(prefix.length)
+    : message.entryId
+  if (!(local in manager.plugins.value.entries)) return null
+  return '/plugins/' + local
 }
 
 </script>
@@ -108,27 +117,6 @@ async function onTop() {
 
   :deep(.el-scrollbar__view) {
     padding: 1rem 1rem;
-  }
-
-  .line.start {
-    margin-top: 1rem;
-
-    &::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: -0.5rem;
-      border-top: 1px solid var(--terminal-separator);
-    }
-  }
-
-  .line:first-child {
-    margin-top: 0;
-
-    &::before {
-      display: none;
-    }
   }
 
   .line {
@@ -149,6 +137,16 @@ async function onTop() {
       background-color: var(--terminal-bg-selection);
     }
   }
+}
+
+.log-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 8rem;
+  color: var(--text-tertiary);
+  background-color: var(--terminal-bg);
+  font-size: 13px;
 }
 
 </style>

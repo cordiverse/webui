@@ -27,6 +27,10 @@ declare module '@cordisjs/client' {
   interface ActionContext {
     'config.tree': EntryData
   }
+
+  interface Events {
+    'webui/loader/service'(entry: EntryData, name: string): boolean | undefined
+  }
 }
 
 export const coreDeps = [
@@ -115,6 +119,10 @@ export default class Manager extends Service {
     if (!path.startsWith('/plugins/')) return
     const [id] = path.slice(9).split('/', 1)
     return this.plugins.value.entries[id]
+  }
+
+  get prefix() {
+    return this.data.value?.prefix ?? ''
   }
 
   get currentRoute() {
@@ -298,7 +306,14 @@ export default class Manager extends Service {
           ...Inject.resolve(this.data.value.packages[entry.name]?.runtime?.inject),
           ...Inject.resolve(entry.inject),
         }
-        return Object.keys(inject).map(name => ({ name }))
+        const names = new Set<string>()
+        for (const [name, meta] of Object.entries(inject)) {
+          names.add(name)
+        }
+        for (const name of Object.keys(this.data.value.services ?? {})) {
+          if (this.ctx.bail('webui/loader/service', entry, name)) names.add(name)
+        }
+        return [...names].sort().map(name => ({ name }))
       },
       indent: 1,
     })

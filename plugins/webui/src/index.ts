@@ -4,7 +4,7 @@ import type {} from '@cordisjs/plugin-logger'
 import type {} from '@cordisjs/plugin-server'
 import type { EntryOptions } from '@cordisjs/plugin-loader'
 import type { FileSystemServeOptions, Logger as ViteLogger, Manifest, ViteDevServer } from 'vite'
-import { extname, join, resolve } from 'node:path'
+import { extname, join, relative, resolve } from 'node:path'
 import { existsSync, readFileSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -229,11 +229,28 @@ class NodeWebUI extends WebUI {
     const { createServer } = await import('@cordisjs/client/lib')
 
     const logger = this.ctx.logger('vite')
+    const hmrLogger = this.ctx.logger('vite:hmr')
+    const baseDir = fileURLToPath(this.ctx.baseUrl!)
+    const ansiRegex = /\x1B\[[0-9;]*m/g
     const loggedWarnings = new Set<string>()
     const loggedErrors = new WeakSet<object>()
     const customLogger: ViteLogger = {
       hasWarned: false,
-      info: (msg) => logger.info(msg),
+      info: (msg) => {
+        const plain = msg.replace(ansiRegex, '')
+        const match = /^hmr update\s+(.+)$/.exec(plain)
+        if (match) {
+          const rels = match[1].split(/,\s*/).map((file) => {
+            const abs = file.startsWith('/@fs')
+              ? file.slice(4)
+              : resolve(this.root, file.replace(/^\//, ''))
+            return relative(baseDir, abs)
+          })
+          hmrLogger.info('update %s', rels.join(', '))
+          return
+        }
+        logger.info(msg)
+      },
       warn: (msg) => {
         customLogger.hasWarned = true
         logger.warn(msg)

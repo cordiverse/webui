@@ -1,9 +1,9 @@
-import { Context, Dict } from '@cordisjs/client'
+import { Context } from '@cordisjs/client'
 import { Ref } from 'vue'
-import type { Message } from '@cordisjs/plugin-logger'
-import {} from '../src'
+import type { Data } from '../src'
 import Logs from './index.vue'
 import Settings from './settings.vue'
+import LoaderIntercept from './loader-intercept.vue'
 import './index.scss'
 import './icons'
 
@@ -11,7 +11,7 @@ export const inject = {
   manager: false,
 }
 
-export function apply(ctx: Context, data: Ref<Dict<Message[]>>) {
+export function apply(ctx: Context, data: Ref<Data>) {
   ctx.client.router.page({
     path: '/logs',
     name: '日志',
@@ -21,26 +21,16 @@ export function apply(ctx: Context, data: Ref<Dict<Message[]>>) {
   })
 
   ctx.client.router.slot({
-    type: 'plugin-details',
-    component: Settings,
+    type: 'loader-intercept',
+    component: LoaderIntercept,
     order: -800,
   })
 
-  // ctx.inject(['manager'], (ctx) => {
-  //   ctx.manager.subroute({
-  //     path: 'logs',
-  //     title: '日志',
-  //     component: Settings,
-  //     hidden: (entry) => {
-  //       let last = Infinity
-  //       for (let index = data.value.length - 1; index > 0; --index) {
-  //         if (data.value[index].id >= last) break
-  //         last = data.value[index].id
-  //         if (data.value[index].meta.entryId !== entry.id) continue
-  //         return false
-  //       }
-  //       return true
-  //     },
-  //   })
-  // })
+  ctx.inject(['manager'], (ctx) => {
+    ctx.on('webui/loader/service', (entry, name) => {
+      if (name !== 'logger') return
+      const full = ctx.manager.prefix + entry.id
+      return data.value?.entryIds?.includes(full) ?? false
+    })
+  })
 }

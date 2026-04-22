@@ -15,6 +15,7 @@
       :initial="info.config"
       v-model="ctx.manager.changes[currentEntry.id].intercept![name]"
     />
+    <k-slot name="loader-intercept"></k-slot>
   </k-content>
   <k-empty v-else>
     当前插件未依赖服务 {{ name }}。

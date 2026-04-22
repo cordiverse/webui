@@ -78,6 +78,7 @@ export interface Data {
   entries: EntryData[]
   packages: Dict<LocalObject>
   services: Dict<ServiceData>
+  prefix: string
 }
 
 export interface RuntimeData {
@@ -182,6 +183,7 @@ export abstract class Manager extends Service {
       entries: this.getEntries(),
       packages: this.packages,
       services: this.getServices(),
+      prefix: this.rootPrefix,
     }))
 
     const updateEntries = this.ctx.debounce(() => {

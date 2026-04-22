@@ -1,5 +1,5 @@
 :root {
-  --terminal-bg: #24292f;
+  --terminal-bg: var(--bg-secondary);
   --terminal-fg: #d0d7de;
   --terminal-bg-hover: #32383f;
   --terminal-fg-hover: #f6f8fa;

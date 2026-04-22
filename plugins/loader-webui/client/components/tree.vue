@@ -105,7 +105,15 @@ function allowDrop(source: EntryNode, target: EntryNode, type: 'inner' | 'prev' 
 }
 
 function handleClick(tree: EntryData, target: EntryNode, instance: any, event: MouseEvent) {
-  router.replace('/plugins/' + tree.id)
+  const current = ctx.manager.currentEntry
+  let sub = ''
+  if (current) {
+    const prefix = '/plugins/' + current.id
+    if (route.path.startsWith(prefix + '/')) {
+      sub = route.path.slice(prefix.length)
+    }
+  }
+  router.replace('/plugins/' + tree.id + sub)
   // el-tree will stop propagation,
   // so we need to manually trigger the event
   // so that context menu can be closed.
@@ -161,6 +169,12 @@ watch(keyword, (val) => {
 
 .search {
   background: var(--k-side-bg);
+
+  :deep(.el-input__wrapper) {
+    height: 2rem;
+    min-height: 2rem;
+    box-sizing: border-box;
+  }
 }
 
 .el-scrollbar {

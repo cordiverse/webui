@@ -72,7 +72,7 @@ function renderLine(message: Message) {
 }
 
 const logs = computed(() => {
-  const keys = Object.keys(data.value).filter(key => data.value[key]).sort((a, b) => {
+  const keys = Object.keys(data.value).filter(key => data.value[key]?.length).sort((a, b) => {
     return a.slice(0, 11).localeCompare(b.slice(0, 11)) || +a.slice(11) - +b.slice(11)
   }).reverse()
   const result: (Message & { start?: boolean })[] = []

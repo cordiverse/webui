@@ -26,11 +26,11 @@
       <!-- implements -->
       <k-slot-item :order="800">
         <template v-for="name in env.impl" :key="name">
-          <k-comment v-if="name in ctx.manager.data.value.services && current.disabled" type="warning">
+          <k-comment v-if="name in ctx.manager.data.value.services && !isActive" type="warning">
             <p>此插件将会提供 {{ name }} 服务，但此服务已被其他插件实现。</p>
           </k-comment>
-          <k-comment v-else :type="current.disabled ? 'primary' : 'success'">
-            <p>此插件{{ current.disabled ? '启用后将会提供' : '提供了' }} {{ name }} 服务。</p>
+          <k-comment v-else :type="isActive ? 'success' : 'primary'">
+            <p>此插件{{ isActive ? '提供了' : '启用后将会提供' }} {{ name }} 服务。</p>
           </k-comment>
         </template>
       </k-slot-item>
@@ -75,7 +75,7 @@
 
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useContext, deepEqual, useI18nText } from '@cordisjs/client'
+import { FiberState, useContext, deepEqual, useI18nText } from '@cordisjs/client'
 import { hasSchema } from '../utils'
 
 const ctx = useContext()
@@ -86,6 +86,7 @@ const current = computed(() => ctx.manager.currentEntry)
 const local = computed(() => ctx.manager.data.value.packages[current.value?.name!])
 const change = computed(() => ctx.manager.changes[current.value?.id!])
 const env = computed(() => ctx.manager.getEnvInfo(current.value)!)
+const isActive = computed(() => current.value?.state === FiberState.ACTIVE)
 
 const desc = computed(() => {
   return tt(local?.value.runtime?.usage ?? local?.value.manifest.description)

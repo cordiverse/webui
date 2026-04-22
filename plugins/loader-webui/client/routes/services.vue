@@ -15,9 +15,6 @@
             :class="{ clickable: !!provider?.schema }"
             @click="provider?.schema && goConfig(name)"
           >
-            <td class="col-dot">
-              <span class="status-dot" :class="depStatusClass(provider, required)"></span>
-            </td>
             <td class="text-left">
               <span
                 v-if="required !== undefined"
@@ -26,13 +23,8 @@
               >{{ required ? '必需' : '可选' }}</span>
               <span class="service-name">{{ name }}</span>
             </td>
-            <td class="col-actions" @click.stop>
-              <button
-                v-if="canGoto(provider?.location)"
-                class="row-btn row-btn-icon"
-                title="跳转到服务来源"
-                @click="goProvider(provider?.location)"
-              ><k-icon name="arrow-right"/></button>
+            <td class="col-dot">
+              <span class="status-dot" :class="depStatusClass(provider, required)"></span>
             </td>
           </tr>
         </tbody>
@@ -49,12 +41,6 @@
     <div class="card mb-4">
       <table v-if="hasIsolate" class="dep-table">
         <tr v-for="(label, name) in currentEntry.isolate" :key="name">
-          <td class="col-dot">
-            <span
-              class="status-dot"
-              :class="getService(name, label) ? 'running' : 'stopped'"
-            ></span>
-          </td>
           <td class="text-left">
             <span class="tag" :class="label === true ? 'tag-private' : 'tag-shared'">
               {{ label === true ? '私有' : '共享' }}
@@ -64,6 +50,12 @@
           <td>
             <span v-if="label === true" class="status-missing">—</span>
             <span v-else class="service-name">{{ label }}</span>
+          </td>
+          <td class="col-dot">
+            <span
+              class="status-dot"
+              :class="getService(name, label) ? 'running' : 'stopped'"
+            ></span>
           </td>
         </tr>
       </table>
@@ -215,10 +207,6 @@ h2 {
   }
 }
 
-.col-status {
-  width: 6rem;
-}
-
 .tag {
   display: inline-block;
   padding: 1px 6px;
@@ -271,7 +259,7 @@ h2 {
   }
 
   td {
-    padding: 10px 12px;
+    padding: 8px 12px;
     font-size: 13px;
     vertical-align: middle;
   }
@@ -298,7 +286,9 @@ h2 {
 
   .col-dot {
     width: 1.25rem;
-    padding-right: 0;
+    padding-left: 0;
+    padding-right: 16px;
+    text-align: right;
   }
 
   .status-dot {

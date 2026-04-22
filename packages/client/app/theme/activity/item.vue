@@ -99,19 +99,19 @@ function handleDrop(event: DragEvent) {
 .activity-item {
   position: relative;
   box-sizing: border-box;
-  width: var(--activity-width);
-  padding: 0 var(--activity-padding);
+  width: var(--nav-width);
+  padding: 0 var(--nav-icon-margin);
 
   .layout-activity &::before {
     content: '';
     position: absolute;
     top: 50%;
     left: 0;
-    width: var(--activity-marker-width);
-    height: var(--activity-marker-height);
+    width: var(--nav-marker-width);
+    height: var(--nav-marker-height);
     transform: translateX(-100%) translateY(-50%);
     display: block;
-    border-radius: 0 var(--activity-marker-width) var(--activity-marker-width) 0;
+    border-radius: 0 var(--nav-marker-width) var(--nav-marker-width) 0;
     background-color: var(--k-text-active);
     transition: all 0.3s ease;
   }
@@ -141,12 +141,12 @@ function handleDrop(event: DragEvent) {
 
   .activity-group {
     display: flex;
-    padding: var(--activity-padding);
-    gap: 0 var(--activity-padding);
+    padding: var(--nav-icon-margin);
+    gap: 0 var(--nav-icon-margin);
     border-top: 1px solid var(--k-color-divider);
 
     .activity-group-item {
-      width: calc(var(--activity-width) - 2 * var(--activity-padding));
+      width: calc(var(--nav-width) - 2 * var(--nav-icon-margin));
     }
   }
 }

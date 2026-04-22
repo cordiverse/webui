@@ -1,8 +1,5 @@
 <template>
   <div class="k-empty">
-    <div class="image">
-      <k-icon name="koishi"></k-icon>
-    </div>
     <slot></slot>
   </div>
 </template>

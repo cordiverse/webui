@@ -1,5 +1,13 @@
 <template>
   <k-layout main="darker">
+    <template #header>
+      <span class="crumb">依赖图</span>
+    </template>
+    <template #menu>
+      <span class="menu-item" @click="relayout" title="Re-layout">
+        <k-icon class="menu-icon" name="refresh"/>
+      </span>
+    </template>
     <div ref="root" :class="{ insight: true, 'has-highlight': tooltip.active }">
       <svg
         ref="svg"
@@ -154,6 +162,15 @@ onMounted(() => {
     simulation.restart()
   }, { deep: true, throttle: 100, trailing: true })
 })
+
+function relayout() {
+  for (const node of nodes) {
+    node.fx = null
+    node.fy = null
+  }
+  resetForce()
+  simulation.alpha(1).restart()
+}
 
 watch(() => data.value, (value) => {
   if (!value) return

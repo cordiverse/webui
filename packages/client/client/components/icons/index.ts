@@ -15,6 +15,7 @@ import ChevronLeft from './svg/chevron-left.vue'
 import ChevronRight from './svg/chevron-right.vue'
 import ChevronUp from './svg/chevron-up.vue'
 import ClipboardList from './svg/clipboard-list.vue'
+import Download from './svg/download.vue'
 import Edit from './svg/edit.vue'
 import ExclamationFull from './svg/exclamation-full.vue'
 import Expand from './svg/expand.vue'
@@ -26,8 +27,11 @@ import InfoFull from './svg/info-full.vue'
 import Koishi from './svg/koishi.vue'
 import Link from './svg/link.vue'
 import PaperPlane from './svg/paper-plane.vue'
+import Pause from './svg/pause.vue'
+import Play from './svg/play.vue'
 import QuestionEmpty from './svg/question-empty.vue'
 import Redo from './svg/redo.vue'
+import Refresh from './svg/refresh.vue'
 import Search from './svg/search.vue'
 import SearchMinus from './svg/search-minus.vue'
 import SearchPlus from './svg/search-plus.vue'
@@ -37,6 +41,7 @@ import Start from './svg/start.vue'
 import Tag from './svg/tag.vue'
 import TimesFull from './svg/times-full.vue'
 import Tools from './svg/tools.vue'
+import Trash from './svg/trash.vue'
 import Undo from './svg/undo.vue'
 import User from './svg/user.vue'
 
@@ -64,6 +69,7 @@ register('chevron-up', ChevronUp)
 register('clipboard-list', ClipboardList)
 register('close', components.IconClose)
 register('delete', components.IconDelete)
+register('download', Download)
 register('edit', Edit)
 register('ellipsis', components.IconEllipsis)
 register('exclamation-full', ExclamationFull)
@@ -79,9 +85,12 @@ register('info-full', InfoFull)
 register('koishi', Koishi)
 register('link', Link)
 register('paper-plane', PaperPlane)
+register('pause', Pause)
+register('play', Play)
 register('add', components.IconAdd)
 register('question-empty', QuestionEmpty)
 register('redo', Redo)
+register('refresh', Refresh)
 register('search', Search)
 register('search-minus', SearchMinus)
 register('search-plus', SearchPlus)
@@ -91,6 +100,7 @@ register('start', Start)
 register('tag', Tag)
 register('times-full', TimesFull)
 register('tools', Tools)
+register('trash', Trash)
 register('undo', Undo)
 register('user', User)
 

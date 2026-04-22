@@ -87,7 +87,7 @@ provide('groups', groups)
   z-index: 100;
   top: 0;
   bottom: 0;
-  width: var(--activity-width);
+  width: var(--nav-width);
   background-color: var(--k-activity-bg);
   border-right: var(--k-activity-divider, var(--k-color-divider-dark)) 1px solid;
   transition: var(--color-transition);

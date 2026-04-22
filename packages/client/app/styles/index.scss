@@ -6,39 +6,76 @@
 $black: #000000;
 $white: #ffffff;
 
-:root, .theme-root.light {
-  --bg0: #ffffff;
-  --bg1: #f9f9fa;
-  --bg2: #f0f0f2;
-  --bg3: #e3e3e5;
+// ==========================================================================
+// Tokens — light
+// ==========================================================================
 
-  --fg0: #000000;
-  --fg1: rgba(40, 40, 44);
-  --fg2: rgba(40, 40, 44, .7);
-  --fg3: rgba(40, 40, 44, .4);
+:root, .theme-root.light {
+  --bg-primary: #ffffff;
+  --bg-secondary: #fafafa;
+  --bg-tertiary: #f5f5f5;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f0f0f0;
+  --bg-active: #e8e8e8;
+
+  --border-primary: #e5e5e5;
+  --border-secondary: #d4d4d4;
+  --border-focus: #3b82f6;
+
+  --text-primary: #171717;
+  --text-secondary: #525252;
+  --text-tertiary: #a3a3a3;
+  --text-inverse: #fafafa;
+
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-muted: rgba(37, 99, 235, 0.1);
+
+  --success: #16a34a;
+  --success-muted: rgba(22, 163, 74, 0.1);
+  --warning: #d97706;
+  --warning-muted: rgba(217, 119, 6, 0.1);
+  --error: #dc2626;
+  --error-muted: rgba(220, 38, 38, 0.1);
+  --info: #2563eb;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  // Legacy aliases → new tokens
+  --bg0: var(--bg-elevated);
+  --bg1: var(--bg-secondary);
+  --bg2: var(--bg-tertiary);
+  --bg3: var(--bg-hover);
+
+  --fg0: var(--text-primary);
+  --fg1: var(--text-primary);
+  --fg2: var(--text-secondary);
+  --fg3: var(--text-tertiary);
 
   --hover-inset: 0 0 2px inset #0002;
 
-  --k-card-bg: var(--bg0);
-  --k-card-border: var(--k-card-bg);
-  --k-card-shadow: 0 4px 8px -4px rgb(0 0 0 / 15%);
-  --k-menu-bg: var(--bg0);
-  --k-main-bg: var(--bg0);
-  --k-side-bg: var(--bg1);
-  --k-page-bg: var(--bg0);
-  --k-hover-bg: var(--bg3);
-  --k-activity-bg: var(--bg2);
+  --k-card-bg: var(--bg-elevated);
+  --k-card-border: var(--border-primary);
+  --k-card-shadow: var(--shadow-sm);
+  --k-menu-bg: var(--bg-elevated);
+  --k-main-bg: var(--bg-primary);
+  --k-side-bg: var(--bg-secondary);
+  --k-page-bg: var(--bg-primary);
+  --k-hover-bg: var(--bg-hover);
+  --k-activity-bg: var(--bg-secondary);
 
-  --k-color-border: #c8c9cc;
-  --k-color-divider: #e0e4e8;
-  --k-color-disabled: #909399;
+  --k-color-border: var(--border-secondary);
+  --k-color-divider: var(--border-primary);
+  --k-color-disabled: var(--text-tertiary);
 
-  --k-text-dark: var(--fg1);
-  --k-text-normal: var(--fg2);
-  --k-text-light: var(--fg3);
-  --k-text-active: var(--k-color-primary);
+  --k-text-dark: var(--text-primary);
+  --k-text-normal: var(--text-secondary);
+  --k-text-light: var(--text-tertiary);
+  --k-text-active: var(--accent);
 
-  --loading-mask-bg: #f2f3f5bf;
+  --loading-mask-bg: rgba(255, 255, 255, 0.75);
 
   @mixin apply-color($name, $base) {
     --k-color-#{$name}: #{$base};
@@ -47,45 +84,81 @@ $white: #ffffff;
     --k-color-#{$name}-fade: #{color.scale($base, $alpha: -90%)};
   }
 
-  @include apply-color(primary, #409eff);
-  @include apply-color(secondary, #909399);
-  @include apply-color(success, #67c23a);
-  @include apply-color(warning, #e49400);
-  @include apply-color(danger, #f56c6c);
-  @include apply-color(info, #909399);
+  @include apply-color(primary, #2563eb);
+  @include apply-color(secondary, #a3a3a3);
+  @include apply-color(success, #16a34a);
+  @include apply-color(warning, #d97706);
+  @include apply-color(danger, #dc2626);
+  @include apply-color(info, #2563eb);
 }
 
+// ==========================================================================
+// Tokens — dark
+// ==========================================================================
+
 html.dark, .theme-root.dark {
-  --bg0: #000000;
-  --bg1: #1e1e20;
-  --bg2: #252529;
-  --bg3: #313136;
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #141414;
+  --bg-tertiary: #1a1a1a;
+  --bg-elevated: #1f1f1f;
+  --bg-hover: #262626;
+  --bg-active: #2a2a2a;
 
-  --fg0: #ffffff;
-  --fg1: rgba(255, 255, 245, .9);
-  --fg2: rgba(255, 255, 245, .6);
-  --fg3: rgba(255, 255, 245, .4);
+  --border-primary: #262626;
+  --border-secondary: #333333;
+  --border-focus: #3b82f6;
 
-  --k-card-bg: var(--bg2);
-  --k-card-border: var(--k-color-divider);
-  --k-card-shadow: 0 4px 8px -4px rgb(0 0 0 / 15%);
-  --k-menu-bg: var(--bg0);
-  --k-main-bg: var(--bg3);
-  --k-side-bg: var(--bg2);
-  --k-page-bg: var(--bg2);
-  --k-hover-bg: var(--bg3);
-  --k-activity-bg: var(--bg1);
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-tertiary: #71717a;
+  --text-inverse: #0a0a0a;
 
-  --k-color-border: rgba(82, 82, 89, .8);
-  --k-color-divider: rgba(82, 82, 89, .5);
-  --k-color-disabled: #909399;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --accent-muted: rgba(59, 130, 246, 0.15);
 
-  --k-text-dark: var(--fg1);
-  --k-text-normal: var(--fg2);
-  --k-text-light: var(--fg3);
-  --k-text-active: var(--k-text-dark);
+  --success: #22c55e;
+  --success-muted: rgba(34, 197, 94, 0.15);
+  --warning: #f59e0b;
+  --warning-muted: rgba(245, 158, 11, 0.15);
+  --error: #ef4444;
+  --error-muted: rgba(239, 68, 68, 0.15);
+  --info: #3b82f6;
 
-  --loading-mask-bg: #202225bf;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+
+  --bg0: var(--bg-elevated);
+  --bg1: var(--bg-secondary);
+  --bg2: var(--bg-tertiary);
+  --bg3: var(--bg-hover);
+
+  --fg0: var(--text-primary);
+  --fg1: var(--text-primary);
+  --fg2: var(--text-secondary);
+  --fg3: var(--text-tertiary);
+
+  --k-card-bg: var(--bg-elevated);
+  --k-card-border: var(--border-primary);
+  --k-card-shadow: var(--shadow-sm);
+  --k-menu-bg: var(--bg-elevated);
+  --k-main-bg: var(--bg-primary);
+  --k-side-bg: var(--bg-secondary);
+  --k-page-bg: var(--bg-primary);
+  --k-hover-bg: var(--bg-hover);
+  --k-activity-bg: var(--bg-secondary);
+
+  --k-color-border: var(--border-secondary);
+  --k-color-divider: var(--border-primary);
+  --k-color-disabled: var(--text-tertiary);
+
+  --k-text-dark: var(--text-primary);
+  --k-text-normal: var(--text-secondary);
+  --k-text-light: var(--text-tertiary);
+  --k-text-active: var(--accent);
+
+  --loading-mask-bg: rgba(10, 10, 10, 0.75);
 
   @mixin apply-color($name, $base) {
     --k-color-#{$name}: #{$base};
@@ -94,47 +167,63 @@ html.dark, .theme-root.dark {
     --k-color-#{$name}-fade: #{color.scale($base, $alpha: -90%)};
   }
 
-  @include apply-color(primary, #7459ff);
+  @include apply-color(primary, #3b82f6);
   @include apply-color(secondary, #4f545c);
-  @include apply-color(success, #3ba55e);
-  @include apply-color(warning, #f9af1b);
-  @include apply-color(danger, #ff595a);
-  @include apply-color(info, #4f545c);
+  @include apply-color(success, #22c55e);
+  @include apply-color(warning, #f59e0b);
+  @include apply-color(danger, #ef4444);
+  @include apply-color(info, #3b82f6);
 }
 
+// ==========================================================================
+// Tokens — theme-neutral (radii, fonts, transitions, legacy aliases)
+// ==========================================================================
+
 :root {
-  // transitions
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
   --color-transition: color 0.3s ease, border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
 
-  // fonts
-  --font-family: PingFang SC, Hiragino Sans GB, Microsoft YaHei, SimSun, sans-serif;
-  --font-family-code: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', SimSun, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+  --font-family: var(--font-sans);
+  --font-family-code: var(--font-mono);
 
-  // fallback
   --k-color-border-dark: var(--k-color-border);
   --k-color-border-light: var(--k-color-divider);
   --k-color-divider-dark: var(--k-color-divider);
   --k-color-divider-light: var(--k-color-divider);
 
-  --k-fill-normal: var(--k-color-primary);
+  --k-fill-normal: var(--accent);
   --k-fill-disabled: var(--k-color-disabled);
 
-  --k-menu-shadow: var(--k-card-shadow);
+  --k-menu-shadow: var(--shadow-md);
 
-  --k-button-hover-bg: var(--bg1);
+  --k-button-hover-bg: var(--bg-hover);
 
-  // compatibility
   --border: var(--k-color-border);
   --divider: var(--k-color-divider);
   --page-bg: var(--k-page-bg);
   --hover-bg: var(--k-hover-bg);
   --card-bg: var(--k-card-bg);
   --card-shadow: var(--k-card-shadow);
-  --success: var(--k-color-success);
-  --error: var(--k-color-danger);
-  --danger: var(--k-color-danger);
-  --warning: var(--k-color-warning);
-  --active: var(--k-color-primary);
-  --primary: var(--k-color-primary);
+  --active: var(--accent);
+  --primary: var(--accent);
+  --danger: var(--error);
   --k-color-active: var(--active);
+}
+
+// ==========================================================================
+// Document basics
+// ==========================================================================
+
+html {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }

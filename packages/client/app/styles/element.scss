@@ -1,25 +1,79 @@
+// Element-plus CSS variable overrides
+// Map el-* tokens onto the design-system tokens so el-* components visually align
+
 :root {
-  --el-text-color-regular: var(--fg1);
-  --el-text-color-primary: var(--fg2);
-  --el-input-text-color: var(--fg1);
-  --el-border-color: var(--k-color-border);
-  --el-border-color-light: var(--k-color-border-light);
-  --el-border-color-lighter: var(--k-color-divider);
-  --el-border-color-extra-light: var(--k-color-divider-light);
-  --el-border-color-hover: var(--active);
-  --el-color-primary: var(--k-color-primary);
-  --el-color-success: var(--k-color-success);
-  --el-color-warning: var(--k-color-warning);
-  --el-color-danger: var(--k-color-danger);
-  --el-color-primary-light-9: var(--k-hover-bg);
-  --el-color-white: var(--bg0);
-  --el-color-black: var(--fg1);
-  --el-bg-color: var(--bg0);
-  --el-bg-color-overlay: var(--bg0);
+  // Backgrounds
+  --el-bg-color: var(--bg-elevated);
+  --el-bg-color-page: var(--bg-primary);
+  --el-bg-color-overlay: var(--bg-elevated);
+  --el-fill-color: var(--bg-tertiary);
+  --el-fill-color-light: var(--bg-hover);
+  --el-fill-color-lighter: var(--bg-secondary);
+  --el-fill-color-extra-light: var(--bg-secondary);
+  --el-fill-color-dark: var(--bg-active);
+  --el-fill-color-darker: var(--bg-active);
   --el-fill-color-blank: transparent;
-  --el-disabled-bg-color: var(--card-bg);
-  --el-fill-color: var(--card-bg);
-  --el-fill-color-light: var(--k-hover-bg);
+  --el-mask-color: rgba(0, 0, 0, 0.5);
+
+  // Text
+  --el-text-color-primary: var(--text-primary);
+  --el-text-color-regular: var(--text-primary);
+  --el-text-color-secondary: var(--text-secondary);
+  --el-text-color-placeholder: var(--text-tertiary);
+  --el-text-color-disabled: var(--text-tertiary);
+  --el-input-text-color: var(--text-primary);
+
+  // Borders
+  --el-border-color: var(--border-secondary);
+  --el-border-color-light: var(--border-primary);
+  --el-border-color-lighter: var(--border-primary);
+  --el-border-color-extra-light: var(--border-primary);
+  --el-border-color-dark: var(--border-secondary);
+  --el-border-color-darker: var(--border-secondary);
+  --el-border-color-hover: var(--accent);
+
+  // Brand colors
+  --el-color-primary: var(--accent);
+  --el-color-primary-light-3: var(--accent);
+  --el-color-primary-light-5: var(--accent-muted);
+  --el-color-primary-light-7: var(--accent-muted);
+  --el-color-primary-light-8: var(--accent-muted);
+  --el-color-primary-light-9: var(--accent-muted);
+  --el-color-primary-dark-2: var(--accent-hover);
+  --el-color-success: var(--success);
+  --el-color-success-light-9: var(--success-muted);
+  --el-color-warning: var(--warning);
+  --el-color-warning-light-9: var(--warning-muted);
+  --el-color-danger: var(--error);
+  --el-color-danger-light-9: var(--error-muted);
+  --el-color-error: var(--error);
+  --el-color-info: var(--text-tertiary);
+  --el-color-info-light-9: var(--bg-hover);
+
+  --el-color-white: var(--bg-elevated);
+  --el-color-black: var(--text-primary);
+
+  // Disabled
+  --el-disabled-bg-color: var(--bg-tertiary);
+  --el-disabled-border-color: var(--border-primary);
+  --el-disabled-text-color: var(--text-tertiary);
+
+  // Shape
+  --el-border-radius-base: var(--radius-md);
+  --el-border-radius-small: var(--radius-sm);
+  --el-border-radius-round: 999px;
+  --el-border-radius-circle: 50%;
+
+  // Typography
+  --el-font-size-base: 14px;
+  --el-font-size-small: 13px;
+  --el-font-size-large: 16px;
+
+  // Shadows
+  --el-box-shadow: var(--shadow-md);
+  --el-box-shadow-light: var(--shadow-sm);
+  --el-box-shadow-lighter: var(--shadow-sm);
+  --el-box-shadow-dark: var(--shadow-lg);
 }
 
 .el-input-number, .el-popper {
@@ -27,7 +81,7 @@
 }
 
 .el-input-number__decrease:hover, .el-input-number__increase:hover {
-  background-color: var(--bg1);
+  background-color: var(--bg-hover);
 }
 
 .el-dropdown-menu {
@@ -83,29 +137,29 @@ html .el-switch {
 
 .el-button {
   --el-button-hover-bg-color: var(--k-button-hover-bg);
-  --el-button-hover-border-color: var(--k-color-active);
+  --el-button-hover-border-color: var(--accent);
   transition: var(--color-transition);
 }
 
 .el-button--primary {
-  --el-button-hover-text-color: var(--k-color-active);
+  --el-button-hover-text-color: var(--text-inverse);
 }
 
 .el-switch__core .el-switch__action,
 .el-slider__button {
-  --el-color-white: var(--bg2);
+  --el-color-white: var(--bg-elevated);
 }
 
 html.dark .el-popper.is-dark {
-  color: var(--fg1);
-  background-color: var(--bg1);
-  border: 1px solid var(--k-color-border);
-  box-shadow: var(--k-card-shadow);
+  color: var(--text-primary);
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-secondary);
+  box-shadow: var(--shadow-md);
   transition: var(--color-transition);
 
   .el-popper__arrow::before {
-    border: 1px solid var(--k-color-border);
-    background: var(--bg1);
+    border: 1px solid var(--border-secondary);
+    background: var(--bg-elevated);
     transition: var(--color-transition);
   }
 }
@@ -123,7 +177,7 @@ html.dark .el-popper.is-dark {
       top: 0;
       bottom: 0;
       left: 0;
-      border-left: 1px solid #c6e2ff;
+      border-left: 1px solid var(--accent-muted);
       z-index: 1;
     }
   }
@@ -185,9 +239,9 @@ html.dark .el-popper.is-dark {
 .el-table__body-wrapper,
 .el-table__footer-wrapper,
 .el-table__header-wrapper {
-  --el-table-tr-bg-color: var(--card-bg);
-  --el-table-header-bg-color: var(--bg2);
-  --el-table-row-hover-bg-color: var(--bg1);
+  --el-table-tr-bg-color: var(--bg-elevated);
+  --el-table-header-bg-color: var(--bg-secondary);
+  --el-table-row-hover-bg-color: var(--bg-hover);
   tr {
     td,
     th {
@@ -206,12 +260,12 @@ html.dark .el-popper.is-dark {
       &.is-last-column {
         &.el-table-fixed-column--left {
           &::before {
-            box-shadow: inset 10px 0 10px -10px var(--bg0);
+            box-shadow: inset 10px 0 10px -10px var(--bg-primary);
           }
         }
         &.el-table-fixed-column--right {
           &::before {
-            box-shadow: inset -10px 0 10px -10px var(--bg0);
+            box-shadow: inset -10px 0 10px -10px var(--bg-primary);
           }
         }
       }

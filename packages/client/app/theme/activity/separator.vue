@@ -104,14 +104,14 @@ function handleDrop(event: DragEvent) {
 
 .separator {
   position: relative;
-  height: var(--activity-padding);
+  height: var(--nav-icon-margin);
 
   &::before {
     position: absolute;
     content: '';
     top: 50%;
-    left: var(--activity-padding);
-    right: var(--activity-padding);
+    left: var(--nav-icon-margin);
+    right: var(--nav-icon-margin);
     height: 2px;
     border-radius: 2px;
     transform: translateY(-50%);

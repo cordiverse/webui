@@ -1,8 +1,17 @@
 <template>
   <k-layout :main="`darker page-home${socket ? '' : ' loading'}`">
-    <el-scrollbar v-if="socket">
-      <k-slot name="home"></k-slot>
-    </el-scrollbar>
+    <template #header>
+      <span class="crumb">Cordis</span>
+    </template>
+
+    <template #menu>
+    </template>
+
+    <div class="content-area" v-if="socket">
+      <el-scrollbar class="content-body">
+        <k-slot name="home"></k-slot>
+      </el-scrollbar>
+    </div>
     <div v-else>
       <k-card class="connect">正在连接到 Cordis 服务器……</k-card>
     </div>

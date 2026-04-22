@@ -36,28 +36,29 @@ function handleDragEnd(event: DragEvent) {
 <style lang="scss" scoped>
 
 .activity-button {
-  height: calc(var(--activity-width) - 2 * var(--activity-padding));
+  height: calc(var(--nav-width) - 2 * var(--nav-icon-margin));
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
   transition: var(--color-transition);
-  color: var(--k-text-light);
-  border-radius: var(--activity-padding);
+  color: var(--text-tertiary);
+  border-radius: var(--radius-md);
   cursor: pointer;
 
   .activity-button-icon {
-    height: var(--activity-icon-size);
+    height: var(--nav-icon-size);
     pointer-events: none;
   }
 
   &:hover, &.dragging {
-    color: var(--k-text-dark);
-    background-color: var(--k-hover-bg);
+    color: var(--text-primary);
+    background-color: var(--bg-hover);
   }
 
   &.active {
-    color: var(--k-text-active);
+    color: var(--accent);
+    background-color: var(--accent-muted);
   }
 
   .badge {

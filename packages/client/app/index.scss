@@ -1,17 +1,17 @@
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: var(--font-family);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: var(--fg1);
-  background-color: var(--k-page-bg);
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
   position: relative;
   transition: color 0.3s ease, background-color 0.3s ease;
 }
 
 code {
-  font-family: var(--font-family-code);
+  font-family: var(--font-mono);
 }
 
 a {
@@ -35,18 +35,18 @@ table {
   }
 
   tr {
-    border-top: 1px solid var(--k-color-divider);
+    border-top: 1px solid var(--border-primary);
     transition: border-color 0.3s ease;
   }
 
   tr:last-child {
-    border-bottom: 1px solid var(--k-color-divider);
+    border-bottom: 1px solid var(--border-primary);
   }
 }
 
 .markdown {
   a, code a {
-    color: var(--k-text-active);
+    color: var(--accent);
 
     &:hover {
       text-decoration: underline;
@@ -54,10 +54,10 @@ table {
   }
 
   code {
-    color: var(--k-text-normal);
+    color: var(--text-primary);
     padding: 0.25rem 0.5rem;
-    background-color: var(--k-page-bg);
-    border-radius: 3px;
+    background-color: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
     overflow-wrap: break-word;
     transition: background-color 0.3s ease, color 0.3s ease;
   }

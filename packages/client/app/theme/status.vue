@@ -13,23 +13,23 @@
   z-index: 50;
   bottom: 0;
   height: var(--footer-height);
-  left: var(--activity-width);
+  left: var(--nav-width);
   right: 0;
-  background-color: var(--k-status-bg, var(--k-side-bg));
+  background-color: var(--bg-secondary);
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  border-top: var(--k-status-divider, var(--k-color-divider-dark)) 1px solid;
+  border-top: 1px solid var(--border-primary);
   transition: var(--color-transition);
-  font-size: 0.875rem;
+  font-size: 12px;
   line-height: var(--footer-height);
-
-  @media screen and (max-width: 768px) {
-    display: none;
-  }
+  color: var(--text-tertiary);
+  padding: 0 12px;
 
   > * {
     display: inline-flex;
+    align-items: center;
+    gap: 8px;
   }
 
   .el-progress-bar {

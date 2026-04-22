@@ -1,17 +1,20 @@
 <template>
-  <div class="http-compose">
+  <div class="http-tab">
     <div class="compose-url-bar">
-      <select class="method-select" v-model="method">
+      <select class="method-select" v-model="state.method">
         <option v-for="m of methods" :key="m" :value="m">{{ m }}</option>
       </select>
-      <input class="url-input" v-model="url" placeholder="https://..." @keyup.enter="sendRequest"/>
-      <button class="btn btn-primary" :disabled="sending || !url" @click="sendRequest">
+      <input class="url-input" v-model="state.url" placeholder="https://..." @keyup.enter="sendRequest"/>
+      <button class="btn btn-ghost" :disabled="sending" :title="saveTooltip" @click="$emit('save')">
+        保存
+      </button>
+      <button class="btn btn-primary" :disabled="sending || !state.url" @click="sendRequest">
         {{ sending ? 'Sending...' : 'Send' }}
       </button>
     </div>
 
     <div class="compose-body">
-      <request ref="requestRef"/>
+      <request :state="state"/>
       <response
         :response="response"
         :sending="sending"
@@ -27,19 +30,26 @@
 import { computed, onBeforeUnmount, ref } from 'vue'
 import Request from './request.vue'
 import Response, { type ResponseData } from './response.vue'
+import type { BodyType, KvRow, TabState } from './types'
+
+defineEmits<{
+  (e: 'save'): void
+}>()
+
+const props = defineProps<{
+  state: TabState
+  saveTooltip?: string
+}>()
 
 const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD']
 
-const method = ref('GET')
-const url = ref('')
 const sending = ref(false)
 const streaming = ref(false)
 const response = ref<ResponseData | null>(null)
-const requestRef = ref<InstanceType<typeof Request>>()
 
 const downloadName = computed(() => {
   try {
-    const u = new URL(url.value)
+    const u = new URL(props.state.url)
     const segments = u.pathname.split('/').filter(Boolean)
     return segments[segments.length - 1] || 'download'
   } catch {
@@ -64,8 +74,61 @@ function isTextContentType(type: string) {
   return false
 }
 
+function contentTypeFor(type: BodyType): string | undefined {
+  switch (type) {
+    case 'json': return 'application/json'
+    case 'xml': return 'application/xml'
+    case 'urlencoded': return 'application/x-www-form-urlencoded'
+    default: return undefined
+  }
+}
+
+function buildBodyPayload(): BodyInit | undefined {
+  switch (props.state.bodyType) {
+    case 'none':
+      return undefined
+    case 'json':
+    case 'xml':
+      return props.state.body || undefined
+    case 'formdata': {
+      const fd = new FormData()
+      for (const row of props.state.formBody) {
+        if (row.enabled && row.key) fd.append(row.key, row.value)
+      }
+      return fd
+    }
+    case 'urlencoded': {
+      const params = new URLSearchParams()
+      for (const row of props.state.formBody) {
+        if (row.enabled && row.key) params.append(row.key, row.value)
+      }
+      return params
+    }
+  }
+}
+
+function buildTarget(): URL {
+  const target = new URL(props.state.url)
+  for (const row of props.state.query) {
+    if (row.enabled && row.key) target.searchParams.append(row.key, row.value)
+  }
+  return target
+}
+
+function buildHeaders(): Headers {
+  const h = new Headers()
+  for (const row of props.state.headers) {
+    if (row.enabled && row.key) h.append(row.key, row.value)
+  }
+  const autoCT = contentTypeFor(props.state.bodyType)
+  if (autoCT && !h.has('content-type')) {
+    h.set('content-type', autoCT)
+  }
+  return h
+}
+
 async function sendRequest() {
-  if (sending.value || !url.value || !requestRef.value) return
+  if (sending.value || !props.state.url) return
   sending.value = true
   streaming.value = false
   if (response.value?.objectUrl) {
@@ -75,8 +138,16 @@ async function sendRequest() {
   const start = performance.now()
 
   try {
-    const { url: target, init } = requestRef.value.build(url.value, method.value)
-    const res = await fetch('/proxy/' + target, init)
+    const target = buildTarget()
+    const init: RequestInit = {
+      method: props.state.method,
+      headers: buildHeaders(),
+    }
+    if (!['GET', 'HEAD'].includes(props.state.method)) {
+      init.body = buildBodyPayload()
+    }
+
+    const res = await fetch('/proxy/' + target.href, init)
     const ttfb = Math.round(performance.now() - start)
     const resType = (res.headers.get('content-type') || '').split(';')[0].trim().toLowerCase()
     const textLike = isTextContentType(resType)
@@ -111,7 +182,7 @@ async function sendRequest() {
           const tail = decoder.decode()
           if (response.value && tail) response.value.body += tail
         } else {
-          const chunks: Uint8Array<ArrayBuffer>[] = []
+          const chunks: Uint8Array[] = []
           while (true) {
             const { done, value } = await reader.read()
             if (done) break
@@ -155,11 +226,13 @@ onBeforeUnmount(() => {
   }
 })
 
+defineExpose({ sendRequest })
+
 </script>
 
 <style lang="scss" scoped>
 
-.http-compose {
+.http-tab {
   display: flex;
   flex-direction: column;
   flex: 1 1 0;
@@ -220,6 +293,9 @@ onBeforeUnmount(() => {
   cursor: pointer;
   border: 1px solid transparent;
   transition: var(--color-transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 
   &:disabled {
     opacity: 0.5;
@@ -233,6 +309,18 @@ onBeforeUnmount(() => {
 
   &:hover:not(:disabled) {
     background: var(--accent-hover);
+  }
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-primary);
+  padding: 0 14px;
+
+  &:hover:not(:disabled) {
+    color: var(--text-primary);
+    background: var(--bg-hover);
   }
 }
 

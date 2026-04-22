@@ -53,6 +53,7 @@
         class="hist-row"
         :class="{ active: selected?.id === entry.id }"
         @click="selected = entry"
+        @contextmenu.stop="triggerHistoryMenu($event, entry)"
       >
         <span class="col-method method-badge" :class="methodClass(entry.method)">{{ entry.method }}</span>
         <span class="col-status status-code" :class="statusClass(entry.status)">{{ entry.status || '—' }}</span>
@@ -73,13 +74,14 @@
 <script lang="ts" setup>
 
 import { computed, ref } from 'vue'
-import { send, useContext, useRpc } from '@cordisjs/client'
+import { send, useContext, useMenu, useRpc } from '@cordisjs/client'
 import type {} from '@cordisjs/plugin-loader-webui/client'
 import type { Data, HistoryEntry } from '../src'
 
 const ctx = useContext()
 const data = useRpc<Data>()
 const history = computed<HistoryEntry[]>(() => data.value?.history ?? [])
+const triggerHistoryMenu = useMenu('httpHistory')
 
 const methodOptions = [
   { id: '', label: 'ALL' },

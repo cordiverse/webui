@@ -32,11 +32,7 @@
 
 <script lang="ts" setup>
 
-export interface KvRow {
-  enabled: boolean
-  key: string
-  value: string
-}
+import type { KvRow } from './types'
 
 const props = defineProps<{
   rows: KvRow[]

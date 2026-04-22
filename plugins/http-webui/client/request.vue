@@ -14,33 +14,33 @@
 
     <kv-table
       v-if="leftTab === 'headers'"
-      :rows="headers"
+      :rows="state.headers"
       key-placeholder="Header Key"
       value-placeholder="Header Value"
     />
     <kv-table
       v-else-if="leftTab === 'query'"
-      :rows="query"
+      :rows="state.query"
       key-placeholder="Param Key"
       value-placeholder="Param Value"
     />
     <template v-else>
       <div class="body-type-bar">
-        <el-select v-model="bodyType" size="small">
+        <el-select v-model="state.bodyType" size="small">
           <el-option v-for="opt of bodyTypeOptions" :key="opt.id" :value="opt.id" :label="opt.label"/>
         </el-select>
       </div>
 
       <textarea
-        v-if="bodyType === 'json' || bodyType === 'xml'"
+        v-if="state.bodyType === 'json' || state.bodyType === 'xml'"
         class="body-input"
-        v-model="body"
-        :placeholder="bodyType === 'json' ? '{\n  \&quot;key\&quot;: \&quot;value\&quot;\n}' : '<root></root>'"
+        v-model="state.body"
+        :placeholder="state.bodyType === 'json' ? '{\n  \&quot;key\&quot;: \&quot;value\&quot;\n}' : '<root></root>'"
         spellcheck="false"
       ></textarea>
       <kv-table
-        v-else-if="bodyType === 'formdata' || bodyType === 'urlencoded'"
-        :rows="formBody"
+        v-else-if="state.bodyType === 'formdata' || state.bodyType === 'urlencoded'"
+        :rows="state.formBody"
         key-placeholder="Field Key"
         value-placeholder="Field Value"
       />
@@ -51,22 +51,13 @@
 
 <script lang="ts" setup>
 
-import { reactive, ref } from 'vue'
-import KvTable, { type KvRow } from './kv-table.vue'
+import { ref } from 'vue'
+import KvTable from './kv-table.vue'
+import type { BodyType, TabState } from './types'
 
-type BodyType = 'none' | 'json' | 'xml' | 'formdata' | 'urlencoded'
-
-const body = ref('')
-const bodyType = ref<BodyType>('none')
-const headers = reactive<KvRow[]>([
-  { enabled: true, key: '', value: '' },
-])
-const query = reactive<KvRow[]>([
-  { enabled: true, key: '', value: '' },
-])
-const formBody = reactive<KvRow[]>([
-  { enabled: true, key: '', value: '' },
-])
+defineProps<{
+  state: TabState
+}>()
 
 const leftTabs = [
   { id: 'headers', label: 'Headers' },
@@ -83,69 +74,6 @@ const bodyTypeOptions: { id: BodyType; label: string }[] = [
 ]
 
 const leftTab = ref<'headers' | 'body' | 'query'>('headers')
-
-function contentTypeFor(type: BodyType): string | undefined {
-  switch (type) {
-    case 'json': return 'application/json'
-    case 'xml': return 'application/xml'
-    case 'urlencoded': return 'application/x-www-form-urlencoded'
-    default: return undefined
-  }
-}
-
-function buildBody(): BodyInit | undefined {
-  switch (bodyType.value) {
-    case 'none':
-      return undefined
-    case 'json':
-    case 'xml':
-      return body.value || undefined
-    case 'formdata': {
-      const fd = new FormData()
-      for (const row of formBody) {
-        if (row.enabled && row.key) fd.append(row.key, row.value)
-      }
-      return fd
-    }
-    case 'urlencoded': {
-      const params = new URLSearchParams()
-      for (const row of formBody) {
-        if (row.enabled && row.key) params.append(row.key, row.value)
-      }
-      return params
-    }
-  }
-}
-
-export interface BuiltRequest {
-  url: string
-  init: RequestInit
-}
-
-function build(rawUrl: string, method: string): BuiltRequest {
-  const target = new URL(rawUrl)
-  for (const row of query) {
-    if (row.enabled && row.key) target.searchParams.append(row.key, row.value)
-  }
-
-  const h = new Headers()
-  for (const row of headers) {
-    if (row.enabled && row.key) h.append(row.key, row.value)
-  }
-  const autoCT = contentTypeFor(bodyType.value)
-  if (autoCT && !h.has('content-type')) {
-    h.set('content-type', autoCT)
-  }
-
-  const init: RequestInit = { method, headers: h }
-  if (!['GET', 'HEAD'].includes(method)) {
-    init.body = buildBody()
-  }
-
-  return { url: target.href, init }
-}
-
-defineExpose({ build })
 
 </script>
 

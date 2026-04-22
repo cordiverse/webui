@@ -8,7 +8,7 @@
       v-if="info.provider?.schema"
       v-bind="formProps"
       :schema="info.provider?.schema"
-      :initial="currentEntry.intercept?.[name]"
+      :initial="info.config"
       v-model="ctx.manager.changes[currentEntry.id].intercept![name]"
     />
   </k-content>
@@ -19,8 +19,8 @@
 
 <script lang="ts" setup>
 
-import { computed } from 'vue'
-import { useContext } from '@cordisjs/client'
+import { computed, watchEffect } from 'vue'
+import { clone, useContext } from '@cordisjs/client'
 import { formProps } from './utils'
 
 const ctx = useContext()
@@ -28,5 +28,13 @@ const ctx = useContext()
 const currentEntry = computed(() => ctx.manager.currentEntry!)
 const name = computed(() => ctx.manager.currentRoute!.params!.name)
 const info = computed(() => ctx.manager.getEnvInfo(currentEntry.value)?.using[name.value])
+
+watchEffect(() => {
+  const change = ctx.manager.changes[currentEntry.value?.id]
+  if (!change || info.value?.config === undefined) return
+  if (change.intercept![name.value] === undefined) {
+    change.intercept![name.value] = clone(info.value.config)
+  }
+})
 
 </script>

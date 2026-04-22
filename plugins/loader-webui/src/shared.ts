@@ -1,7 +1,7 @@
 import { Context, EffectMeta, Inject, Plugin, FiberState, Service } from 'cordis'
 import { readFile } from 'node:fs/promises'
 import { Dict, pick } from 'cosmokit'
-import { EntryOptions } from '@cordisjs/plugin-loader'
+import { Entry, EntryOptions, EntryTree } from '@cordisjs/plugin-loader'
 import { Entry as ClientEntry } from '@cordisjs/plugin-webui'
 import { PackageJson, SearchObject } from './types.ts'
 import type {} from '@cordisjs/plugin-logger'
@@ -102,17 +102,34 @@ export abstract class Manager extends Service {
   private plugins = new WeakMap<Plugin, string>()
   private pending = new Set<string>()
   private flushTimer?: NodeJS.Timeout
+  private rootTree: EntryTree
+  private rootPrefix = ''
 
   constructor(public ctx: Context) {
     super(ctx, '_manager')
+    let entry: Entry | undefined = this.ctx.fiber.entry
+    while (entry?.parent.tree.ctx.fiber.entry) {
+      entry = entry.parent.tree.ctx.fiber.entry
+    }
+    this.rootTree = entry?.subtree ?? this.ctx.loader
+    const rootEntry = this.rootTree.ctx.fiber.entry
+    this.rootPrefix = rootEntry ? rootEntry.id + EntryTree.sep : ''
+  }
+
+  private stripId(id?: string): string | null {
+    if (!id) return null
+    if (!this.rootPrefix) return id
+    if (id + EntryTree.sep === this.rootPrefix) return null
+    if (id.startsWith(this.rootPrefix)) return id.slice(this.rootPrefix.length)
+    return id
   }
 
   getEntries() {
-    return [...this.ctx.loader.entries()].map<EntryData>((entry) => ({
+    return [...this.rootTree.entries()].map<EntryData>((entry) => ({
       ...entry.options,
-      id: entry.id,
+      id: this.stripId(entry.id)!,
       config: entry.subgroup?.data === entry.options.config ? undefined : entry.options.config,
-      parent: entry.parent.ctx.fiber.entry?.id ?? null,
+      parent: this.stripId(entry.parent.ctx.fiber.entry?.id),
       position: entry.parent.data.indexOf(entry.options),
       isGroup: !!entry.subgroup,
       state: entry.fiber?.state,
@@ -123,12 +140,9 @@ export abstract class Manager extends Service {
   private getServiceInfo(ctx: Context, name: string): Provider | undefined {
     const key = ctx[Context.isolate][name]
     const impl = ctx.reflect.store[key]
-    // FIXME
-    // 1. check `impl` instead of `impl?.source`
-    // 2. experimental `schema`
     if (!impl?.fiber) return
-    const location = this.ctx.loader.locate(impl.fiber)
-    const schema = Reflect.getOwnPropertyDescriptor(impl.value, 'Intercept')?.value
+    const location = this.stripId(this.ctx.loader.locate(impl.fiber)) ?? undefined
+    const schema = impl.value?.Config
     return { location, schema }
   }
 
@@ -142,12 +156,13 @@ export abstract class Manager extends Service {
         global: {},
       }
     }
-    for (const entry of this.ctx.loader.entries()) {
+    for (const entry of this.rootTree.entries()) {
       if (!entry.options.isolate) continue
       for (const [name, value] of Object.entries(entry.options.isolate)) {
         if (!result[name]) continue
+        const id = this.stripId(entry.id)!
         if (value === true) {
-          result[name].local[entry.id] = this.getServiceInfo(entry.ctx, name)!
+          result[name].local[id] = this.getServiceInfo(entry.ctx, name)!
         } else {
           result[name].global[value] = this.getServiceInfo(entry.ctx, name)!
         }
@@ -197,20 +212,20 @@ export abstract class Manager extends Service {
 
     this.ctx.webui.addListener('manager.config.create', (options) => {
       const { parent, position, ...rest } = options
-      return this.ctx.loader.create(rest, parent, position)
+      return this.rootTree.create(rest, parent, position)
     })
 
     this.ctx.webui.addListener('manager.config.update', (options) => {
       const { id, parent, position, ...rest } = options
-      return this.ctx.loader.update(id, rest, parent, position)
+      return this.rootTree.update(id, rest, parent, position)
     })
 
     this.ctx.webui.addListener('manager.config.remove', (options) => {
-      return this.ctx.loader.remove(options.id)
+      return this.rootTree.remove(options.id)
     })
 
     this.ctx.webui.addListener('manager.config.eval', async ({ id, expr, schema }) => {
-      const entry = this.ctx.loader.resolve(id)
+      const entry = this.rootTree.resolve(id)
       schema = z(schema)
       let value: any
       try {

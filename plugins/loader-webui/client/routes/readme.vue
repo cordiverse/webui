@@ -1,11 +1,5 @@
 <template>
   <k-content v-if="currentEntry">
-    <el-button
-      @click="router.replace('/plugins/' + currentEntry.id)">
-      <k-icon name="arrow-left" class="h-3.25 mr-2"/>
-      回到概览
-    </el-button>
-
     <k-markdown :source="content"/>
   </k-content>
 </template>

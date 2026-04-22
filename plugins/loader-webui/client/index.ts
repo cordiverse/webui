@@ -1,4 +1,5 @@
 import { clone, Context, Dict, Inject, message, remove, Schema, send, Service } from '@cordisjs/client'
+import { capitalize } from 'cosmokit'
 import { computed, reactive, ref, Ref, watch } from 'vue'
 import type { Data, EntryData, Provider } from '../src'
 import { hasSchema } from './utils'
@@ -264,13 +265,13 @@ export default class Manager extends Service {
       },
     })
 
-    this.subroute({
-      path: 'effects',
-      title: '作用',
-      component: EffectsPage,
-      hidden: (entry) => !entry.effects,
-      order: 1000,
-    })
+    // this.subroute({
+    //   path: 'effects',
+    //   title: '副作用',
+    //   component: EffectsPage,
+    //   hidden: (entry) => !entry.effects,
+    //   order: 1000,
+    // })
 
     this.subroute({
       path: 'service',
@@ -285,8 +286,8 @@ export default class Manager extends Service {
 
     this.subroute({
       path: 'service/:name',
-      title: ({ name }) => '服务：' + name,
-      label: ({ name }) => name,
+      title: ({ name }) => '服务：' + capitalize(name),
+      label: ({ name }) => capitalize(name),
       component: InterceptPage,
       order: 600,
       hidden: (entry) => {

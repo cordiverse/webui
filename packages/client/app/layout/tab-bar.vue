@@ -6,7 +6,7 @@
       class="tab-item"
       :class="{ active: tab.id === active }"
       @click="handleClick(tab)"
-    >{{ tab.label }}</div>
+    ><span class="tab-label" :data-label="tab.label">{{ tab.label }}</span></div>
     <slot></slot>
   </div>
 </template>

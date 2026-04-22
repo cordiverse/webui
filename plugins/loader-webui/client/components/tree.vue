@@ -163,16 +163,6 @@ watch(keyword, (val) => {
   background: var(--k-side-bg);
 }
 
-.search::after {
-  position: absolute;
-  content: '';
-  top: 100%;
-  left: 0;
-  width: 100%;
-  height: 32px;
-  background: linear-gradient(var(--k-side-bg) 25%, transparent 50%);
-}
-
 .el-scrollbar {
   :deep(.el-scrollbar__view) {
     padding: 4rem 0 1rem;

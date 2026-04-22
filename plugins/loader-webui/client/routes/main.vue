@@ -14,7 +14,7 @@
             <p>
               {{ required ? '必需' : '可选' }}服务：{{ name }}
               <template v-if="provider">
-                (<span v-if="provider.location" class="k-link" @click="gotoProvider(provider.location)">已加载</span>
+                (<span v-if="provider.location && provider.location in ctx.manager.plugins.value.entries" class="k-link" @click="gotoProvider(provider.location)">已加载</span>
                 <span v-else>已加载</span>)
               </template>
               <template v-else>(未加载)</template>

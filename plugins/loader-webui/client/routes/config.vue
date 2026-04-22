@@ -1,12 +1,5 @@
 <template>
   <k-content v-if="currentEntry && local.runtime?.schema">
-    <div class="flex flex-wrap gap-x-4 gap-y-2 my-8">
-      <el-button
-        @click="router.replace('/plugins/' + currentEntry.id)">
-        <k-icon name="arrow-left" class="h-3.25 mr-2"/>
-        回到概览
-      </el-button>
-    </div>
     <k-form
       v-bind="formProps"
       :schema="local.runtime.schema"

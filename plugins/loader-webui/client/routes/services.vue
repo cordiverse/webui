@@ -1,28 +1,74 @@
 <template>
   <k-content v-if="currentEntry">
-    <el-button
-      @click="router.replace('/plugins/' + currentEntry.id)">
-      <k-icon name="arrow-left" class="h-3.25 mr-2"/>
-      回到概览
-    </el-button>
+    <div class="section-header">
+      <h2>服务依赖</h2>
+      <button class="button-add" title="添加依赖项" @click="showAddDependency = true">
+        <k-icon name="add"/>
+      </button>
+    </div>
+    <div class="card mb-4">
+      <table v-if="hasUsing" class="dep-table">
+        <tbody>
+          <tr
+            v-for="({ required, provider }, name) in env.using"
+            :key="name"
+            :class="{ clickable: !!provider?.schema }"
+            @click="provider?.schema && goConfig(name)"
+          >
+            <td class="col-dot">
+              <span class="status-dot" :class="depStatusClass(provider, required)"></span>
+            </td>
+            <td class="text-left">
+              <span
+                v-if="required !== undefined"
+                class="tag"
+                :class="required ? 'tag-required' : 'tag-optional'"
+              >{{ required ? '必需' : '可选' }}</span>
+              <span class="service-name">{{ name }}</span>
+            </td>
+            <td class="col-actions" @click.stop>
+              <button
+                v-if="canGoto(provider?.location)"
+                class="row-btn row-btn-icon"
+                title="跳转到服务来源"
+                @click="goProvider(provider?.location)"
+              ><k-icon name="arrow-right"/></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p v-else class="empty">该插件当前未声明任何依赖项。</p>
+    </div>
 
-    <h2>依赖项</h2>
-    <k-comment
-      v-for="({ required, provider }, name) in env.using" :key="name"
-      :type="provider ? 'success' : required ? 'warning' : 'primary'">
-      <p>{{ required ? '必需' : '可选' }}服务 {{ name }} {{ provider ? '已加载' : '未加载' }}。</p>
-    </k-comment>
-    <el-button @click="showAddDependency = true">添加依赖项</el-button>
-
-    <h2>隔离域</h2>
-    <k-comment
-      v-for="(label, name) in currentEntry.isolate" :key="name"
-      :type="getService(name, label) ? 'success' : 'primary'"
-    >
-      <p>该插件为服务 {{ name }} 配置了{{ label ? `名为 ${label} 的共享` : '私有' }}隔离域。</p>
-    </k-comment>
-    <p>该插件当前未配置隔离域。</p>
-    <el-button @click="showCreateIsolate = true">创建隔离域</el-button>
+    <div class="section-header">
+      <h2>服务隔离域</h2>
+      <button class="button-add" title="创建隔离域" @click="showCreateIsolate = true">
+        <k-icon name="add"/>
+      </button>
+    </div>
+    <div class="card mb-4">
+      <table v-if="hasIsolate" class="dep-table">
+        <tr v-for="(label, name) in currentEntry.isolate" :key="name">
+          <td class="col-dot">
+            <span
+              class="status-dot"
+              :class="getService(name, label) ? 'running' : 'stopped'"
+            ></span>
+          </td>
+          <td class="text-left">
+            <span class="tag" :class="label === true ? 'tag-private' : 'tag-shared'">
+              {{ label === true ? '私有' : '共享' }}
+            </span>
+            <span class="service-name">{{ name }}</span>
+          </td>
+          <td>
+            <span v-if="label === true" class="status-missing">—</span>
+            <span v-else class="service-name">{{ label }}</span>
+          </td>
+        </tr>
+      </table>
+      <p v-else class="empty">该插件当前未配置隔离域。</p>
+    </div>
   </k-content>
 
   <el-dialog
@@ -59,6 +105,7 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { send, useContext } from '@cordisjs/client'
+import type { Provider } from '../../src'
 
 const ctx = useContext()
 const router = useRouter()
@@ -72,6 +119,27 @@ const label = ref('')
 const currentEntry = computed(() => ctx.manager.currentEntry!)
 const services = computed(() => ctx.manager.data.value.services)
 const env = computed(() => ctx.manager.getEnvInfo(currentEntry.value)!)
+
+const hasUsing = computed(() => env.value?.using && Object.keys(env.value.using).length > 0)
+const hasIsolate = computed(() => currentEntry.value?.isolate && Object.keys(currentEntry.value.isolate).length > 0)
+
+function canGoto(location?: string) {
+  return !!location && location in ctx.manager.plugins.value.entries
+}
+
+function goProvider(location?: string) {
+  if (canGoto(location)) router.push('/plugins/' + location)
+}
+
+function goConfig(name: string) {
+  router.push('/plugins/' + currentEntry.value.id + '/service/' + name)
+}
+
+function depStatusClass(provider: Provider | undefined, required: boolean | undefined) {
+  if (provider) return 'running'
+  if (required) return 'warning'
+  return 'stopped'
+}
 
 function getService(name: string, label: string | true) {
   if (!services.value[name]) return
@@ -103,3 +171,184 @@ function createIsolate() {
 }
 
 </script>
+
+<style lang="scss" scoped>
+
+h2 {
+  &:first-child {
+    margin-top: 0;
+  }
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 2rem 0 1rem;
+
+  &:first-child {
+    margin-top: 0;
+  }
+
+  h2 {
+    margin: 0;
+    flex: 1;
+  }
+}
+
+.button-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--color-transition);
+
+  &:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+  }
+}
+
+.col-status {
+  width: 6rem;
+}
+
+.tag {
+  display: inline-block;
+  padding: 1px 6px;
+  margin-right: 8px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+  background: var(--accent-muted);
+  color: var(--accent);
+
+  // &.tag-required { background: var(--warning-muted); color: var(--warning); }
+  // &.tag-optional { background: var(--bg-hover);      color: var(--text-tertiary); }
+  // &.tag-private  { background: var(--accent-muted);  color: var(--accent); }
+  // &.tag-shared   { background: var(--success-muted); color: var(--success); }
+}
+
+.service-name {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.status-loaded { color: var(--success); }
+.status-missing {
+  color: var(--text-tertiary);
+
+  &.is-required { color: var(--warning); }
+}
+
+.card {
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.dep-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    text-align: left;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    padding: 8px 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  td {
+    padding: 10px 12px;
+    font-size: 13px;
+    vertical-align: middle;
+  }
+
+  tr {
+    transition: var(--color-transition);
+  }
+
+  tr:first-child {
+    border-top: none;
+  }
+
+  tr:last-child {
+    border-bottom: none;
+  }
+
+  tr.clickable {
+    cursor: pointer;
+
+    &:hover td {
+      background: var(--bg-hover);
+    }
+  }
+
+  .col-dot {
+    width: 1.25rem;
+    padding-right: 0;
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+  }
+
+  .col-actions {
+    width: 1%;
+    white-space: nowrap;
+    text-align: right;
+    padding-right: 8px;
+  }
+}
+
+.row-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  padding: 0 10px;
+  font-size: 12px;
+  line-height: 1;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: var(--color-transition);
+
+  & + & { margin-left: 4px; }
+
+  &:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+  }
+}
+
+.row-btn-icon {
+  width: 24px;
+  padding: 0;
+  font-size: 14px;
+}
+
+.empty {
+  padding: 1rem;
+  color: var(--text-tertiary);
+  text-align: center;
+  font-size: 13px;
+}
+
+</style>

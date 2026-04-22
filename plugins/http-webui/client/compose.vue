@@ -19,49 +19,125 @@
               :key="t.id"
               class="panel-tab"
               :class="{ active: leftTab === t.id }"
-              @click="leftTab = t.id as any"
+              @click="leftTab = t.id"
             >{{ t.label }}</span>
           </div>
         </div>
 
-        <div class="panel-content">
-          <template v-if="leftTab === 'headers'">
+        <template v-if="leftTab === 'headers'">
+          <div class="panel-content">
             <div v-for="(row, index) of headers" :key="index" class="kv-row">
-              <input type="checkbox" class="kv-checkbox" v-model="row.enabled"/>
-              <input class="kv-input kv-key" v-model="row.key" placeholder="Header"/>
-              <input class="kv-input" v-model="row.value" placeholder="Value"/>
-              <button class="btn-icon-sm" @click="headers.splice(index, 1)">
+              <input
+                type="checkbox"
+                class="kv-checkbox"
+                :class="{ invisible: isTrailing(headers, index) }"
+                v-model="row.enabled"
+              />
+              <input
+                class="kv-input kv-key"
+                v-model="row.key"
+                placeholder="Header Key"
+                @input="ensureTrailing(headers)"
+              />
+              <input
+                class="kv-input"
+                v-model="row.value"
+                placeholder="Header Value"
+                @input="ensureTrailing(headers)"
+              />
+              <button
+                class="btn-icon-sm"
+                :class="{ invisible: isTrailing(headers, index) }"
+                @click="removeRow(headers, index)"
+              >
                 <k-icon name="trash"/>
               </button>
             </div>
-            <button class="btn btn-ghost btn-add" @click="headers.push({ enabled: true, key: '', value: '' })">
-              <k-icon name="add"/> Add Header
-            </button>
-          </template>
+          </div>
+        </template>
 
-          <template v-else-if="leftTab === 'query'">
+        <template v-else-if="leftTab === 'query'">
+          <div class="panel-content">
             <div v-for="(row, index) of query" :key="index" class="kv-row">
-              <input type="checkbox" class="kv-checkbox" v-model="row.enabled"/>
-              <input class="kv-input kv-key" v-model="row.key" placeholder="Param"/>
-              <input class="kv-input" v-model="row.value" placeholder="Value"/>
-              <button class="btn-icon-sm" @click="query.splice(index, 1)">
+              <input
+                type="checkbox"
+                class="kv-checkbox"
+                :class="{ invisible: isTrailing(query, index) }"
+                v-model="row.enabled"
+              />
+              <input
+                class="kv-input kv-key"
+                v-model="row.key"
+                placeholder="Param Key"
+                @input="ensureTrailing(query)"
+              />
+              <input
+                class="kv-input"
+                v-model="row.value"
+                placeholder="Param Value"
+                @input="ensureTrailing(query)"
+              />
+              <button
+                class="btn-icon-sm"
+                :class="{ invisible: isTrailing(query, index) }"
+                @click="removeRow(query, index)"
+              >
                 <k-icon name="trash"/>
               </button>
             </div>
-            <button class="btn btn-ghost btn-add" @click="query.push({ enabled: true, key: '', value: '' })">
-              <k-icon name="add"/> Add Param
-            </button>
-          </template>
+          </div>
+        </template>
 
-          <template v-else>
+        <template v-else>
+          <div class="body-type-bar">
+            <el-select v-model="bodyType" size="small">
+              <el-option v-for="opt of bodyTypeOptions" :key="opt.id" :value="opt.id" :label="opt.label"/>
+            </el-select>
+          </div>
+
+          <template v-if="bodyType === 'json' || bodyType === 'xml'">
             <textarea
-              class="body-input"
+              class="body-input flush"
               v-model="body"
-              placeholder="Request body (JSON, text, etc.)"
+              :placeholder="bodyType === 'json' ? '{\n  \&quot;key\&quot;: \&quot;value\&quot;\n}' : '<root></root>'"
               spellcheck="false"
             ></textarea>
           </template>
-        </div>
+
+          <template v-else-if="bodyType === 'formdata' || bodyType === 'urlencoded'">
+            <div class="panel-content">
+              <div v-for="(row, index) of formBody" :key="index" class="kv-row">
+                <input
+                  type="checkbox"
+                  class="kv-checkbox"
+                  :class="{ invisible: isTrailing(formBody, index) }"
+                  v-model="row.enabled"
+                />
+                <input
+                  class="kv-input kv-key"
+                  v-model="row.key"
+                  placeholder="Field Key"
+                  @input="ensureTrailing(formBody)"
+                />
+                <input
+                  class="kv-input"
+                  v-model="row.value"
+                  placeholder="Field Value"
+                  @input="ensureTrailing(formBody)"
+                />
+                <button
+                  class="btn-icon-sm"
+                  :class="{ invisible: isTrailing(formBody, index) }"
+                  @click="removeRow(formBody, index)"
+                >
+                  <k-icon name="trash"/>
+                </button>
+              </div>
+            </div>
+          </template>
+
+          <div v-else class="body-empty">No body.</div>
+        </template>
       </div>
 
       <div class="compose-right">
@@ -98,11 +174,12 @@
 
         <div class="panel-content response-content" v-if="response">
           <template v-if="rightTab === 'body'">
-            <template v-if="response.error">
+            <template v-if="response.error && !response.body">
               <div class="response-error">{{ response.error }}</div>
             </template>
             <template v-else>
-              <pre>{{ formattedBody }}</pre>
+              <pre>{{ formattedBody }}<span v-if="streaming" class="stream-cursor">▍</span></pre>
+              <div v-if="response.error" class="response-error">{{ response.error }}</div>
               <div v-if="response.bodyTruncated" class="truncated">[truncated — response body exceeds 64KB]</div>
             </template>
           </template>
@@ -121,8 +198,6 @@
 <script lang="ts" setup>
 
 import { computed, reactive, ref } from 'vue'
-import { send } from '@cordisjs/client'
-import type { ComposeResponse } from '../src'
 
 interface KvRow {
   enabled: boolean
@@ -130,58 +205,207 @@ interface KvRow {
   value: string
 }
 
+type BodyType = 'none' | 'json' | 'xml' | 'formdata' | 'urlencoded'
+
+interface ComposeResponse {
+  status: number
+  statusText: string
+  headers: Record<string, string>
+  body: string
+  bodyTruncated?: boolean
+  latency: number
+  size: number
+  error?: string
+}
+
 const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD']
 
 const method = ref('GET')
 const url = ref('')
 const body = ref('')
+const bodyType = ref<BodyType>('none')
 const headers = reactive<KvRow[]>([
   { enabled: true, key: 'Accept', value: 'application/json' },
+  { enabled: true, key: '', value: '' },
 ])
-const query = reactive<KvRow[]>([])
+const query = reactive<KvRow[]>([
+  { enabled: true, key: '', value: '' },
+])
+const formBody = reactive<KvRow[]>([
+  { enabled: true, key: '', value: '' },
+])
 
 const leftTabs = [
   { id: 'headers', label: 'Headers' },
   { id: 'body', label: 'Body' },
   { id: 'query', label: 'Query' },
+] as const
+
+const bodyTypeOptions: { id: BodyType; label: string }[] = [
+  { id: 'none', label: 'None' },
+  { id: 'json', label: 'JSON' },
+  { id: 'xml', label: 'XML' },
+  { id: 'formdata', label: 'FormData' },
+  { id: 'urlencoded', label: 'URLSearchParams' },
 ]
 
 const leftTab = ref<'headers' | 'body' | 'query'>('headers')
 const rightTab = ref<'body' | 'headers'>('body')
 
 const sending = ref(false)
+const streaming = ref(false)
 const response = ref<ComposeResponse | null>(null)
 
-function pack(rows: KvRow[]) {
-  const out: Record<string, string> = {}
-  for (const row of rows) {
-    if (row.enabled && row.key) out[row.key] = row.value
+function isTrailing(rows: KvRow[], index: number) {
+  return index === rows.length - 1 && !rows[index].key && !rows[index].value
+}
+
+function ensureTrailing(rows: KvRow[]) {
+  const last = rows[rows.length - 1]
+  if (!last || last.key || last.value) {
+    rows.push({ enabled: true, key: '', value: '' })
   }
+}
+
+function removeRow(rows: KvRow[], index: number) {
+  rows.splice(index, 1)
+  ensureTrailing(rows)
+}
+
+function contentTypeFor(type: BodyType): string | undefined {
+  switch (type) {
+    case 'json': return 'application/json'
+    case 'xml': return 'application/xml'
+    case 'urlencoded': return 'application/x-www-form-urlencoded'
+    default: return undefined
+  }
+}
+
+function buildBody(): BodyInit | undefined {
+  switch (bodyType.value) {
+    case 'none':
+      return undefined
+    case 'json':
+    case 'xml':
+      return body.value || undefined
+    case 'formdata': {
+      const fd = new FormData()
+      for (const row of formBody) {
+        if (row.enabled && row.key) fd.append(row.key, row.value)
+      }
+      return fd
+    }
+    case 'urlencoded': {
+      const params = new URLSearchParams()
+      for (const row of formBody) {
+        if (row.enabled && row.key) params.append(row.key, row.value)
+      }
+      return params
+    }
+  }
+}
+
+function buildHeaders(autoContentType?: string): Headers {
+  const h = new Headers()
+  for (const row of headers) {
+    if (row.enabled && row.key) h.append(row.key, row.value)
+  }
+  if (autoContentType && !h.has('content-type')) {
+    h.set('content-type', autoContentType)
+  }
+  return h
+}
+
+function headersToDict(headers: Headers): Record<string, string> {
+  const out: Record<string, string> = {}
+  headers.forEach((v, k) => { out[k] = v })
   return out
 }
 
 async function sendRequest() {
   if (sending.value || !url.value) return
   sending.value = true
+  streaming.value = false
+  response.value = null
+  const start = performance.now()
+
   try {
-    const result = await send('http-webui.compose', {
+    const target = new URL(url.value)
+    for (const row of query) {
+      if (row.enabled && row.key) target.searchParams.append(row.key, row.value)
+    }
+
+    const autoCT = contentTypeFor(bodyType.value)
+    const requestHeaders = buildHeaders(autoCT)
+
+    const init: RequestInit = {
       method: method.value,
-      url: url.value,
-      headers: pack(headers),
-      query: pack(query),
-      body: body.value || undefined,
-    })
-    response.value = result as ComposeResponse
+      headers: requestHeaders,
+    }
+    if (!['GET', 'HEAD'].includes(method.value)) {
+      init.body = buildBody()
+    }
+
+    const res = await fetch('/proxy/' + target.href, init)
+    const ttfb = Math.round(performance.now() - start)
+
+    response.value = {
+      status: res.status,
+      statusText: res.statusText,
+      headers: headersToDict(res.headers),
+      body: '',
+      latency: ttfb,
+      size: 0,
+    }
     rightTab.value = 'body'
+
+    if (res.body) {
+      streaming.value = true
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder('utf-8', { fatal: false })
+      let size = 0
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          size += value.byteLength
+          const chunk = decoder.decode(value, { stream: true })
+          if (response.value) {
+            response.value.size = size
+            if (chunk) response.value.body += chunk
+          }
+        }
+        const tail = decoder.decode()
+        if (response.value && tail) response.value.body += tail
+      } catch (e: any) {
+        if (response.value) response.value.error = String(e?.message ?? e)
+      }
+      if (response.value) {
+        response.value.latency = Math.round(performance.now() - start)
+      }
+    }
+  } catch (e: any) {
+    const latency = Math.round(performance.now() - start)
+    response.value = {
+      status: 0,
+      statusText: 'Error',
+      headers: {},
+      body: '',
+      latency,
+      size: 0,
+      error: String(e?.message ?? e),
+    }
   } finally {
     sending.value = false
+    streaming.value = false
   }
 }
 
 const formattedBody = computed(() => {
   if (!response.value?.body) return ''
-  const ct = response.value.headers['content-type'] ?? ''
-  if (!ct.includes('json')) return response.value.body
+  if (streaming.value) return response.value.body
+  const type = response.value.headers['content-type'] ?? ''
+  if (!type.includes('json')) return response.value.body
   try {
     return JSON.stringify(JSON.parse(response.value.body), null, 2)
   } catch {
@@ -201,8 +425,8 @@ function formatSize(bytes: number) {
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
 }
 
-function shortContentType(ct: string) {
-  return ct.split(';')[0].trim()
+function shortContentType(type: string) {
+  return type.split(';')[0].trim()
 }
 
 </script>
@@ -286,26 +510,6 @@ function shortContentType(ct: string) {
   }
 }
 
-.btn-ghost {
-  background: transparent;
-  color: var(--text-tertiary);
-  border: none;
-  padding: 4px 8px;
-  font-size: 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-
-  &:hover {
-    color: var(--text-primary);
-  }
-
-  :deep(.k-icon) {
-    width: 14px;
-    height: 14px;
-  }
-}
-
 .compose-body {
   flex: 1 1 0;
   min-height: 0;
@@ -331,27 +535,37 @@ function shortContentType(ct: string) {
 .panel-header {
   flex: 0 0 auto;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 8px;
-  padding: 8px 16px;
+  padding: 0 16px;
+  height: 36px; // var(--tab-bar-height)
   border-bottom: 1px solid var(--border-primary);
   background: var(--bg-secondary);
-  min-height: 40px;
+
+  > .response-status,
+  > .response-empty {
+    align-self: center;
+  }
 }
 
 .panel-tabs {
   display: flex;
-  gap: 0;
+  align-items: stretch;
+  margin-bottom: -1px;
 }
 
 .panel-tab {
-  padding: 6px 12px;
-  font-size: 12px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  font-size: 13px;
   color: var(--text-tertiary);
   cursor: pointer;
   border-bottom: 2px solid transparent;
   font-weight: 500;
   transition: var(--color-transition);
+  box-sizing: border-box;
+  white-space: nowrap;
 
   &.active {
     color: var(--text-primary);
@@ -372,6 +586,25 @@ function shortContentType(ct: string) {
   font-size: 12px;
   line-height: 1.7;
   color: var(--text-primary);
+}
+
+.body-type-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border-primary);
+  background: var(--bg-secondary);
+}
+
+.body-empty {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  color: var(--text-tertiary);
+  font-size: 13px;
 }
 
 .kv-row {
@@ -407,23 +640,33 @@ function shortContentType(ct: string) {
   width: 14px;
   height: 14px;
   accent-color: var(--accent);
+  flex-shrink: 0;
+
+  &.invisible {
+    visibility: hidden;
+  }
 }
 
 .btn-icon-sm {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: transparent;
-  border: none;
+  border: 1px solid var(--border-primary);
   border-radius: var(--radius-sm);
   color: var(--text-tertiary);
   cursor: pointer;
+  flex-shrink: 0;
 
   &:hover {
     background: var(--bg-hover);
     color: var(--text-primary);
+  }
+
+  &.invisible {
+    visibility: hidden;
   }
 
   :deep(.k-icon) {
@@ -432,25 +675,23 @@ function shortContentType(ct: string) {
   }
 }
 
-.btn-add {
-  margin-top: 8px;
-}
-
 .body-input {
   width: 100%;
-  min-height: 240px;
+  flex: 1 1 0;
+  min-height: 0;
   background: var(--bg-tertiary);
-  border: 1px solid var(--border-primary);
-  border-radius: var(--radius-md);
-  padding: 12px;
+  border: none;
+  border-radius: 0;
+  padding: 12px 16px;
   font-size: 12px;
   font-family: var(--font-mono);
   color: var(--text-primary);
   outline: none;
-  resize: vertical;
+  resize: none;
+  box-sizing: border-box;
 
-  &:focus {
-    border-color: var(--border-focus);
+  &.flush {
+    border: none;
   }
 }
 
@@ -501,6 +742,12 @@ function shortContentType(ct: string) {
     font-size: 12px;
   }
 
+  .stream-cursor {
+    display: inline-block;
+    color: var(--accent);
+    animation: blink 1s steps(2, start) infinite;
+  }
+
   .truncated {
     margin-top: 12px;
     padding: 8px 12px;
@@ -534,6 +781,10 @@ function shortContentType(ct: string) {
       color: var(--text-primary);
     }
   }
+}
+
+@keyframes blink {
+  to { visibility: hidden; }
 }
 
 </style>

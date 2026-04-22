@@ -43,7 +43,7 @@ export interface Node extends EntryData {
   children?: Node[]
 }
 
-interface DepInfo extends Inject.Meta {
+interface DepInfo extends Partial<Inject.Meta> {
   provider?: Provider
 }
 
@@ -307,7 +307,7 @@ export default class Manager extends Service {
           ...Inject.resolve(entry.inject),
         }
         const names = new Set<string>()
-        for (const [name, meta] of Object.entries(inject)) {
+        for (const name of Object.keys(inject)) {
           names.add(name)
         }
         for (const name of Object.keys(this.data.value.services ?? {})) {
@@ -547,7 +547,7 @@ export default class Manager extends Service {
     }
 
     // check services
-    const setService = (name: string, meta: Inject.Meta) => {
+    const setService = (name: string, meta?: Inject.Meta) => {
       let provider = this.data.value.services[name]?.root
       let node = entry
       while (node) {
@@ -571,6 +571,13 @@ export default class Manager extends Service {
     for (const [name, info] of Object.entries(Inject.resolve(entry.inject))) {
       setService(name, info)
     }
+    for (const name of Object.keys(this.data.value.services ?? {})) {
+      if (result.using[name]) continue
+      if (this.ctx.bail('webui/loader/service', entry, name)) setService(name)
+    }
+    result.using = Object.fromEntries(
+      Object.entries(result.using).sort(([a], [b]) => a.localeCompare(b)),
+    )
 
     // check schema
     if (!local.runtime?.schema) {

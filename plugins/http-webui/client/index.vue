@@ -6,8 +6,8 @@
 
     <div class="content-area">
       <k-tab-bar :tabs="tabs" :active="active" @select="active = $event as typeof active" />
-      <compose v-if="active === 'compose'" />
-      <history v-else />
+      <compose v-show="active === 'compose'" />
+      <history v-show="active === 'history'" />
     </div>
   </k-layout>
 </template>

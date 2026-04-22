@@ -9,7 +9,7 @@
       </p>
     </k-comment>
     <k-form
-      v-if="info.provider?.schema"
+      v-if="info.provider?.schema && info.required !== undefined"
       v-bind="formProps"
       :schema="info.provider?.schema"
       :initial="info.config"

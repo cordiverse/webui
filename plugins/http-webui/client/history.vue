@@ -13,7 +13,7 @@
 
       <select class="source-filter" v-model="activeSource">
         <option value="">All Plugins</option>
-        <option v-for="src of sources" :key="src" :value="src">{{ src }}</option>
+        <option v-for="src of sources" :key="src" :value="src">{{ pluginLabel(src) }}</option>
       </select>
 
       <select class="source-filter" v-model="activeStatus">
@@ -57,7 +57,7 @@
         <span class="col-method method-badge" :class="methodClass(entry.method)">{{ entry.method }}</span>
         <span class="col-status status-code" :class="statusClass(entry.status)">{{ entry.status || '—' }}</span>
         <span class="col-url hist-url">{{ entry.url }}</span>
-        <span class="col-plugin hist-source">{{ entry.source || 'unknown' }}</span>
+        <span class="col-plugin hist-source">{{ pluginLabel(entry.source) }}</span>
         <span class="col-latency hist-latency">{{ formatLatency(entry.latency) }}</span>
         <span class="col-size hist-size">{{ formatSize(entry.size) }}</span>
         <span class="col-time hist-time">{{ formatTime(entry.ts) }}</span>
@@ -73,9 +73,11 @@
 <script lang="ts" setup>
 
 import { computed, ref } from 'vue'
-import { send, useRpc } from '@cordisjs/client'
+import { send, useContext, useRpc } from '@cordisjs/client'
+import type {} from '@cordisjs/plugin-loader-webui/client'
 import type { Data, HistoryEntry } from '../src'
 
+const ctx = useContext()
 const data = useRpc<Data>()
 const history = computed<HistoryEntry[]>(() => data.value?.history ?? [])
 
@@ -101,6 +103,17 @@ const sources = computed(() => {
   }
   return [...set].sort()
 })
+
+function pluginLabel(source?: string) {
+  if (!source) return 'unknown'
+  const manager = ctx.get('manager')
+  if (!manager) return source
+  const prefix = manager.prefix
+  const local = prefix && source.startsWith(prefix) ? source.slice(prefix.length) : source
+  const entry = manager.plugins.value.entries[local]
+  if (!entry) return source
+  return manager.getLabel(entry)
+}
 
 const filtered = computed(() => {
   return [...history.value].reverse().filter((entry) => {
@@ -308,8 +321,8 @@ function clearHistory() {
   }
 }
 
-.col-method { min-width: 52px; }
-.col-status { min-width: 40px; }
+.col-method { width: 52px; display: inline-flex; justify-content: center; }
+.col-status { width: 3.5rem; display: inline-flex; justify-content: center; }
 .col-url    { flex: 1; min-width: 0; }
 .col-plugin { min-width: 100px; }
 .col-latency { min-width: 60px; text-align: right; }
@@ -326,6 +339,7 @@ function clearHistory() {
   font-weight: 700;
   font-family: var(--font-mono);
   text-align: center;
+  min-width: 44px;
 
   &.method-get    { background: var(--accent-muted);  color: var(--accent); }
   &.method-post   { background: var(--success-muted); color: var(--success); }
@@ -337,7 +351,10 @@ function clearHistory() {
 
 .status-code {
   display: inline-flex;
-  padding: 2px 6px;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  padding: 2px 0;
   border-radius: var(--radius-sm);
   font-size: 11px;
   font-weight: 500;

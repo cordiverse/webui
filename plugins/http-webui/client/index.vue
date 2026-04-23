@@ -106,11 +106,30 @@ const savedMap = computed<Record<string, SavedRequest>>(() => {
   return map
 })
 
+// strip runtime-only fields so dirty comparison + persistence only see the saveable shape
+function toPersistable(state: TabState): TabState {
+  return {
+    method: state.method,
+    url: state.url,
+    headers: state.headers,
+    query: state.query,
+    body: state.body,
+    bodyType: state.bodyType,
+    formBody: state.formBody,
+    // ts is runtime-only
+    events: state.events.map(ev => ({ ...ev, ts: 0 })),
+    // keep only persisted outbound, drop ts
+    wsMessages: state.wsMessages
+      .filter(m => m.direction === 'out' && m.persist)
+      .map(m => ({ ...m, ts: 0 })),
+  }
+}
+
 const dirty = computed<Record<string, boolean>>(() => {
   const out: Record<string, boolean> = {}
   for (const tab of tabs.value) {
     const origin = tab.savedId ? savedMap.value[tab.savedId]?.state : undefined
-    out[tab.id] = !origin || !deepEqual(origin, tab.state)
+    out[tab.id] = !origin || !deepEqual(toPersistable(origin), toPersistable(tab.state))
   }
   return out
 })
@@ -123,8 +142,12 @@ function saveTooltip(tab: OpenTab) {
 
 function normalizeState(state: any) {
   if (!Array.isArray(state.events)) state.events = []
+  if (!Array.isArray(state.wsMessages)) state.wsMessages = []
   // ts is runtime-only (indicates "was sent in this session"); wipe on load
   for (const ev of state.events) ev.ts = 0
+  // keep only persisted out messages; reset ts so they re-queue on next connect
+  state.wsMessages = state.wsMessages.filter((m: any) => m.direction === 'out' && m.persist)
+  for (const m of state.wsMessages) m.ts = 0
 }
 
 const persisted = storage.load()
@@ -145,23 +168,21 @@ if (persisted) {
 let saveTimer: number | undefined
 watch([saved, tabs, activeId], () => {
   if (saveTimer) clearTimeout(saveTimer)
-  saveTimer = window.setTimeout(() => {
-    storage.save({
-      saved: saved.value,
-      tabs: tabs.value,
-      activeId: activeId.value,
-    })
-  }, 200)
+  saveTimer = window.setTimeout(persistToStorage, 200)
 }, { deep: true })
 
 onBeforeUnmount(() => {
   if (saveTimer) clearTimeout(saveTimer)
+  persistToStorage()
+})
+
+function persistToStorage() {
   storage.save({
-    saved: saved.value,
-    tabs: tabs.value,
+    saved: saved.value.map(s => ({ ...s, state: toPersistable(s.state) })),
+    tabs: tabs.value.map(t => ({ ...t, state: toPersistable(t.state) })),
     activeId: activeId.value,
   })
-})
+}
 
 // --- tab / saved operations ---
 
@@ -445,6 +466,8 @@ function stateFromHistory(entry: HistoryEntry): TabState {
     body: '',
     bodyType: 'none',
     formBody: [emptyKvRow()],
+    events: [],
+    wsMessages: [],
   }
 }
 

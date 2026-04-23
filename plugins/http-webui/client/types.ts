@@ -14,6 +14,14 @@ export interface SseEvent {
   ts: number
 }
 
+export interface WsMessage {
+  direction: 'in' | 'out'
+  data: string
+  size: number
+  ts: number          // 0 = pending (out only, not yet flushed on connect)
+  persist?: boolean   // direction='out' only: keep across reloads
+}
+
 export interface TabState {
   method: string
   url: string
@@ -23,6 +31,7 @@ export interface TabState {
   bodyType: BodyType
   formBody: KvRow[]
   events: SseEvent[]
+  wsMessages: WsMessage[]
 }
 
 export interface SavedRequest {
@@ -59,6 +68,7 @@ export function emptyTabState(): TabState {
     bodyType: 'none',
     formBody: [emptyKvRow()],
     events: [],
+    wsMessages: [],
   }
 }
 

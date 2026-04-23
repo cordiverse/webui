@@ -4,23 +4,53 @@
       <select class="method-select" v-model="state.method">
         <option v-for="m of methods" :key="m" :value="m">{{ m }}</option>
       </select>
-      <input class="url-input" v-model="state.url" placeholder="https://..." @keyup.enter="sendRequest"/>
+      <input
+        class="url-input"
+        v-model="state.url"
+        :placeholder="urlPlaceholder"
+        @keyup.enter="primaryAction"
+      />
       <button class="btn btn-ghost" :disabled="sending" :title="saveTooltip" @click="$emit('save')">
         保存
       </button>
-      <button class="btn btn-primary" :disabled="sending || !state.url" @click="sendRequest">
+      <button
+        v-if="isWs"
+        class="btn"
+        :class="wsOpen ? 'btn-ghost' : 'btn-primary'"
+        :disabled="wsConnecting || !state.url"
+        @click="toggleWs"
+      >
+        {{ wsConnecting ? 'Connecting...' : wsOpen ? 'Close' : 'Connect' }}
+      </button>
+      <button
+        v-else
+        class="btn btn-primary"
+        :disabled="sending || !state.url"
+        @click="sendRequest"
+      >
         {{ sending ? 'Sending...' : 'Send' }}
       </button>
     </div>
 
     <div class="compose-body">
-      <request :state="state"/>
-      <response
-        :response="response"
-        :sending="sending"
-        :streaming="streaming"
-        :download-name="downloadName"
+      <ws-panel
+        v-if="isWs"
+        :messages="state.wsMessages"
+        :query="state.query"
+        :can-send="wsOpen"
+        :ws-status="wsStatus"
+        @send="onWsSend"
+        @queue="onWsQueue"
       />
+      <template v-else>
+        <request :state="state"/>
+        <response
+          :response="response"
+          :sending="sending"
+          :streaming="streaming"
+          :download-name="downloadName"
+        />
+      </template>
     </div>
   </div>
 </template>
@@ -30,8 +60,9 @@
 import { computed, onBeforeUnmount, ref } from 'vue'
 import Request from './request.vue'
 import Response, { type ResponseData } from './response.vue'
+import WsPanel from './ws-panel.vue'
 import { createSseParser, encodeEvent } from './sse'
-import type { BodyType, KvRow, TabState } from './types'
+import type { BodyType, TabState } from './types'
 
 defineEmits<{
   (e: 'save'): void
@@ -42,11 +73,20 @@ const props = defineProps<{
   saveTooltip?: string
 }>()
 
-const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD']
+const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'WS']
 
 const sending = ref(false)
 const streaming = ref(false)
 const response = ref<ResponseData | null>(null)
+
+const isWs = computed(() => props.state.method === 'WS')
+
+const wsSocket = ref<WebSocket | null>(null)
+const wsConnecting = ref(false)
+const wsOpen = ref(false)
+const wsStatus = ref<'idle' | 'connecting' | 'open' | 'closed' | 'error'>('idle')
+
+const urlPlaceholder = computed(() => isWs.value ? 'ws://... or wss://...' : 'https://...')
 
 const downloadName = computed(() => {
   try {
@@ -257,10 +297,140 @@ async function sendRequest() {
   }
 }
 
+// ---- WebSocket ----
+
+function buildWsProxyUrl(): string {
+  // resolve state.url as a URL (may be http/https/ws/wss), then rewrite to ws(s):// against window.location
+  const target = buildTarget()
+  // The proxy endpoint on the current page uses the page's origin.
+  const page = new URL(window.location.href)
+  const wsProto = page.protocol === 'https:' ? 'wss:' : 'ws:'
+  const prefix = `${wsProto}//${page.host}/proxy/`
+  return prefix + target.href
+}
+
+function primaryAction() {
+  if (isWs.value) {
+    toggleWs()
+  } else {
+    sendRequest()
+  }
+}
+
+function toggleWs() {
+  if (wsOpen.value || wsConnecting.value) {
+    closeWs()
+  } else {
+    connectWs()
+  }
+}
+
+function connectWs() {
+  if (wsConnecting.value || wsOpen.value || !props.state.url) return
+  // clear everything except persisted out messages; reset their ts so they re-flush on open
+  const kept = props.state.wsMessages.filter(m => m.direction === 'out' && m.persist)
+  for (const m of kept) m.ts = 0
+  props.state.wsMessages.splice(0, props.state.wsMessages.length, ...kept)
+
+  wsStatus.value = 'connecting'
+  wsConnecting.value = true
+  let socket: WebSocket
+  try {
+    socket = new WebSocket(buildWsProxyUrl())
+  } catch (e: any) {
+    wsStatus.value = 'error'
+    wsConnecting.value = false
+    props.state.wsMessages.push({
+      direction: 'in',
+      data: `Error: ${String(e?.message ?? e)}`,
+      size: 0,
+      ts: Date.now(),
+    })
+    return
+  }
+  wsSocket.value = socket
+  socket.addEventListener('open', () => {
+    wsConnecting.value = false
+    wsOpen.value = true
+    wsStatus.value = 'open'
+    // flush any pending (ts=0) outbound messages in order
+    for (const msg of props.state.wsMessages) {
+      if (msg.direction === 'out' && !msg.ts) {
+        socket.send(msg.data)
+        msg.ts = Date.now()
+      }
+    }
+  })
+  socket.addEventListener('message', async (event) => {
+    let text: string
+    let size = 0
+    const data = event.data
+    if (typeof data === 'string') {
+      text = data
+      size = new TextEncoder().encode(data).byteLength
+    } else if (data instanceof Blob) {
+      size = data.size
+      try {
+        text = await data.text()
+      } catch {
+        text = `<binary ${size} bytes>`
+      }
+    } else if (data instanceof ArrayBuffer) {
+      size = data.byteLength
+      text = `<binary ${size} bytes>`
+    } else {
+      text = String(data)
+    }
+    props.state.wsMessages.push({
+      direction: 'in',
+      data: text,
+      size,
+      ts: Date.now(),
+    })
+  })
+  socket.addEventListener('close', () => {
+    wsOpen.value = false
+    wsConnecting.value = false
+    wsStatus.value = wsStatus.value === 'error' ? 'error' : 'closed'
+    wsSocket.value = null
+  })
+  socket.addEventListener('error', () => {
+    wsStatus.value = 'error'
+  })
+}
+
+function closeWs() {
+  wsSocket.value?.close()
+}
+
+function onWsSend(data: string, persist: boolean) {
+  const socket = wsSocket.value
+  if (!socket || socket.readyState !== WebSocket.OPEN) return
+  socket.send(data)
+  props.state.wsMessages.push({
+    direction: 'out',
+    data,
+    size: new TextEncoder().encode(data).byteLength,
+    ts: Date.now(),
+    persist,
+  })
+}
+
+function onWsQueue(data: string, persist: boolean) {
+  props.state.wsMessages.push({
+    direction: 'out',
+    data,
+    size: new TextEncoder().encode(data).byteLength,
+    ts: 0,
+    persist,
+  })
+}
+
 onBeforeUnmount(() => {
   if (response.value?.objectUrl) {
     URL.revokeObjectURL(response.value.objectUrl)
   }
+  wsSocket.value?.close()
 })
 
 defineExpose({ sendRequest })

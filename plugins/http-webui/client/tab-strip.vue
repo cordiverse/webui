@@ -6,7 +6,7 @@
       @click="$emit('switch', 'history')"
       title="History"
     >
-      <k-icon name="search"/>
+      <k-icon name="http:history"/>
     </div>
 
     <div

@@ -53,9 +53,9 @@
             <th>Status</th>
             <th class="text-left">URL</th>
             <th class="text-left">Plugin</th>
-            <th class="text-right">Duration</th>
-            <th class="text-right">Size</th>
-            <th class="text-right">Time</th>
+            <th class="text-center">Duration</th>
+            <th class="text-center">Size</th>
+            <th class="text-center">Time</th>
           </tr>
         </thead>
         <tbody>
@@ -75,11 +75,13 @@
               <span v-else-if="entry.endTs" class="status-code status-err">ERR</span>
               <span v-else class="pending-dot"></span>
             </td>
-            <td class="hist-url">{{ entry.url }}</td>
+            <td class="hist-url text-left">{{ entry.url }}</td>
             <td class="hist-source">{{ pluginLabel(entry.source) }}</td>
-            <td class="text-right hist-latency">{{ displayDuration(entry) }}</td>
-            <td class="text-right hist-size">{{ formatSize(entry.size) }}</td>
-            <td class="text-right hist-time">{{ formatTime(entry.ts) }}</td>
+            <td class="text-center hist-latency">{{ displayDuration(entry) }}</td>
+            <td class="text-center hist-size">
+              <size-pair :bytes-in="entry.bytesIn || 0" :bytes-out="entry.bytesOut || 0"/>
+            </td>
+            <td class="text-center hist-time">{{ formatTime(entry.ts) }}</td>
           </tr>
         </tbody>
       </table>
@@ -96,6 +98,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { send, useContext, useMenu, useRpc } from '@cordisjs/client'
 import type {} from '@cordisjs/plugin-loader-webui/client'
+import SizePair from './size-pair.vue'
 import type { Data, HistoryEntry } from '../src'
 
 const ctx = useContext()
@@ -180,13 +183,6 @@ function formatDuration(ms: number) {
 function displayDuration(entry: HistoryEntry) {
   const ms = entry.endTs ? entry.duration : Math.max(0, now.value - entry.ts)
   return formatDuration(ms)
-}
-
-function formatSize(bytes: number) {
-  if (!bytes) return '—'
-  if (bytes < 1024) return bytes + ' B'
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
 }
 
 function formatTime(ts: number) {
@@ -340,7 +336,7 @@ function clearHistory() {
 .hist-table col.col-url     { width: auto; }
 .hist-table col.col-plugin  { width: 160px; }
 .hist-table col.col-latency { width: 80px; }
-.hist-table col.col-size    { width: 80px; }
+.hist-table col.col-size    { width: 140px; }
 .hist-table col.col-time    { width: 96px; }
 
 .hist-table thead th {
@@ -363,7 +359,6 @@ function clearHistory() {
   padding: 10px 12px;
   vertical-align: middle;
   border-bottom: 1px solid var(--border-primary);
-  text-align: center;
   white-space: nowrap;
 }
 
@@ -455,7 +450,7 @@ function clearHistory() {
 }
 
 .hist-latency { font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); }
-.hist-size { font-size: 12px; color: var(--text-tertiary); }
+.hist-size { font-size: 12px; }
 .hist-time { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); }
 
 .hist-empty {

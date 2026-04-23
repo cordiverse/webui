@@ -25,11 +25,13 @@
       </div>
       <div class="sse-input-row">
         <textarea
+          ref="dataEl"
           class="sse-input sse-data"
           v-model="dataInput"
           placeholder="Data (supports multiple lines)"
           spellcheck="false"
-          rows="3"
+          rows="1"
+          @input="autoResize"
           @keydown="onDataKey"
         ></textarea>
         <button class="sse-add" :disabled="!canAdd" @click="addEvent">
@@ -42,7 +44,7 @@
 
 <script lang="ts" setup>
 
-import { computed, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import SseEventsTable from './sse-events-table.vue'
 import type { SseEvent } from './types'
 
@@ -54,6 +56,25 @@ const eventName = ref('')
 const idInput = ref('')
 const retryInput = ref<number | ''>('')
 const dataInput = ref('')
+const dataEl = ref<HTMLTextAreaElement>()
+
+const MAX_ROWS = 10
+
+function autoResize() {
+  const el = dataEl.value
+  if (!el) return
+  el.style.height = 'auto'
+  const cs = getComputedStyle(el)
+  const lineHeight = parseFloat(cs.lineHeight) || 18
+  const paddingY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom)
+  const borderY = parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth)
+  const max = lineHeight * MAX_ROWS + paddingY + borderY
+  // scrollHeight measures content+padding; element total needs border added on top.
+  el.style.height = Math.min(el.scrollHeight + borderY, max) + 'px'
+}
+
+onMounted(autoResize)
+watch(dataInput, () => nextTick(autoResize))
 
 const canAdd = computed(() => {
   return !!(dataInput.value || eventName.value || idInput.value || retryInput.value !== '')
@@ -144,11 +165,13 @@ input.sse-input { height: 28px; }
 
 .sse-data {
   flex: 1 1 auto;
-  min-height: 60px;
-  padding: 6px 8px;
-  resize: vertical;
+  box-sizing: border-box;
+  min-height: 28px;
+  padding: 4px 8px;
+  resize: none;
   line-height: 1.5;
   font-family: var(--font-mono);
+  overflow-y: auto;
 }
 
 .sse-add {

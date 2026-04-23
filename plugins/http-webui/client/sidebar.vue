@@ -1,7 +1,7 @@
 <template>
   <aside class="page-sidebar http-sidebar">
     <div class="sidebar-header">
-      <span class="sidebar-title">已保存</span>
+      <span class="sidebar-title">已保存的请求</span>
     </div>
     <div class="sidebar-list">
       <div

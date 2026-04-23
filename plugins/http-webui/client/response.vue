@@ -115,6 +115,7 @@
 
 import { computed, ref } from 'vue'
 import SseEventsTable from './sse-events-table.vue'
+import { formatSize } from './utils'
 import type { SseEvent } from './types'
 
 export interface ResponseData {
@@ -175,13 +176,6 @@ const formattedBody = computed(() => {
 function statusClass(status: number) {
   if (!status) return 'status-err'
   return 'status-' + Math.floor(status / 100) + 'xx'
-}
-
-function formatSize(bytes: number) {
-  if (!bytes) return '0B'
-  if (bytes < 1024) return bytes + 'B'
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + 'KB'
-  return (bytes / (1024 * 1024)).toFixed(1) + 'MB'
 }
 
 function shortContentType(type: string) {

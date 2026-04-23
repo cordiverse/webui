@@ -44,6 +44,10 @@
         key-placeholder="Field Key"
         value-placeholder="Field Value"
       />
+      <event-stream
+        v-else-if="state.bodyType === 'eventstream'"
+        :events="state.events"
+      />
       <div v-else class="body-empty">No body.</div>
     </template>
   </div>
@@ -53,6 +57,7 @@
 
 import { ref } from 'vue'
 import KvTable from './kv-table.vue'
+import EventStream from './event-stream.vue'
 import type { BodyType, TabState } from './types'
 
 defineProps<{
@@ -71,6 +76,7 @@ const bodyTypeOptions: { id: BodyType; label: string }[] = [
   { id: 'xml', label: 'XML' },
   { id: 'formdata', label: 'FormData' },
   { id: 'urlencoded', label: 'URLSearchParams' },
+  { id: 'eventstream', label: 'EventStream' },
 ]
 
 const leftTab = ref<'headers' | 'body' | 'query'>('headers')
@@ -92,7 +98,7 @@ const leftTab = ref<'headers' | 'body' | 'query'>('headers')
   align-items: stretch;
   gap: 8px;
   padding: 0 16px;
-  height: 40px;
+  height: 36px;
   border-bottom: 1px solid var(--border-primary);
   background: var(--bg-secondary);
 }

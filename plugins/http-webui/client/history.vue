@@ -36,33 +36,53 @@
       </button>
     </div>
 
-    <div class="hist-header">
-      <span class="col-method">Method</span>
-      <span class="col-status">Status</span>
-      <span class="col-url">URL</span>
-      <span class="col-plugin">Plugin</span>
-      <span class="col-latency">Latency</span>
-      <span class="col-size">Size</span>
-      <span class="col-time">Time</span>
-    </div>
-
     <div class="history-list">
-      <div
-        v-for="entry of filtered"
-        :key="entry.id"
-        class="hist-row"
-        :class="{ active: selected?.id === entry.id }"
-        @click="selected = entry"
-        @contextmenu.stop="triggerHistoryMenu($event, entry)"
-      >
-        <span class="col-method method-badge" :class="methodClass(entry.method)">{{ entry.method }}</span>
-        <span class="col-status status-code" :class="statusClass(entry.status)">{{ entry.status || '—' }}</span>
-        <span class="col-url hist-url">{{ entry.url }}</span>
-        <span class="col-plugin hist-source">{{ pluginLabel(entry.source) }}</span>
-        <span class="col-latency hist-latency">{{ formatLatency(entry.latency) }}</span>
-        <span class="col-size hist-size">{{ formatSize(entry.size) }}</span>
-        <span class="col-time hist-time">{{ formatTime(entry.ts) }}</span>
-      </div>
+      <table class="hist-table">
+        <colgroup>
+          <col class="col-method"/>
+          <col class="col-status"/>
+          <col class="col-url"/>
+          <col class="col-plugin"/>
+          <col class="col-latency"/>
+          <col class="col-size"/>
+          <col class="col-time"/>
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Status</th>
+            <th class="text-left">URL</th>
+            <th class="text-left">Plugin</th>
+            <th class="text-right">Duration</th>
+            <th class="text-right">Size</th>
+            <th class="text-right">Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="entry of filtered"
+            :key="entry.id"
+            class="hist-row"
+            :class="{ active: selected?.id === entry.id, pending: !entry.endTs }"
+            @click="selected = entry"
+            @contextmenu.stop="triggerHistoryMenu($event, entry)"
+          >
+            <td>
+              <span class="method-badge" :class="methodClass(entry.method)">{{ entry.method }}</span>
+            </td>
+            <td>
+              <span v-if="entry.status" class="status-code" :class="statusClass(entry.status)">{{ entry.status }}</span>
+              <span v-else-if="entry.endTs" class="status-code status-err">ERR</span>
+              <span v-else class="pending-dot"></span>
+            </td>
+            <td class="hist-url">{{ entry.url }}</td>
+            <td class="hist-source">{{ pluginLabel(entry.source) }}</td>
+            <td class="text-right hist-latency">{{ displayDuration(entry) }}</td>
+            <td class="text-right hist-size">{{ formatSize(entry.size) }}</td>
+            <td class="text-right hist-time">{{ formatTime(entry.ts) }}</td>
+          </tr>
+        </tbody>
+      </table>
       <div v-if="!filtered.length" class="hist-empty">
         <span v-if="history.length">没有匹配的请求</span>
         <span v-else>暂无请求记录</span>
@@ -73,7 +93,7 @@
 
 <script lang="ts" setup>
 
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { send, useContext, useMenu, useRpc } from '@cordisjs/client'
 import type {} from '@cordisjs/plugin-loader-webui/client'
 import type { Data, HistoryEntry } from '../src'
@@ -82,6 +102,16 @@ const ctx = useContext()
 const data = useRpc<Data>()
 const history = computed<HistoryEntry[]>(() => data.value?.history ?? [])
 const triggerHistoryMenu = useMenu('httpHistory')
+
+// live "now" for ticking duration of pending requests
+const now = ref(Date.now())
+let tickHandle: number | undefined
+onMounted(() => {
+  tickHandle = window.setInterval(() => now.value = Date.now(), 500)
+})
+onBeforeUnmount(() => {
+  if (tickHandle) clearInterval(tickHandle)
+})
 
 const methodOptions = [
   { id: '', label: 'ALL' },
@@ -142,9 +172,14 @@ function statusClass(status: number) {
   return 'status-' + bucket + 'xx'
 }
 
-function formatLatency(ms: number) {
+function formatDuration(ms: number) {
   if (ms < 1000) return ms + 'ms'
   return (ms / 1000).toFixed(1) + 's'
+}
+
+function displayDuration(entry: HistoryEntry) {
+  const ms = entry.endTs ? entry.duration : Math.max(0, now.value - entry.ts)
+  return formatDuration(ms)
 }
 
 function formatSize(bytes: number) {
@@ -283,65 +318,86 @@ function clearHistory() {
   }
 }
 
-.hist-header {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 24px;
-  font-size: 11px;
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 500;
-  border-bottom: 1px solid var(--border-secondary);
-  background: var(--bg-secondary);
-}
-
 .history-list {
   flex: 1 1 0;
   min-height: 0;
   overflow-y: auto;
 }
 
-.hist-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 24px;
-  border-bottom: 1px solid var(--border-primary);
+.hist-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
   font-size: 13px;
+}
+
+.hist-table tr {
+  border: none;
+}
+
+.hist-table col.col-method  { width: 80px; }
+.hist-table col.col-status  { width: 80px; }
+.hist-table col.col-url     { width: auto; }
+.hist-table col.col-plugin  { width: 160px; }
+.hist-table col.col-latency { width: 80px; }
+.hist-table col.col-size    { width: 80px; }
+.hist-table col.col-time    { width: 96px; }
+
+.hist-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-align: center;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-secondary);
+  white-space: nowrap;
+}
+
+.hist-table tbody td {
+  padding: 10px 12px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border-primary);
+  text-align: center;
+  white-space: nowrap;
+}
+
+// only truncate for flexible text columns; fixed-width badges must not be clipped
+.hist-table tbody td.hist-url,
+.hist-table tbody td.hist-source {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hist-row {
   transition: background 0.1s;
   cursor: pointer;
 
-  &:hover {
+  &:hover td {
     background: var(--bg-hover);
   }
 
-  &.active {
+  &.active td {
     background: var(--accent-muted);
   }
 }
-
-.col-method { width: 52px; display: inline-flex; justify-content: center; }
-.col-status { width: 3.5rem; display: inline-flex; justify-content: center; }
-.col-url    { flex: 1; min-width: 0; }
-.col-plugin { min-width: 100px; }
-.col-latency { min-width: 60px; text-align: right; }
-.col-size   { min-width: 60px; text-align: right; }
-.col-time   { min-width: 80px; text-align: right; }
 
 .method-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 2px 8px;
+  width: 52px;
+  padding: 2px 0;
   border-radius: var(--radius-sm);
   font-size: 10px;
   font-weight: 700;
   font-family: var(--font-mono);
   text-align: center;
-  min-width: 44px;
 
   &.method-get    { background: var(--accent-muted);  color: var(--accent); }
   &.method-post   { background: var(--success-muted); color: var(--success); }
@@ -355,7 +411,7 @@ function clearHistory() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 3rem;
+  width: 52px;
   padding: 2px 0;
   border-radius: var(--radius-sm);
   font-size: 11px;
@@ -369,22 +425,33 @@ function clearHistory() {
   &.status-err { background: var(--error-muted);   color: var(--error); }
 }
 
+.pending-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.hist-row.pending .hist-latency {
+  color: var(--accent);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.85); }
+  50%      { opacity: 1;   transform: scale(1); }
+}
+
 .hist-url {
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .hist-source {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-tertiary);
-  padding: 2px 8px;
-  background: var(--bg-tertiary);
-  border-radius: 10px;
-  white-space: nowrap;
 }
 
 .hist-latency { font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); }

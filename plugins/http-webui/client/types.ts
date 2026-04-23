@@ -1,9 +1,17 @@
-export type BodyType = 'none' | 'json' | 'xml' | 'formdata' | 'urlencoded'
+export type BodyType = 'none' | 'json' | 'xml' | 'formdata' | 'urlencoded' | 'eventstream'
 
 export interface KvRow {
   enabled: boolean
   key: string
   value: string
+}
+
+export interface SseEvent {
+  event?: string
+  id?: string
+  retry?: number
+  data: string
+  ts: number
 }
 
 export interface TabState {
@@ -14,6 +22,7 @@ export interface TabState {
   body: string
   bodyType: BodyType
   formBody: KvRow[]
+  events: SseEvent[]
 }
 
 export interface SavedRequest {
@@ -49,6 +58,7 @@ export function emptyTabState(): TabState {
     body: '',
     bodyType: 'none',
     formBody: [emptyKvRow()],
+    events: [],
   }
 }
 

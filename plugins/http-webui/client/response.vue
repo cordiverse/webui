@@ -2,19 +2,25 @@
   <div class="response-root">
     <div class="panel-header">
       <div class="response-status" v-if="response">
-        <span class="status-code" :class="statusClass(response.status)">
-          {{ response.status ? response.status + ' ' + response.statusText : 'Error' }}
+        <span
+          class="status-code"
+          :class="statusClass(response.status)"
+          :title="response.status ? response.statusText : 'Error'"
+        >
+          {{ response.status || 'Error' }}
         </span>
         <div class="response-meta">
           <span>{{ response.latency }}ms</span>
           <span>{{ formatSize(response.size) }}</span>
-          <span v-if="response.headers['content-type']">
+          <span
+            v-if="response.headers['content-type']"
+            class="meta-truncate"
+            :title="response.headers['content-type']"
+          >
             {{ shortContentType(response.headers['content-type']) }}
           </span>
         </div>
       </div>
-
-      <div style="flex: 1"></div>
 
       <div class="panel-tabs" v-if="response">
         <span
@@ -49,10 +55,14 @@
 
     <template v-else>
       <div
-        v-if="response.error && !response.body && !response.objectUrl"
+        v-if="response.error && !response.body && !response.objectUrl && !response.events?.length"
         class="panel-content response-content"
       >
         <div class="response-error">{{ response.error }}</div>
+      </div>
+      <div v-else-if="isEventStream" class="response-sse">
+        <sse-events-table :events="response.events ?? []"/>
+        <div v-if="response.error" class="response-error">{{ response.error }}</div>
       </div>
       <div v-else-if="isText" class="panel-content response-content">
         <pre>{{ formattedBody }}<span v-if="streaming" class="stream-cursor">▍</span></pre>
@@ -104,6 +114,8 @@
 <script lang="ts" setup>
 
 import { computed, ref } from 'vue'
+import SseEventsTable from './sse-events-table.vue'
+import type { SseEvent } from './types'
 
 export interface ResponseData {
   status: number
@@ -111,6 +123,7 @@ export interface ResponseData {
   headers: Record<string, string>
   body: string
   objectUrl?: string
+  events?: SseEvent[]
   latency: number
   size: number
   error?: string
@@ -146,6 +159,7 @@ const isText = computed(() => isTextContentType(contentType.value))
 const isImage = computed(() => contentType.value.startsWith('image/'))
 const isAudio = computed(() => contentType.value.startsWith('audio/'))
 const isVideo = computed(() => contentType.value.startsWith('video/'))
+const isEventStream = computed(() => contentType.value === 'text/event-stream')
 
 const formattedBody = computed(() => {
   if (!props.response?.body) return ''
@@ -164,14 +178,42 @@ function statusClass(status: number) {
 }
 
 function formatSize(bytes: number) {
-  if (!bytes) return '0 B'
-  if (bytes < 1024) return bytes + ' B'
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+  if (!bytes) return '0B'
+  if (bytes < 1024) return bytes + 'B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + 'KB'
+  return (bytes / (1024 * 1024)).toFixed(1) + 'MB'
 }
 
 function shortContentType(type: string) {
-  return type.split(';')[0].trim()
+  const raw = type.split(';')[0].trim().toLowerCase()
+  if (!raw) return ''
+  const map: Record<string, string> = {
+    'application/json': 'JSON',
+    'application/xml': 'XML',
+    'application/javascript': 'JavaScript',
+    'application/x-javascript': 'JavaScript',
+    'application/pdf': 'PDF',
+    'application/octet-stream': 'Binary',
+    'application/x-www-form-urlencoded': 'Form',
+    'application/yaml': 'YAML',
+    'application/x-yaml': 'YAML',
+    'text/event-stream': 'EventStream',
+    'text/plain': 'Text',
+    'text/html': 'HTML',
+    'text/css': 'CSS',
+    'text/javascript': 'JavaScript',
+    'text/xml': 'XML',
+    'text/csv': 'CSV',
+    'text/markdown': 'Markdown',
+  }
+  if (map[raw]) return map[raw]
+  if (raw.endsWith('+json')) return 'JSON'
+  if (raw.endsWith('+xml')) return 'XML'
+  const [cat, sub] = raw.split('/')
+  if (cat === 'image' || cat === 'audio' || cat === 'video') {
+    return sub ? sub.toUpperCase() : cat[0].toUpperCase() + cat.slice(1)
+  }
+  return raw
 }
 
 </script>
@@ -191,7 +233,7 @@ function shortContentType(type: string) {
   align-items: stretch;
   gap: 8px;
   padding: 0 16px;
-  height: 40px;
+  height: 36px;
   border-bottom: 1px solid var(--border-primary);
   background: var(--bg-secondary);
 
@@ -244,6 +286,8 @@ function shortContentType(type: string) {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .response-meta {
@@ -252,6 +296,19 @@ function shortContentType(type: string) {
   display: flex;
   gap: 12px;
   font-family: var(--font-mono);
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  white-space: nowrap;
+
+  > span { flex-shrink: 0; }
+
+  > span.meta-truncate {
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 .status-code {
@@ -261,6 +318,7 @@ function shortContentType(type: string) {
   font-size: 12px;
   font-weight: 600;
   font-family: var(--font-mono);
+  flex-shrink: 0;
 
   &.status-2xx { background: var(--success-muted); color: var(--success); }
   &.status-3xx { background: var(--accent-muted);  color: var(--accent); }
@@ -293,6 +351,19 @@ function shortContentType(type: string) {
   padding: 16px;
   background: var(--bg-tertiary);
   overflow: auto;
+}
+
+.response-sse {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--bg-tertiary);
+
+  .response-error {
+    padding: 12px 16px;
+    color: var(--error);
+    white-space: pre-wrap;
+  }
 }
 
 .response-image {

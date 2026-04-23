@@ -30,6 +30,7 @@
 import { computed, onBeforeUnmount, ref } from 'vue'
 import Request from './request.vue'
 import Response, { type ResponseData } from './response.vue'
+import { createSseParser, encodeEvent } from './sse'
 import type { BodyType, KvRow, TabState } from './types'
 
 defineEmits<{
@@ -79,6 +80,7 @@ function contentTypeFor(type: BodyType): string | undefined {
     case 'json': return 'application/json'
     case 'xml': return 'application/xml'
     case 'urlencoded': return 'application/x-www-form-urlencoded'
+    case 'eventstream': return 'text/event-stream'
     default: return undefined
   }
 }
@@ -103,6 +105,14 @@ function buildBodyPayload(): BodyInit | undefined {
         if (row.enabled && row.key) params.append(row.key, row.value)
       }
       return params
+    }
+    case 'eventstream': {
+      if (!props.state.events.length) return undefined
+      const now = Date.now()
+      for (const ev of props.state.events) {
+        if (!ev.ts) ev.ts = now
+      }
+      return props.state.events.map(encodeEvent).join('')
     }
   }
 }
@@ -160,6 +170,9 @@ async function sendRequest() {
       latency: ttfb,
       size: 0,
     }
+    if (resType === 'text/event-stream') {
+      response.value.events = []
+    }
 
     if (res.body) {
       streaming.value = true
@@ -167,7 +180,31 @@ async function sendRequest() {
       let size = 0
 
       try {
-        if (textLike) {
+        if (resType === 'text/event-stream') {
+          const decoder = new TextDecoder('utf-8', { fatal: false })
+          const parser = createSseParser((ev) => {
+            response.value?.events?.push(ev)
+          })
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            size += value.byteLength
+            const chunk = decoder.decode(value, { stream: true })
+            if (response.value) {
+              response.value.size = size
+              if (chunk) {
+                response.value.body += chunk
+                parser.push(chunk)
+              }
+            }
+          }
+          const tail = decoder.decode()
+          if (tail && response.value) {
+            response.value.body += tail
+            parser.push(tail)
+          }
+          parser.flush()
+        } else if (textLike) {
           const decoder = new TextDecoder('utf-8', { fatal: false })
           while (true) {
             const { done, value } = await reader.read()

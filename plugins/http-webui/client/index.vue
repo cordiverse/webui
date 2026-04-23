@@ -121,10 +121,18 @@ function saveTooltip(tab: OpenTab) {
 
 // --- initial load ---
 
+function normalizeState(state: any) {
+  if (!Array.isArray(state.events)) state.events = []
+  // ts is runtime-only (indicates "was sent in this session"); wipe on load
+  for (const ev of state.events) ev.ts = 0
+}
+
 const persisted = storage.load()
 if (persisted) {
   saved.value = persisted.saved ?? []
   tabs.value = persisted.tabs ?? []
+  for (const item of saved.value) normalizeState(item.state)
+  for (const tab of tabs.value) normalizeState(tab.state)
   activeId.value = persisted.activeId ?? 'history'
   // validate activeId
   if (activeId.value !== 'history' && !tabs.value.some(t => t.id === activeId.value)) {

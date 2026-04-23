@@ -12,12 +12,13 @@ declare module '@cordisjs/plugin-webui' {
 
 export interface HistoryEntry {
   id: number
-  ts: number
+  ts: number               // request start time (Date.now())
+  endTs?: number           // request end time; undefined → still live
   method: string
   url: string
-  status: number
+  status: number           // 0 while pending
   statusText: string
-  latency: number
+  duration: number         // ms; updated live while pending
   size: number
   source?: string
   requestHeaders: Dict<string>
@@ -74,76 +75,88 @@ export function apply(ctx: Context, config: Config) {
     prod: '../dist/manifest.json',
   }, data)
 
-  function push(entryData: HistoryEntry) {
-    history.push(entryData)
+  function pushRecord(record: HistoryEntry) {
+    history.push(record)
     while (history.length > config.historyLimit) history.shift()
     entry.refresh()
   }
 
   ctx.on('http/fetch', async function (this: HTTP, url, init, httpConfig, next) {
-    const start = performance.now()
+    const startPerf = performance.now()
     const method = String(init.method ?? 'GET').toUpperCase()
     const requestHeaders = headersToDict(init.headers as any)
     const fiber = this?.ctx?.fiber
     const source = fiber ? ctx.get('loader')?.locate(fiber) : undefined
 
-    const id = ++nextId
-    const ts = Date.now()
+    const record: HistoryEntry = {
+      id: ++nextId,
+      ts: Date.now(),
+      method,
+      url: url.toString(),
+      status: 0,
+      statusText: 'Pending',
+      duration: 0,
+      size: 0,
+      source,
+      requestHeaders,
+      responseHeaders: {},
+    }
+    pushRecord(record)
+
+    // throttled patch: size updates can be very frequent during streaming
+    let lastRefresh = 0
+    function throttledRefresh() {
+      const now = performance.now()
+      if (now - lastRefresh < 100) return
+      lastRefresh = now
+      entry.refresh()
+    }
+
+    function finalize() {
+      record.endTs = Date.now()
+      record.duration = Math.round(performance.now() - startPerf)
+      entry.refresh()
+    }
 
     try {
       const response = await next()
-      const latency = Math.round(performance.now() - start)
-      const record: HistoryEntry = {
-        id,
-        ts,
-        method,
-        url: url.toString(),
+      record.status = response.status
+      record.statusText = response.statusText
+      record.responseHeaders = headersToDict(response.headers)
+      record.duration = Math.round(performance.now() - startPerf)
+      const declaredSize = parseSize(response.headers)
+      if (declaredSize) record.size = declaredSize
+      entry.refresh()
+
+      if (!response.body) {
+        finalize()
+        return response
+      }
+
+      let total = 0
+      const counter = new TransformStream<Uint8Array, Uint8Array>({
+        transform(chunk, controller) {
+          total += chunk.byteLength
+          record.size = total
+          record.duration = Math.round(performance.now() - startPerf)
+          throttledRefresh()
+          controller.enqueue(chunk)
+        },
+        flush() {
+          if (total) record.size = total
+          finalize()
+        },
+      })
+      return new Response(response.body.pipeThrough(counter), {
         status: response.status,
         statusText: response.statusText,
-        latency,
-        size: parseSize(response.headers),
-        source,
-        requestHeaders,
-        responseHeaders: headersToDict(response.headers),
-      }
-      push(record)
-
-      if (!record.size && response.body) {
-        let total = 0
-        const counter = new TransformStream<Uint8Array, Uint8Array>({
-          transform(chunk, controller) {
-            total += chunk.byteLength
-            controller.enqueue(chunk)
-          },
-          flush() {
-            record.size = total
-            entry.refresh()
-          },
-        })
-        return new Response(response.body.pipeThrough(counter), {
-          status: response.status,
-          statusText: response.statusText,
-          headers: response.headers,
-        })
-      }
-
-      return response
-    } catch (e: any) {
-      const latency = Math.round(performance.now() - start)
-      push({
-        id,
-        ts,
-        method,
-        url: url.toString(),
-        status: 0,
-        statusText: 'Error',
-        latency,
-        size: 0,
-        source,
-        requestHeaders,
-        responseHeaders: {},
-        error: String(e?.message ?? e),
+        headers: response.headers,
       })
+    } catch (e: any) {
+      record.status = 0
+      record.statusText = 'Error'
+      record.error = String(e?.message ?? e)
+      finalize()
       throw e
     }
   }, { global: true })

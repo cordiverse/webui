@@ -2,6 +2,7 @@ import { Context } from 'cordis'
 import { Dict } from 'cosmokit'
 import type { HTTP } from '@cordisjs/plugin-http'
 import type {} from '@cordisjs/plugin-webui'
+import type {} from '@cordisjs/plugin-server-proxy'
 import type { WebSocket as UndiciWebSocket } from 'undici'
 import z from 'schemastery'
 
@@ -33,6 +34,7 @@ export interface HistoryEntry {
 export interface Data {
   history: HistoryEntry[]
   limit: number
+  proxyBaseUrl: string
 }
 
 export const name = 'http-webui'
@@ -45,7 +47,7 @@ export const Config: z<Config> = z.object({
   historyLimit: z.natural().default(500).description('请求历史的最大条数。'),
 })
 
-export const inject = ['http', 'webui']
+export const inject = ['http', 'webui', 'server.proxy']
 
 function headersToDict(headers: HeadersInit | Dict<string> | undefined): Dict<string> {
   const result: Dict<string> = {}
@@ -86,7 +88,11 @@ export function apply(ctx: Context, config: Config) {
   const history: HistoryEntry[] = []
   let nextId = 0
 
-  const data = (): Data => ({ history, limit: config.historyLimit })
+  const data = (): Data => ({
+    history,
+    limit: config.historyLimit,
+    proxyBaseUrl: ctx.get('server.proxy')!.baseUrl,
+  })
 
   const entry = ctx.webui.addEntry<Data>({
     path: '@cordisjs/plugin-http-webui/dist',

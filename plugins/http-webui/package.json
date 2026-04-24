@@ -46,18 +46,21 @@
     "service": {
       "required": [
         "http",
-        "webui"
+        "webui",
+        "server.proxy"
       ]
     }
   },
   "peerDependencies": {
     "@cordisjs/plugin-http": "^1.4.0",
+    "@cordisjs/plugin-server-proxy": "^1.1.0",
     "@cordisjs/plugin-webui": "^0.4.2",
     "cordis": "^4.0.0-rc.3"
   },
   "devDependencies": {
     "@cordisjs/client": "^0.4.2",
     "@cordisjs/plugin-http": "^1.4.0",
+    "@cordisjs/plugin-server-proxy": "^1.1.0",
     "@cordisjs/plugin-webui": "^0.4.2",
     "cordis": "^4.0.0-rc.3"
   },

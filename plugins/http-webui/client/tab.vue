@@ -58,11 +58,16 @@
 <script lang="ts" setup>
 
 import { computed, onBeforeUnmount, ref } from 'vue'
+import { useRpc } from '@cordisjs/client'
 import Request from './request.vue'
 import Response, { type ResponseData } from './response.vue'
 import WsPanel from './ws-panel.vue'
 import { createSseParser, encodeEvent } from './sse'
+import type { Data } from '../src'
 import type { BodyType, TabState } from './types'
+
+const rpcData = useRpc<Data>()
+const proxyBaseUrl = computed(() => rpcData.value?.proxyBaseUrl ?? '')
 
 defineEmits<{
   (e: 'save'): void
@@ -197,7 +202,7 @@ async function sendRequest() {
       init.body = buildBodyPayload()
     }
 
-    const res = await fetch('/proxy/' + target.href, init)
+    const res = await fetch(proxyBaseUrl.value + '/' + target.href, init)
     const ttfb = Math.round(performance.now() - start)
     const resType = (res.headers.get('content-type') || '').split(';')[0].trim().toLowerCase()
     const textLike = isTextContentType(resType)
@@ -297,16 +302,11 @@ async function sendRequest() {
   }
 }
 
-// ---- WebSocket ----
-
 function buildWsProxyUrl(): string {
-  // resolve state.url as a URL (may be http/https/ws/wss), then rewrite to ws(s):// against window.location
   const target = buildTarget()
-  // The proxy endpoint on the current page uses the page's origin.
-  const page = new URL(window.location.href)
-  const wsProto = page.protocol === 'https:' ? 'wss:' : 'ws:'
-  const prefix = `${wsProto}//${page.host}/proxy/`
-  return prefix + target.href
+  // convert proxy baseUrl's http(s):// → ws(s)://
+  const base = proxyBaseUrl.value.replace(/^http/, 'ws')
+  return base + '/' + target.href
 }
 
 function primaryAction() {

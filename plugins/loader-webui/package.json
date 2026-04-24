@@ -63,7 +63,7 @@
   },
   "devDependencies": {
     "@cordisjs/client": "^0.4.3",
-    "@cordisjs/plugin-hmr": "^1.0.10",
+    "@cordisjs/plugin-hmr": "^1.0.11",
     "@cordisjs/plugin-loader": "^1.0.0-rc.2",
     "@cordisjs/plugin-timer": "^1.1.1",
     "@cordisjs/plugin-webui": "^0.4.3",

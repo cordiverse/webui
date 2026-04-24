@@ -38,7 +38,6 @@ export interface ClientConfig {
   endpoint: string
   static?: boolean
   heartbeat?: HeartbeatConfig
-  proxyBase?: string
   plugins?: EntryOptions[]
 }
 
@@ -78,8 +77,6 @@ class NodeWebUI extends WebUI {
     global.uiPath = uiPath
     global.heartbeat = heartbeat
     global.endpoint = selfUrl + apiPath
-    const proxy = this.ctx.get('server.proxy')
-    if (proxy) global.proxyBase = proxy.config.path + '/'
     return global
   }
 
@@ -88,7 +85,7 @@ class NodeWebUI extends WebUI {
     this.serveAssets()
 
     this.ctx.on('server/ready', () => {
-      const target = this.ctx.server.selfUrl + this.config.uiPath
+      const target = this.ctx.server.baseUrl + this.config.uiPath
       const loader = this.ctx.get('loader')
       if (this.config.open && !loader?.envData.clientCount && !process.env.CORDIS_AGENT) {
         open(target)

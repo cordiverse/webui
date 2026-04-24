@@ -1,15 +1,6 @@
 <template>
   <slot name="header" v-bind="{ all, packages, hasFilter: hasFilter(modelValue) }"></slot>
   <template v-if="packages.length">
-    <el-pagination
-      class="pagination"
-      background
-      v-model:current-page="page"
-      :pager-count="5"
-      :page-size="limit"
-      :total="packages.length"
-      layout="prev, pager, next"
-    />
     <div class="package-list">
       <market-package
         v-for="data in pages[page - 1]"
@@ -23,15 +14,6 @@
         <slot name="action" v-bind="data"></slot>
       </market-package>
     </div>
-    <el-pagination
-      class="pagination"
-      background
-      v-model:current-page="page"
-      :pager-count="5"
-      :page-size="limit"
-      :total="packages.length"
-      layout="prev, pager, next"
-    />
   </template>
   <k-empty v-else>
     没有搜索到相关插件。
@@ -50,6 +32,7 @@ const props = defineProps<{
   data: SearchObject[],
   installed?: (data: SearchObject) => boolean,
   gravatar?: string,
+  page?: number,
 }>()
 
 const emit = defineEmits(['update:modelValue', 'update:page'])
@@ -70,9 +53,19 @@ const limit = computed(() => {
   return 24
 })
 
-const page = ref(1)
+const internalPage = ref(1)
+const page = computed({
+  get: () => props.page ?? internalPage.value,
+  set: (v) => {
+    internalPage.value = v
+    emit('update:page', v)
+  },
+})
 
-watch(page, (page) => emit('update:page', page))
+// Reset to page 1 when search/filter changes (total may shrink below current page)
+watch(() => packages.value.length, () => {
+  if (page.value > pages.value.length) page.value = 1
+})
 
 const pages = computed(() => {
   const result: SearchObject[][] = []
@@ -80,6 +73,11 @@ const pages = computed(() => {
     result.push(packages.value.slice(i, i + limit.value))
   }
   return result
+})
+
+defineExpose({
+  total: computed(() => packages.value.length),
+  limit,
 })
 
 function onQuery(word: string) {
@@ -99,12 +97,6 @@ function onQuery(word: string) {
   grid-template-columns: repeat(auto-fill, minmax(336px, 1fr));
   gap: var(--card-margin);
   justify-items: center;
-  flex: 1 0 auto;
-}
-
-.pagination {
-  margin: var(--card-margin) 0;
-  justify-content: center;
 }
 
 .k-empty {

@@ -108,7 +108,7 @@ function getSimRating(data: SearchObject, words: string[]) {
 
 export const comparators: Dict<Comparator> = {
   default: {
-    icon: 'solid:all',
+    icon: 'balance',
     compare: (a, b, words) => getSimRating(b, words) - getSimRating(a, words),
   },
   rating: {

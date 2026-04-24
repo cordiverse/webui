@@ -1,0 +1,68 @@
+{
+  "name": "@cordisjs/plugin-server-webui",
+  "description": "WebUI for @cordisjs/plugin-server",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./src/*": "./src/*",
+    "./client": "./client/index.ts",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "dist"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint src --ext .ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cordiverse/webui.git",
+    "directory": "plugins/server-webui"
+  },
+  "bugs": {
+    "url": "https://github.com/cordiverse/webui/issues"
+  },
+  "keywords": [
+    "cordis",
+    "plugin",
+    "server",
+    "webui"
+  ],
+  "cordis": {
+    "public": [
+      "dist"
+    ],
+    "description": {
+      "en": "Inspect server routes and incoming requests in the webui console",
+      "zh": "在网页控制台中查看服务器路由和请求流量"
+    },
+    "service": {
+      "required": [
+        "server",
+        "webui"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "@cordisjs/plugin-server": "^1.3.0",
+    "@cordisjs/plugin-webui": "^0.4.2",
+    "cordis": "^4.0.0-rc.3"
+  },
+  "devDependencies": {
+    "@cordisjs/client": "^0.4.2",
+    "@cordisjs/plugin-server": "^1.3.0",
+    "@cordisjs/plugin-webui": "^0.4.2",
+    "cordis": "^4.0.0-rc.3"
+  },
+  "dependencies": {
+    "cosmokit": "^1.8.1",
+    "schemastery": "^3.18.0"
+  }
+}

@@ -96,9 +96,9 @@ class NodeWebUI extends WebUI {
 
   addListener<K extends keyof Events>(event: K, callback: Events[K]) {
     this.ctx.server.post(`${this.config.apiPath}/${event}`, async (req, res, next) => {
-      const body = await req.json()
+      const args = await req.json() as any[]
       try {
-        res.body = JSON.stringify(await (callback as any)(body) ?? {})
+        res.body = JSON.stringify(await (callback as any)(...args) ?? {})
         res.headers.set('content-type', 'application/json; charset=utf-8')
         res.status = 200
       } catch (error) {

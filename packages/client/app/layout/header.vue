@@ -44,7 +44,7 @@ const route = useRoute()
       color: var(--accent);
     }
 
-    &.spin {
+    &.spin .menu-icon {
       animation: spin 1s linear infinite;
     }
 

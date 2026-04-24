@@ -22,7 +22,7 @@ export async function send(type: string, ...args: any[]) {
   console.debug('[request]', type, ...args)
   const response = await fetch(`${global.endpoint}/${type}`, {
     method: 'POST',
-    body: JSON.stringify(args[0]),
+    body: JSON.stringify(args),
     headers: new Headers({
       'content-type': 'application/json',
       'x-client-id': clientId.value ?? '',

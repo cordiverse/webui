@@ -14,8 +14,16 @@ declare module '@cordisjs/plugin-webui' {
     'market/refresh'(): Promise<void>
     'market/install'(deps: Dict<string | null>, forced?: boolean): Promise<number>
     'market/registry'(names: string[]): Promise<Dict<Dict<Pick<RemotePackage, DependencyMetaKey>>>>
+    'market/describe'(name: string): Promise<DescribeResult | null>
     'market/dependency/list'(): Promise<Dict<Dependency>>
   }
+}
+
+export interface DescribeResult {
+  name: string
+  latest: string
+  description?: string
+  versions: string[]
 }
 
 export interface Data {
@@ -95,6 +103,25 @@ export function apply(ctx: Context, config: Config) {
 
     ctx.webui.addListener('market/dependency/list', async () => {
       return ctx.installer.getDeps()
+    })
+
+    ctx.webui.addListener('market/describe', async (name) => {
+      try {
+        const registry = await ctx.http.get<any>(`${ctx.installer.endpoint}/${name}`, {
+          timeout: config.registry?.timeout ?? config.timeout,
+        })
+        const latest = registry['dist-tags']?.latest
+        if (!latest) return null
+        return {
+          name: registry.name,
+          latest,
+          description: registry.description,
+          versions: Object.keys(registry.versions ?? {}).reverse(),
+        }
+      } catch (error: any) {
+        ctx.logger.warn('describe %c: %s', name, error?.message ?? error)
+        return null
+      }
     })
   })
 }

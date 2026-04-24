@@ -504,12 +504,11 @@ export default class Manager extends Service {
     })
   }
 
-  ensure(name: string, passive?: boolean) {
+  async ensure(name: string, passive?: boolean) {
     const forks = this.plugins.value.forks[name]
     if (!forks?.length) {
-      const key = Math.random().toString(36).slice(2, 8)
-      send('manager.config.create', { name, disabled: true })
-      if (!passive) this.ctx.client.router.router.push('/plugins/' + key)
+      const id = await send('manager.config.create', { name, disabled: true })
+      if (!passive) this.ctx.client.router.router.push('/plugins/' + id)
     } else if (forks.length === 1) {
       if (!passive) this.ctx.client.router.router.push('/plugins/' + forks[0])
     } else {

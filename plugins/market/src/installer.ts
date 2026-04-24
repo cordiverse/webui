@@ -2,6 +2,7 @@ import { Context, Inject, Service } from 'cordis'
 import { Dict, Time, valueMap } from 'cosmokit'
 import type {} from '@cordisjs/plugin-http'
 import type { PackageJson, Registry, RemotePackage } from '@cordisjs/registry'
+import { LocalScanner } from '@cordisjs/registry'
 import { readFile, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
@@ -119,6 +120,29 @@ class Installer extends Service {
         result[name].invalid = true
       }
     }
+
+    // Also include cordis plugins discovered in workspaces / node_modules
+    // that aren't listed in the top-level manifest dependencies. In monorepo
+    // setups the root package.json is often empty, so without this step the
+    // UI would report "0 installed" even though every plugin ships as a
+    // workspace package.
+    try {
+      const baseDir = fileURLToPath(this.ctx.baseUrl!)
+      const scanner = new LocalScanner(baseDir)
+      const objects = await scanner.collect()
+      for (const object of objects) {
+        const name = object.package.name
+        if (result[name]) continue
+        result[name] = {
+          request: object.package.version ?? '*',
+          resolved: object.package.version,
+          workspace: object.workspace,
+        }
+      }
+    } catch (error: any) {
+      this.ctx.logger.debug('local scan failed: %s', error?.message ?? error)
+    }
+
     return result
   }
 

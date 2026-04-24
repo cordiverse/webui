@@ -9,6 +9,15 @@
 
     <template #menu>
       <span
+        v-if="pendingCount"
+        class="menu-item apply-btn"
+        @click="showConfirm = true"
+        title="应用暂存的变更"
+      >
+        <span class="apply-text">应用</span>
+        <span class="apply-count">{{ pendingCount }}</span>
+      </span>
+      <span
         class="menu-item refresh-btn"
         :class="{ spin: market?.loading, 'just-refreshed': justRefreshed }"
         @click="refresh"
@@ -69,6 +78,10 @@
         />
       </div>
     </div>
+
+    <detail-dialog/>
+    <confirm-dialog/>
+    <manual-dialog/>
   </k-layout>
 </template>
 
@@ -79,16 +92,35 @@ import { message, send, useRpc } from '@cordisjs/client'
 import { MarketSearch, MarketFilter, MarketList, getFiltered, hasFilter, kConfig } from '@cordisjs/market'
 import type { Data } from '../src'
 import ActionButton from './action.vue'
+import DetailDialog from './detail.vue'
+import ConfirmDialog from './confirm.vue'
+import ManualDialog from './manual.vue'
+import { kActivePackage, kPackagesMap, kDependencies, kRefresh, kShowConfirm, kShowManual } from './context'
+import { activePackage, showConfirm, showManual, storage } from './store'
 
 const data = useRpc<Data>()
 
 const market = computed(() => data.value?.market)
 const deps = computed(() => data.value?.dependencies ?? {})
 const packages = computed(() => Object.values(market.value?.data ?? {}))
+const packagesMap = computed(() => market.value?.data ?? {})
 const packageCount = computed(() => packages.value.length)
 
 const words = ref<string[]>([''])
 const pending = ref(new Set<string>())
+
+const pendingCount = computed(() => Object.keys(storage.value.override).length)
+
+function requestRefresh() {
+  send('market/refresh')
+}
+
+provide(kActivePackage, activePackage)
+provide(kPackagesMap, packagesMap)
+provide(kDependencies, deps)
+provide(kRefresh, requestRefresh)
+provide(kShowConfirm, showConfirm)
+provide(kShowManual, showManual)
 
 const filterActive = computed(() => hasFilter(words.value))
 const filteredCount = computed(() => filterActive.value ? getFiltered(packages.value, words.value).length : 0)
@@ -271,6 +303,30 @@ nextTick(setupFocusTracking)
   &.just-refreshed .menu-icon.check {
     color: var(--success, #4ade80);
     animation: market-pop 0.4s ease;
+  }
+}
+
+.apply-btn {
+  width: auto !important;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent) !important;
+  font-size: 12px;
+  font-weight: 500;
+
+  .apply-count {
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 

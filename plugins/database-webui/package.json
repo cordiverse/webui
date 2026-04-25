@@ -1,0 +1,69 @@
+{
+  "name": "@cordisjs/plugin-database-webui",
+  "description": "WebUI for browsing minato tables",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./src/*": "./src/*",
+    "./client": "./client/index.ts",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "dist"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint src --ext .ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cordiverse/webui.git",
+    "directory": "plugins/database-webui"
+  },
+  "bugs": {
+    "url": "https://github.com/cordiverse/webui/issues"
+  },
+  "keywords": [
+    "cordis",
+    "plugin",
+    "database",
+    "minato",
+    "webui"
+  ],
+  "cordis": {
+    "public": [
+      "dist"
+    ],
+    "description": {
+      "en": "Browse and preview minato tables in the webui console",
+      "zh": "在网页控制台中浏览 minato 数据表"
+    },
+    "service": {
+      "required": [
+        "model",
+        "webui"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "@cordisjs/plugin-webui": "^0.4.2",
+    "cordis": "^4.0.0-rc.3",
+    "minato": "^4.0.0"
+  },
+  "devDependencies": {
+    "@cordisjs/client": "^0.4.2",
+    "@cordisjs/plugin-webui": "^0.4.2",
+    "cordis": "^4.0.0-rc.3",
+    "minato": "^4.0.0"
+  },
+  "dependencies": {
+    "cosmokit": "^1.8.1",
+    "schemastery": "^3.18.0"
+  }
+}

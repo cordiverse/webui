@@ -68,20 +68,21 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="req of filtered" :key="req.id">
+          <tr v-for="req of filtered" :key="req.id" :class="{ pending: !req.endTime }">
             <td>
               <span class="method-badge" :class="methodClass(req.method)">{{ req.method }}</span>
             </td>
             <td>
-              <span class="status-code" :class="statusClass(req.status)">{{ req.status || 'ERR' }}</span>
+              <span v-if="!req.endTime && !req.status" class="pending-dot"></span>
+              <span v-else class="status-code" :class="statusClass(req.status)">{{ req.status || 'ERR' }}</span>
             </td>
             <td class="cell-path text-left">{{ req.path }}</td>
             <td class="cell-remote text-left">{{ req.remote || '—' }}</td>
-            <td class="text-center">{{ formatDuration(req.latency) }}</td>
+            <td class="text-center">{{ displayDuration(req) }}</td>
             <td class="text-center">
               <size-pair :bytes-in="req.bytesIn || 0" :bytes-out="req.bytesOut || 0"/>
             </td>
-            <td class="text-center">{{ formatTime(req.ts) }}</td>
+            <td class="text-center">{{ formatTime(req.startTime) }}</td>
           </tr>
         </tbody>
       </table>
@@ -95,14 +96,24 @@
 
 <script lang="ts" setup>
 
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { send, useRpc } from '@cordisjs/client'
 import SizePair from './size-pair.vue'
-import type { Data } from '../src'
+import type { Data, ServerRequest } from '../src'
 import { formatDuration, formatTime, methodClass, statusClass } from './utils'
 
 const data = useRpc<Data>()
 const requests = computed(() => data.value?.requests ?? [])
+
+// Live "now" for ticking duration of pending WS connections
+const now = ref(Date.now())
+let tickHandle: number | undefined
+onMounted(() => {
+  tickHandle = window.setInterval(() => now.value = Date.now(), 500)
+})
+onBeforeUnmount(() => {
+  if (tickHandle) clearInterval(tickHandle)
+})
 
 const methodOptions = [
   { id: '', label: 'ALL' },
@@ -111,6 +122,7 @@ const methodOptions = [
   { id: 'PUT', label: 'PUT' },
   { id: 'DELETE', label: 'DEL' },
   { id: 'PATCH', label: 'PATCH' },
+  { id: 'WS', label: 'WS' },
 ]
 
 const activeMethod = ref('')
@@ -128,6 +140,11 @@ const filtered = computed(() => {
     return true
   })
 })
+
+function displayDuration(req: ServerRequest) {
+  const ms = req.endTime ? req.endTime - req.startTime : Math.max(0, now.value - req.startTime)
+  return formatDuration(ms)
+}
 
 function clearRequests() {
   send('server-webui.clear')
@@ -166,6 +183,7 @@ function clearRequests() {
   border-radius: var(--radius-sm);
   background: var(--bg-secondary);
   color: var(--text-secondary);
+  border: none;
   cursor: pointer;
   transition: var(--color-transition);
 
@@ -247,7 +265,9 @@ function clearRequests() {
   th {
     color: var(--text-tertiary);
     font-weight: 500;
-    font-size: 12px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
     background: var(--bg-secondary);
     position: sticky;
     top: 0;
@@ -310,6 +330,24 @@ function clearRequests() {
   &.status-4xx { background: var(--warning-muted); color: var(--warning); }
   &.status-5xx { background: var(--error-muted);   color: var(--error); }
   &.status-err { background: var(--error-muted);   color: var(--error); }
+}
+
+tr.pending td {
+  background: rgba(168, 85, 247, 0.04);
+}
+
+.pending-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pending-pulse 1s ease-in-out infinite;
+}
+
+@keyframes pending-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.85); }
+  50%      { opacity: 1;   transform: scale(1); }
 }
 
 .empty {

@@ -150,7 +150,9 @@ function pluginLabel(source?: string) {
   th {
     color: var(--text-tertiary);
     font-weight: 500;
-    font-size: 12px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
     background: var(--bg-secondary);
     position: sticky;
     top: 0;

@@ -24,11 +24,11 @@ export interface ServerRoute {
 
 export interface ServerRequest {
   id: number
-  ts: number
+  startTime: number
+  endTime?: number
   method: string
   path: string
   status: number
-  latency: number
   bytesIn?: number
   bytesOut?: number
   remote?: string
@@ -131,9 +131,10 @@ export function apply(ctx: Context, config: Config) {
     let errors = 0
     let totalLatency = 0
     for (const req of requests) {
-      if (req.ts < horizon) continue
+      if (req.startTime < horizon) continue
+      if (!req.endTime) continue
       count++
-      totalLatency += req.latency
+      totalLatency += req.endTime - req.startTime
       if (req.status >= 400 || req.status === 0) errors++
     }
     return {
@@ -160,10 +161,13 @@ export function apply(ctx: Context, config: Config) {
     requestLimit: config.requestLimit,
   }))
 
-  function pushRequest(req: ServerRequest, matchedKey?: string) {
+  function pushRequest(req: ServerRequest) {
     requests.push(req)
     while (requests.length > config.requestLimit) requests.shift()
+    entry.refresh()
+  }
 
+  function finalizeRequest(req: ServerRequest, matchedKey?: string) {
     if (matchedKey) {
       const existing = stats.get(matchedKey) ?? {
         id: matchedKey,
@@ -174,7 +178,7 @@ export function apply(ctx: Context, config: Config) {
         avgLatency: 0,
       } as ServerRoute
       existing.requests += 1
-      existing.totalLatency += req.latency
+      existing.totalLatency += (req.endTime ?? req.startTime) - req.startTime
       existing.avgLatency = Math.round(existing.totalLatency / existing.requests)
       existing.lastStatus = req.status
       stats.set(matchedKey, existing)
@@ -198,7 +202,6 @@ export function apply(ctx: Context, config: Config) {
   }
 
   ctx.on('server/request', async (req, res, next) => {
-    const start = performance.now()
     let matched: ReturnType<typeof findMatchedRoute>
     try {
       matched = findMatchedRoute(req)
@@ -207,10 +210,24 @@ export function apply(ctx: Context, config: Config) {
     const contentLength = (req as any)._req?.headers?.['content-length']
     const bytesIn = contentLength ? parseInt(contentLength, 10) || undefined : undefined
 
+    const reqEntry: ServerRequest = {
+      id: ++nextRequestId,
+      startTime: Date.now(),
+      method: req.method.toUpperCase(),
+      path: req.path,
+      status: 0,
+      bytesIn,
+      remote: (req as any).headers?.['x-forwarded-for']?.toString().split(',')[0]?.trim()
+        || (req as any)._req?.socket?.remoteAddress
+        || undefined,
+      route: matched?.path,
+      plugin: matched?.plugin,
+    }
+    pushRequest(reqEntry)
+
     try {
       await next()
     } finally {
-      const latency = Math.round(performance.now() - start)
       let bytesOut: number | undefined
       if (res.body) {
         if (typeof res.body === 'string') {
@@ -219,21 +236,74 @@ export function apply(ctx: Context, config: Config) {
           bytesOut = res.body.byteLength
         }
       }
-      pushRequest({
-        id: ++nextRequestId,
-        ts: Date.now(),
-        method: req.method.toUpperCase(),
-        path: req.path,
-        status: res.status ?? 0,
-        latency,
-        bytesIn,
-        bytesOut,
-        remote: (req as any).headers?.['x-forwarded-for']?.toString().split(',')[0]?.trim()
-          || (req as any)._req?.socket?.remoteAddress
-          || undefined,
-        route: matched?.path,
-        plugin: matched?.plugin,
-      }, matched?.key)
+      reqEntry.endTime = Date.now()
+      reqEntry.status = res.status ?? 0
+      reqEntry.bytesOut = bytesOut
+      finalizeRequest(reqEntry, matched?.key)
+    }
+  })
+
+  ctx.on('server/upgrade', async (req, next) => {
+    const start = Date.now()
+    let matched: { key: string, path: string, plugin?: string } | undefined
+    try {
+      for (const route of server.wsRoutes) {
+        if (!route.check(req)) continue
+        const interceptPath = route.config?.path || undefined
+        matched = {
+          key: routeKey('WS', route.path, interceptPath),
+          path: stringifyPath(route.path),
+          plugin: resolvePlugin(ctx, route),
+        }
+        break
+      }
+    } catch {}
+
+    const reqEntry: ServerRequest = {
+      id: ++nextRequestId,
+      startTime: start,
+      method: 'WS',
+      path: req.path,
+      status: 0,
+      remote: (req as any).headers?.['x-forwarded-for']?.toString().split(',')[0]?.trim()
+        || (req as any)._req?.socket?.remoteAddress
+        || undefined,
+      route: matched?.path,
+      plugin: matched?.plugin,
+    }
+    pushRequest(reqEntry)
+
+    try {
+      await next()
+      // If we reach here, the upgrade succeeded
+      reqEntry.status = 101
+      entry.refresh()
+
+      // Hook into the WebSocket close event to finalize duration
+      // We need to find the accepted connection - it's added to route.clients during accept()
+      if (matched) {
+        // Wait a tick for the connection to be added to route.clients
+        setImmediate(() => {
+          for (const route of server.wsRoutes) {
+            if (stringifyPath(route.path) !== matched.path) continue
+            // Find the most recently added client (the one we just accepted)
+            const clients = Array.from(route.clients)
+            const ws = clients[clients.length - 1]
+            if (!ws) continue
+            ws.once('close', () => {
+              reqEntry.endTime = Date.now()
+              finalizeRequest(reqEntry, matched.key)
+            })
+            break
+          }
+        })
+      }
+    } catch (error) {
+      // Upgrade failed
+      reqEntry.status = 500
+      reqEntry.endTime = Date.now()
+      finalizeRequest(reqEntry, matched?.key)
+      throw error
     }
   })
 

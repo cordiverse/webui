@@ -59,7 +59,7 @@
             v-for="entry of filtered"
             :key="entry.id"
             class="hist-row"
-            :class="{ active: selected?.id === entry.id, pending: !entry.endTs }"
+            :class="{ active: selected?.id === entry.id, pending: !entry.endTime }"
             @click="selected = entry"
             @contextmenu.stop="triggerHistoryMenu($event, entry)"
           >
@@ -68,7 +68,7 @@
             </td>
             <td>
               <span v-if="entry.status" class="status-code" :class="statusClass(entry.status)">{{ entry.status }}</span>
-              <span v-else-if="entry.endTs" class="status-code status-err">ERR</span>
+              <span v-else-if="entry.endTime" class="status-code status-err">ERR</span>
               <span v-else class="pending-dot"></span>
             </td>
             <td class="hist-url text-left">{{ entry.url }}</td>
@@ -77,7 +77,7 @@
             <td class="text-center hist-size">
               <size-pair :bytes-in="entry.bytesIn || 0" :bytes-out="entry.bytesOut || 0"/>
             </td>
-            <td class="text-center hist-time">{{ formatTime(entry.ts) }}</td>
+            <td class="text-center hist-time">{{ formatTime(entry.startTime) }}</td>
           </tr>
         </tbody>
       </table>
@@ -177,7 +177,7 @@ function formatDuration(ms: number) {
 }
 
 function displayDuration(entry: HistoryEntry) {
-  const ms = entry.endTs ? entry.duration : Math.max(0, now.value - entry.ts)
+  const ms = entry.endTime ? entry.endTime - entry.startTime : Math.max(0, now.value - entry.startTime)
   return formatDuration(ms)
 }
 

@@ -15,13 +15,12 @@ declare module '@cordisjs/plugin-webui' {
 export interface HistoryEntry {
   id: number
   kind: 'http' | 'ws'
-  ts: number               // request start time (Date.now())
-  endTs?: number           // request end time; undefined → still live
+  startTime: number        // request start time (Date.now())
+  endTime?: number         // request end time; undefined → still live
   method: string
   url: string
   status: number           // 0 while pending
   statusText: string
-  duration: number         // ms; updated live while pending
   bytesIn: number          // HTTP response body bytes / WS total recv bytes
   bytesOut: number         // HTTP request body bytes / WS total sent bytes
   source?: string
@@ -117,8 +116,7 @@ export function apply(ctx: Context, config: Config) {
     }
   }
 
-  ctx.on('http/fetch', async function (this: HTTP, url, init, httpConfig, next) {
-    const startPerf = performance.now()
+  ctx.on('http/fetch', async function (this: HTTP, url, init, _httpConfig, next) {
     const method = String(init.method ?? 'GET').toUpperCase()
     const requestHeaders = headersToDict(init.headers as any)
     const fiber = this?.ctx?.fiber
@@ -127,12 +125,11 @@ export function apply(ctx: Context, config: Config) {
     const record: HistoryEntry = {
       id: ++nextId,
       kind: 'http',
-      ts: Date.now(),
+      startTime: Date.now(),
       method,
       url: url.toString(),
       status: 0,
       statusText: 'Pending',
-      duration: 0,
       bytesIn: 0,
       bytesOut: sizeOfSent(init.body),
       source,
@@ -144,8 +141,7 @@ export function apply(ctx: Context, config: Config) {
     const throttledRefresh = makeThrottledRefresh()
 
     function finalize() {
-      record.endTs = Date.now()
-      record.duration = Math.round(performance.now() - startPerf)
+      record.endTime = Date.now()
       entry.refresh()
     }
 
@@ -154,7 +150,6 @@ export function apply(ctx: Context, config: Config) {
       record.status = response.status
       record.statusText = response.statusText
       record.responseHeaders = headersToDict(response.headers)
-      record.duration = Math.round(performance.now() - startPerf)
       const declaredSize = parseSize(response.headers)
       if (declaredSize) record.bytesIn = declaredSize
       entry.refresh()
@@ -169,7 +164,6 @@ export function apply(ctx: Context, config: Config) {
         transform(chunk, controller) {
           total += chunk.byteLength
           record.bytesIn = total
-          record.duration = Math.round(performance.now() - startPerf)
           throttledRefresh()
           controller.enqueue(chunk)
         },
@@ -193,7 +187,6 @@ export function apply(ctx: Context, config: Config) {
   }, { global: true })
 
   ctx.on('http/websocket', function (this: HTTP, url, init, _config, next) {
-    const startPerf = performance.now()
     const requestHeaders = headersToDict(init.headers as any)
     const fiber = this?.ctx?.fiber
     const source = fiber ? ctx.get('loader')?.locate(fiber) : undefined
@@ -201,12 +194,11 @@ export function apply(ctx: Context, config: Config) {
     const record: HistoryEntry = {
       id: ++nextId,
       kind: 'ws',
-      ts: Date.now(),
+      startTime: Date.now(),
       method: 'WS',
       url: url.toString(),
       status: 0,
       statusText: 'Connecting',
-      duration: 0,
       bytesIn: 0,
       bytesOut: 0,
       source,
@@ -221,14 +213,12 @@ export function apply(ctx: Context, config: Config) {
     const originalSend = socket.send.bind(socket)
     socket.send = function (this: UndiciWebSocket, ...args: any[]) {
       record.bytesOut += sizeOfSent(args[0])
-      record.duration = Math.round(performance.now() - startPerf)
       throttledRefresh()
       return (originalSend as any)(...args)
     } as typeof socket.send
 
     socket.addEventListener('message', (event) => {
       record.bytesIn += sizeOfRecv(event.data)
-      record.duration = Math.round(performance.now() - startPerf)
       throttledRefresh()
     })
 
@@ -236,21 +226,17 @@ export function apply(ctx: Context, config: Config) {
       record.status = 101
       record.statusText = 'Switching Protocols'
       record.wsStatus = 'open'
-      record.duration = Math.round(performance.now() - startPerf)
       entry.refresh()
     })
 
     socket.addEventListener('close', (event) => {
-      record.endTs = Date.now()
-      record.duration = Math.round(performance.now() - startPerf)
+      record.endTime = Date.now()
       if (record.wsStatus === 'connecting') {
         record.wsStatus = 'error'
         record.error = event.reason || 'Connection failed'
       } else {
         record.wsStatus = 'closed'
       }
-      record.status = event.code || (record.status || 1006)
-      record.statusText = event.reason || record.statusText
       entry.refresh()
     })
 

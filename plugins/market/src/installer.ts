@@ -1,12 +1,12 @@
 import { Context, Inject, Service } from 'cordis'
 import { Dict, Time, valueMap } from 'cosmokit'
 import type {} from '@cordisjs/plugin-http'
-import type { PackageJson, Registry, RemotePackage } from '@cordisjs/registry'
-import { LocalScanner } from '@cordisjs/registry'
-import { readFile, writeFile } from 'node:fs/promises'
+import type { PackageJson, Registry, RemotePackage } from './types.ts'
+import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
 import { spawn } from 'node:child_process'
+import { dirname, join } from 'node:path'
 import { compare, satisfies, valid } from 'semver'
 import which from 'which-pm-runs'
 import z from 'schemastery'
@@ -28,6 +28,30 @@ export interface Dependency {
 interface LocalPackage extends PackageJson {
   private?: boolean
   $workspace?: boolean
+}
+
+function isPluginName(name: string): boolean {
+  if (name.startsWith('@cordisjs/plugin-')) return true
+  if (/(^|\/)cordis-plugin-/.test(name)) return true
+  return false
+}
+
+async function listPluginsIn(nm: string): Promise<string[]> {
+  const out: string[] = []
+  const entries = await readdir(nm, { withFileTypes: true }).catch(() => [])
+  for (const entry of entries) {
+    if (!entry.isDirectory() && !entry.isSymbolicLink()) continue
+    if (entry.name.startsWith('@')) {
+      const inner = await readdir(join(nm, entry.name), { withFileTypes: true }).catch(() => [])
+      for (const sub of inner) {
+        const full = `${entry.name}/${sub.name}`
+        if (isPluginName(full)) out.push(full)
+      }
+    } else if (isPluginName(entry.name)) {
+      out.push(entry.name)
+    }
+  }
+  return out
 }
 
 async function loadManifest(filename: string): Promise<LocalPackage> {
@@ -121,26 +145,30 @@ class Installer extends Service {
       }
     }
 
-    // Also include cordis plugins discovered in workspaces / node_modules
-    // that aren't listed in the top-level manifest dependencies. In monorepo
-    // setups the root package.json is often empty, so without this step the
-    // UI would report "0 installed" even though every plugin ships as a
-    // workspace package.
-    try {
-      const baseDir = fileURLToPath(this.ctx.baseUrl!)
-      const scanner = new LocalScanner(baseDir)
-      const objects = await scanner.collect()
-      for (const object of objects) {
-        const name = object.package.name
-        if (result[name]) continue
-        result[name] = {
-          request: object.package.version ?? '*',
-          resolved: object.package.version,
-          workspace: object.workspace,
-        }
+    // Walk node_modules up the directory tree to discover cordis plugins that
+    // aren't listed in the root manifest dependencies. Yarn workspace setups
+    // typically have an empty root dependencies field — without this step the
+    // dependencies page would render "未检测到任何依赖".
+    const seen = new Set<string>(Object.keys(result))
+    let dir = this.cwd
+    while (true) {
+      const names = await listPluginsIn(join(dir, 'node_modules'))
+      for (const name of names) {
+        if (seen.has(name)) continue
+        seen.add(name)
+        try {
+          const filename = require.resolve(`${name}/package.json`)
+          const meta = await loadManifest(filename)
+          result[name] = {
+            request: meta.version ?? '*',
+            resolved: meta.version,
+            workspace: !filename.includes('node_modules'),
+          }
+        } catch {}
       }
-    } catch (error: any) {
-      this.ctx.logger.debug('local scan failed: %s', error?.message ?? error)
+      const parent = dirname(dir)
+      if (parent === dir) break
+      dir = parent
     }
 
     return result

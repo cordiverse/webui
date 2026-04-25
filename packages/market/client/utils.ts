@@ -84,26 +84,31 @@ interface Comparator {
 }
 
 function getSimilarity(data: SearchObject, word: string) {
-  word = word.replace('cordis-plugin-', '').replace('@cordisjs/plugin-', '')
-  const shortname = data.package.name.replace(/(cordis-|^@cordisjs\/)plugin-/, '')
-  if (shortname === word) return 10
-  if (shortname.startsWith(word)) return 5
-  if (shortname.includes(word)) return 2
+  word = word.replace('koishi-plugin-', '').replace('@koishijs/plugin-', '')
+  const shortname = data.package.name.replace(/(koishi-|^@koishijs\/)plugin-/, '')
+  if (shortname === word) return 1
+  const tokens = shortname.split(/[-/_]/)
+  // if (tokens[0] === word) return 0.5
+  if (tokens.includes(word)) return 0.5
+  // if (tokens[0].startsWith(word)) return 0.3
+  if (tokens.some(t => t.startsWith(word))) return 0.3
+  if (tokens.some(t => t.includes(word))) return 0.2
   return [
     ...data.package.keywords,
     ...Object.values(data.manifest?.description ?? {}),
-  ].some(keyword => keyword.includes(word)) ? 1 : 0
+  ].some(keyword => keyword.includes(word)) ? 0.05 : 0
 }
 
 function getSimRating(data: SearchObject, words: string[]) {
   words = words.filter(w => w && !w.includes(':'))
-  let result = 0
+  if (!words.length) return data.rating
+  let weight = 0
   for (const word of words) {
     const similarity = getSimilarity(data, word)
     if (!similarity) return 0
-    result = Math.max(result, similarity)
+    weight += similarity
   }
-  return data.rating + result
+  return data.rating * weight
 }
 
 export const comparators: Dict<Comparator> = {
@@ -142,7 +147,8 @@ export const kConfig = Symbol('market.config') as InjectionKey<MarketConfig>
 
 export function getSorted(market: SearchObject[], words: string[]) {
   return market?.slice().filter((data) => {
-    return !data.manifest?.hidden || words.includes('show:hidden')
+    return (!data.manifest?.hidden || words.includes('show:hidden'))
+      && (!data.deprecated || words.includes('show:deprecated'))
   }).sort((a, b) => {
     for (let word of words) {
       if (!word.startsWith('sort:')) continue

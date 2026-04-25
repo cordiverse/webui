@@ -1,7 +1,6 @@
 import type { InjectionKey, Ref, ComputedRef } from 'vue'
 import type { Dict } from 'cosmokit'
-import type { SearchObject } from '@cordisjs/registry'
-import type { Dependency } from '../src'
+import type { Dependency, SearchObject } from '../src'
 
 export const kActivePackage: InjectionKey<Ref<string>> = Symbol('market.active')
 export const kPackagesMap: InjectionKey<ComputedRef<Dict<SearchObject>>> = Symbol('market.packages')

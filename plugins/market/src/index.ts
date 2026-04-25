@@ -1,13 +1,14 @@
 import { Context } from 'cordis'
 import { Dict } from 'cosmokit'
 import type {} from '@cordisjs/plugin-webui'
-import type { DependencyMetaKey, RemotePackage } from '@cordisjs/registry'
+import type { DependencyMetaKey, RemotePackage } from './types.ts'
 import z from 'schemastery'
 import Installer, { Dependency } from './installer.ts'
 import Market, { MarketData } from './market.ts'
 
 export * from './installer.ts'
 export * from './market.ts'
+export * from './types.ts'
 
 declare module '@cordisjs/plugin-webui' {
   interface Events {

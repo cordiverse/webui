@@ -13,8 +13,7 @@
 <script lang="ts" setup>
 
 import { computed, inject } from 'vue'
-import type { SearchObject } from '@cordisjs/registry'
-import type { Dependency } from '../src'
+import type { Dependency, SearchObject } from '../src'
 import type { Dict } from 'cosmokit'
 import { kActivePackage } from './context'
 

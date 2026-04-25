@@ -3,7 +3,7 @@ import { Dict, Time } from 'cosmokit'
 import type {} from '@cordisjs/plugin-http'
 import type {} from '@cordisjs/plugin-logger'
 import type {} from '@cordisjs/plugin-webui'
-import type { SearchObject, SearchResult } from '@cordisjs/registry'
+import type { SearchObject, SearchResult } from './types.ts'
 import z from 'schemastery'
 
 declare module 'cordis' {

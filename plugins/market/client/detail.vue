@@ -161,7 +161,7 @@ import { message, send, useInject } from '@cordisjs/client'
 import { useI18nText } from '@cordisjs/components'
 import { parse, satisfies } from 'semver'
 import type { Dict } from 'cosmokit'
-import type { RemotePackage, DependencyMetaKey } from '@cordisjs/registry'
+import type { RemotePackage, DependencyMetaKey } from '../src'
 import { kActivePackage, kPackagesMap, kDependencies, kRefresh } from './context'
 import { storage } from './store'
 

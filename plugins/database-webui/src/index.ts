@@ -7,6 +7,7 @@ declare module '@cordisjs/plugin-webui' {
   interface Events {
     'database-webui.refresh'(): Promise<void>
     'database-webui.query'(args: QueryArgs): Promise<QueryResult>
+    'database-webui.update'(args: UpdateArgs): Promise<void>
   }
 }
 
@@ -40,6 +41,13 @@ export interface QueryArgs {
 export interface QueryResult {
   rows: any[]
   total: number
+}
+
+export interface UpdateArgs {
+  table: string
+  where: Record<string, unknown>
+  field: string
+  value: unknown
 }
 
 export const name = 'database-webui'
@@ -150,5 +158,29 @@ export function apply(ctx: Context, config: Config) {
     entry.refresh()
     const total = stats.tables?.[table]?.count ?? rows.length
     return { rows, total }
+  })
+
+  ctx.webui.addListener('database-webui.update', async ({ table, where, field, value }) => {
+    const model = ctx.model
+    const m = model.tables[table]
+    if (!m) throw new Error(`unknown table: ${table}`)
+    const primary = ([] as string[]).concat(m.primary ?? [])
+    if (!primary.length) throw new Error(`table "${table}" has no primary key, cannot update`)
+    for (const key of primary) {
+      if (where[key] === undefined || where[key] === null) {
+        throw new Error(`missing primary key: ${key}`)
+      }
+    }
+    const meta = m.fields?.[field]
+    if (!meta) throw new Error(`unknown field: ${field}`)
+    if (primary.includes(field)) throw new Error(`cannot modify primary key: ${field}`)
+    if (meta.relation) throw new Error(`cannot modify relation field: ${field}`)
+    if (String(meta.deftype ?? meta.type) === 'expr') {
+      throw new Error(`cannot modify computed field: ${field}`)
+    }
+    const result = await (model.set as any)(table, where, { [field]: value })
+    if (!result || (result.matched ?? 0) === 0) {
+      throw new Error('no rows matched')
+    }
   })
 }

@@ -42,7 +42,12 @@
         </thead>
         <tbody>
           <tr v-for="(row, idx) of rows" :key="rowKey(row, idx)">
-            <td v-for="field of info.fields" :key="field.name" :title="renderCell(row[field.name])">
+            <td
+              v-for="field of info.fields"
+              :key="field.name"
+              :title="renderCell(row[field.name])"
+              @dblclick="onCellDblClick(row, field)"
+            >
               <span class="cell" :class="cellClass(row[field.name])">{{ renderCell(row[field.name]) }}</span>
             </td>
           </tr>
@@ -61,6 +66,8 @@
       <button class="pg-btn" :disabled="tab.page >= totalPages || loading" @click="setPage(tab.page + 1)">›</button>
       <button class="pg-btn" :disabled="tab.page >= totalPages || loading" @click="setPage(totalPages)">»</button>
     </div>
+
+    <edit-dialog v-model="editVisible" :ctx="editCtx" @saved="reload"/>
   </div>
 </template>
 
@@ -69,7 +76,8 @@
 import { computed, ref, watch } from 'vue'
 import { send } from '@cordisjs/client'
 import FieldType from './field-type.vue'
-import type { TableInfo, QueryResult } from '../src'
+import EditDialog, { type EditContext } from './edit-dialog.vue'
+import type { FieldInfo, TableInfo, QueryResult } from '../src'
 import type { TableTab } from './state'
 import { cacheKey, rowCache } from './state'
 
@@ -155,6 +163,19 @@ function onHeaderClick(field: string) {
   props.tab.page = 1
 }
 
+function rowKey(row: any, idx: number): string {
+  const primary = props.info?.primary
+  if (!primary?.length) return `i:${idx}`
+  const parts: string[] = []
+  for (const k of primary) {
+    const v = row[k]
+    // any missing primary field → fall back to idx (can't safely combine)
+    if (v === undefined || v === null) return `i:${idx}`
+    parts.push(String(v))
+  }
+  return `p:${parts.join('\u0001')}`
+}
+
 function renderCell(value: any): string {
   if (value === null) return '∅'
   if (value === undefined) return ''
@@ -170,6 +191,20 @@ function cellClass(value: any) {
   if (typeof value === 'number') return 'num'
   if (typeof value === 'boolean') return 'bool'
   return ''
+}
+
+const editVisible = ref(false)
+const editCtx = ref<EditContext | undefined>()
+
+function onCellDblClick(row: any, field: FieldInfo) {
+  if (!props.info) return
+  editCtx.value = {
+    table: props.tab.table,
+    primary: props.info.primary,
+    field,
+    row,
+  }
+  editVisible.value = true
 }
 
 </script>
@@ -291,6 +326,8 @@ function cellClass(value: any) {
     text-overflow: ellipsis;
     white-space: nowrap;
     vertical-align: middle;
+    cursor: pointer;
+    user-select: none;
   }
 
   tbody tr:hover td {

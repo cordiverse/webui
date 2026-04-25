@@ -12,11 +12,12 @@ declare module '@cordisjs/plugin-webui' {
 
 export interface ServerRoute {
   id: string
-  method: string       // uppercase, 'GET' | 'POST' | 'WS' | 'ALL' ...
+  method: string
   path: string
+  interceptPath?: string
   plugin?: string
   requests: number
-  totalLatency: number  // ms sum
+  totalLatency: number
   avgLatency: number
   lastStatus?: number
 }
@@ -28,9 +29,10 @@ export interface ServerRequest {
   path: string
   status: number
   latency: number
-  size: number
+  bytesIn?: number
+  bytesOut?: number
   remote?: string
-  route?: string       // matched route path
+  route?: string
   plugin?: string
 }
 
@@ -64,13 +66,19 @@ export const Config: z<Config> = z.object({
 
 export const inject = ['server', 'webui']
 
-function routeKey(method: string, path: string | RegExp) {
+function routeKey(method: string, path: string | RegExp, interceptPath?: string) {
   const p = typeof path === 'string' ? path : path.toString()
-  return `${method.toUpperCase()} ${p}`
+  return `${method.toUpperCase()} ${interceptPath ?? ''}${p}`
 }
 
 function stringifyPath(path: string | RegExp) {
   return typeof path === 'string' ? path : path.toString()
+}
+
+function resolvePlugin(ctx: Context, route: any): string | undefined {
+  const fiber = route.fiber
+  if (!fiber) return
+  return ctx.get('loader')?.locate(fiber) ?? undefined
 }
 
 export function apply(ctx: Context, config: Config) {
@@ -82,13 +90,15 @@ export function apply(ctx: Context, config: Config) {
   function snapshotRoutes(): ServerRoute[] {
     const out: ServerRoute[] = []
     for (const route of server.httpRoutes) {
-      const key = routeKey(route.method, route.path)
+      const interceptPath = route.config?.path || undefined
+      const key = routeKey(route.method, route.path, interceptPath)
       const prior = stats.get(key)
       out.push({
         id: key,
         method: route.method.toUpperCase(),
         path: stringifyPath(route.path),
-        plugin: prior?.plugin,
+        interceptPath,
+        plugin: resolvePlugin(ctx, route),
         requests: prior?.requests ?? 0,
         totalLatency: prior?.totalLatency ?? 0,
         avgLatency: prior?.avgLatency ?? 0,
@@ -96,13 +106,15 @@ export function apply(ctx: Context, config: Config) {
       })
     }
     for (const route of server.wsRoutes) {
-      const key = routeKey('WS', route.path)
+      const interceptPath = route.config?.path || undefined
+      const key = routeKey('WS', route.path, interceptPath)
       const prior = stats.get(key)
       out.push({
         id: key,
         method: 'WS',
         path: stringifyPath(route.path),
-        plugin: prior?.plugin,
+        interceptPath,
+        plugin: resolvePlugin(ctx, route),
         requests: prior?.requests ?? 0,
         totalLatency: prior?.totalLatency ?? 0,
         avgLatency: prior?.avgLatency ?? 0,
@@ -175,23 +187,38 @@ export function apply(ctx: Context, config: Config) {
     for (const route of server.httpRoutes) {
       if (route.method !== 'all' && req.method.toLowerCase() !== route.method) continue
       if (!route.check(req)) continue
-      return { key: routeKey(route.method, route.path), path: stringifyPath(route.path) }
+      const interceptPath = route.config?.path || undefined
+      return {
+        key: routeKey(route.method, route.path, interceptPath),
+        path: stringifyPath(route.path),
+        plugin: resolvePlugin(ctx, route),
+      }
     }
     return undefined
   }
 
   ctx.on('server/request', async (req, res, next) => {
     const start = performance.now()
-    let matched: { key: string, path: string } | undefined
+    let matched: ReturnType<typeof findMatchedRoute>
     try {
       matched = findMatchedRoute(req)
     } catch {}
+
+    const contentLength = (req as any)._req?.headers?.['content-length']
+    const bytesIn = contentLength ? parseInt(contentLength, 10) || undefined : undefined
 
     try {
       await next()
     } finally {
       const latency = Math.round(performance.now() - start)
-      const size = res.body ? (typeof res.body === 'string' ? Buffer.byteLength(res.body) : 0) : 0
+      let bytesOut: number | undefined
+      if (res.body) {
+        if (typeof res.body === 'string') {
+          bytesOut = Buffer.byteLength(res.body)
+        } else if (res.body instanceof Buffer || res.body instanceof Uint8Array) {
+          bytesOut = res.body.byteLength
+        }
+      }
       pushRequest({
         id: ++nextRequestId,
         ts: Date.now(),
@@ -199,11 +226,13 @@ export function apply(ctx: Context, config: Config) {
         path: req.path,
         status: res.status ?? 0,
         latency,
-        size,
+        bytesIn,
+        bytesOut,
         remote: (req as any).headers?.['x-forwarded-for']?.toString().split(',')[0]?.trim()
           || (req as any)._req?.socket?.remoteAddress
           || undefined,
         route: matched?.path,
+        plugin: matched?.plugin,
       }, matched?.key)
     }
   })
@@ -214,8 +243,6 @@ export function apply(ctx: Context, config: Config) {
     entry.refresh()
   })
 
-  // Refresh periodically to capture route registrations / de-registrations
-  // that happen without triggering requests.
   const refreshInterval = setInterval(() => entry.refresh(), 5000)
   ctx.effect(() => () => clearInterval(refreshInterval))
 

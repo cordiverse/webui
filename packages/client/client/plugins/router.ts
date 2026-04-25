@@ -38,7 +38,7 @@ export namespace Activity {
 export interface Activity extends Activity.Options {}
 
 function getActivityId(path: string) {
-  return path.split('/').find(Boolean) ?? ''
+  return path.replace(/^\//, '') || ''
 }
 
 export const redirectTo = ref<string>()

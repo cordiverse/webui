@@ -30,10 +30,6 @@
         <k-icon name="search"/>
         <input class="search-input" v-model="searchInput" placeholder="Filter by URL..."/>
       </div>
-
-      <button class="btn-icon" title="Clear" @click="clearHistory">
-        <k-icon name="trash"/>
-      </button>
     </div>
 
     <div class="history-list">
@@ -96,7 +92,7 @@
 <script lang="ts" setup>
 
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { send, useContext, useMenu, useRpc } from '@cordisjs/client'
+import { useContext, useMenu, useRpc } from '@cordisjs/client'
 import type {} from '@cordisjs/plugin-loader-webui/client'
 import SizePair from './size-pair.vue'
 import type { Data, HistoryEntry } from '../src'
@@ -188,10 +184,6 @@ function displayDuration(entry: HistoryEntry) {
 function formatTime(ts: number) {
   const d = new Date(ts)
   return d.toTimeString().slice(0, 8)
-}
-
-function clearHistory() {
-  send('http-webui.clear')
 }
 
 </script>

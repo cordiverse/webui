@@ -1,77 +1,108 @@
 <template>
-  <div class="server-requests">
-    <div class="req-toolbar">
-      <div class="method-filter">
-        <button
-          v-for="m of methodOptions"
-          :key="m.id"
-          class="method-btn"
-          :class="{ active: activeMethod === m.id }"
-          @click="activeMethod = m.id"
-        >{{ m.label }}</button>
+  <k-layout>
+    <template #header>
+      <span class="crumb">Requests</span>
+      <span class="crumb-sub" v-if="data">
+        {{ data.requests.length }} / {{ data.requestLimit }} requests
+      </span>
+    </template>
+
+    <template #menu>
+      <span class="menu-item" @click="clearRequests" title="Clear">
+        <k-icon class="menu-icon" name="trash"/>
+      </span>
+    </template>
+
+    <div class="requests-body">
+      <div class="req-toolbar">
+        <div class="method-filter">
+          <button
+            v-for="m of methodOptions"
+            :key="m.id"
+            class="method-btn"
+            :class="{ active: activeMethod === m.id }"
+            @click="activeMethod = m.id"
+          >{{ m.label }}</button>
+        </div>
+
+        <select class="source-filter" v-model="activeStatus">
+          <option value="">All Status</option>
+          <option value="2xx">2xx</option>
+          <option value="3xx">3xx</option>
+          <option value="4xx">4xx</option>
+          <option value="5xx">5xx</option>
+        </select>
+
+        <div class="live-indicator">
+          <div class="live-dot"></div>
+          Live
+        </div>
+
+        <div style="flex: 1"></div>
+
+        <div class="search-wrapper">
+          <k-icon name="search"/>
+          <input class="search-input" v-model="searchInput" placeholder="Filter by path..."/>
+        </div>
       </div>
 
-      <select class="source-filter" v-model="activeStatus">
-        <option value="">All Status</option>
-        <option value="2xx">2xx</option>
-        <option value="3xx">3xx</option>
-        <option value="4xx">4xx</option>
-        <option value="5xx">5xx</option>
-      </select>
-
-      <div class="live-indicator">
-        <div class="live-dot"></div>
-        Live
-      </div>
-
-      <div style="flex: 1"></div>
-
-      <div class="search-wrapper">
-        <k-icon name="search"/>
-        <input class="search-input" v-model="searchInput" placeholder="Filter by path..."/>
-      </div>
-
-      <button class="btn-icon" title="Clear" @click="clearRequests">
-        <k-icon name="trash"/>
-      </button>
-    </div>
-
-    <div class="req-header">
-      <span class="col-method">Method</span>
-      <span class="col-status">Status</span>
-      <span class="col-path">Path</span>
-      <span class="col-remote">Client</span>
-      <span class="col-latency">Latency</span>
-      <span class="col-size">Size</span>
-      <span class="col-time">Time</span>
-    </div>
-
-    <div class="req-list">
-      <div v-for="req of filtered" :key="req.id" class="req-row">
-        <span class="col-method method-badge" :class="methodClass(req.method)">{{ req.method }}</span>
-        <span class="col-status status-code" :class="statusClass(req.status)">{{ req.status || '—' }}</span>
-        <span class="col-path req-path">{{ req.path }}</span>
-        <span class="col-remote req-remote">{{ req.remote || '—' }}</span>
-        <span class="col-latency req-latency">{{ formatLatency(req.latency) }}</span>
-        <span class="col-size req-size">{{ formatSize(req.size) }}</span>
-        <span class="col-time req-time">{{ formatTime(req.ts) }}</span>
-      </div>
+      <table class="req-table">
+        <colgroup>
+          <col class="col-method"/>
+          <col class="col-status"/>
+          <col class="col-path"/>
+          <col class="col-remote"/>
+          <col class="col-latency"/>
+          <col class="col-size"/>
+          <col class="col-time"/>
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Status</th>
+            <th class="text-left">Path</th>
+            <th class="text-left">Client</th>
+            <th class="text-center">Duration</th>
+            <th class="text-center">Size</th>
+            <th class="text-center">Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="req of filtered" :key="req.id">
+            <td>
+              <span class="method-badge" :class="methodClass(req.method)">{{ req.method }}</span>
+            </td>
+            <td>
+              <span class="status-code" :class="statusClass(req.status)">{{ req.status || 'ERR' }}</span>
+            </td>
+            <td class="cell-path text-left">{{ req.path }}</td>
+            <td class="cell-remote text-left">{{ req.remote || '—' }}</td>
+            <td class="text-center">{{ formatDuration(req.latency) }}</td>
+            <td class="text-center">
+              <size-pair :bytes-in="req.bytesIn || 0" :bytes-out="req.bytesOut || 0"/>
+            </td>
+            <td class="text-center">{{ formatTime(req.ts) }}</td>
+          </tr>
+        </tbody>
+      </table>
       <div v-if="!filtered.length" class="empty">
         <span v-if="requests.length">没有匹配的请求</span>
         <span v-else>暂无请求记录</span>
       </div>
     </div>
-  </div>
+  </k-layout>
 </template>
 
 <script lang="ts" setup>
 
 import { computed, ref } from 'vue'
 import { send, useRpc } from '@cordisjs/client'
-import type { Data, ServerRequest } from '../src'
+import SizePair from './size-pair.vue'
+import type { Data } from '../src'
+import { formatDuration, formatTime, methodClass, statusClass } from './utils'
 
 const data = useRpc<Data>()
-const requests = computed<ServerRequest[]>(() => data.value?.requests ?? [])
+const requests = computed(() => data.value?.requests ?? [])
 
 const methodOptions = [
   { id: '', label: 'ALL' },
@@ -79,6 +110,7 @@ const methodOptions = [
   { id: 'POST', label: 'POST' },
   { id: 'PUT', label: 'PUT' },
   { id: 'DELETE', label: 'DEL' },
+  { id: 'PATCH', label: 'PATCH' },
 ]
 
 const activeMethod = ref('')
@@ -97,34 +129,6 @@ const filtered = computed(() => {
   })
 })
 
-function methodClass(method: string) {
-  const m = method.toLowerCase()
-  if (['get', 'post', 'put', 'delete', 'patch'].includes(m)) return 'method-' + m
-  return 'method-other'
-}
-
-function statusClass(status: number) {
-  if (!status) return 'status-err'
-  return 'status-' + Math.floor(status / 100) + 'xx'
-}
-
-function formatLatency(ms: number) {
-  if (!ms) return '—'
-  if (ms < 1000) return ms + 'ms'
-  return (ms / 1000).toFixed(1) + 's'
-}
-
-function formatSize(bytes: number) {
-  if (!bytes) return '—'
-  if (bytes < 1024) return bytes + ' B'
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
-}
-
-function formatTime(ts: number) {
-  return new Date(ts).toTimeString().slice(0, 8)
-}
-
 function clearRequests() {
   send('server-webui.clear')
 }
@@ -133,12 +137,12 @@ function clearRequests() {
 
 <style lang="scss" scoped>
 
-.server-requests {
-  display: flex;
-  flex-direction: column;
+.requests-body {
   flex: 1 1 0;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .req-toolbar {
@@ -147,49 +151,42 @@ function clearRequests() {
   align-items: center;
   gap: 8px;
   padding: 12px 24px;
-  border-bottom: 1px solid var(--border-primary);
-  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-secondary);
 }
 
 .method-filter {
   display: flex;
-  gap: 2px;
+  gap: 4px;
 }
 
 .method-btn {
   padding: 4px 10px;
-  border-radius: var(--radius-sm);
   font-size: 11px;
   font-weight: 600;
-  cursor: pointer;
-  border: 1px solid var(--border-primary);
-  background: transparent;
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
   color: var(--text-secondary);
-  font-family: var(--font-mono);
+  cursor: pointer;
   transition: var(--color-transition);
 
-  &.active {
-    background: var(--accent-muted);
-    color: var(--accent);
-    border-color: var(--accent);
+  &:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
   }
 
-  &:hover:not(.active) {
-    background: var(--bg-hover);
+  &.active {
+    background: var(--accent);
+    color: white;
   }
 }
 
 .source-filter {
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
+  padding: 4px 8px;
   font-size: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   border: 1px solid var(--border-primary);
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
-  outline: none;
-  cursor: pointer;
-  appearance: none;
-  height: 28px;
 }
 
 .live-indicator {
@@ -197,16 +194,15 @@ function clearRequests() {
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: var(--success);
-  margin-left: 8px;
-}
+  color: var(--text-tertiary);
 
-.live-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--success);
-  animation: pulse 2s ease-in-out infinite;
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    animation: pulse 2s ease-in-out infinite;
+  }
 }
 
 @keyframes pulse {
@@ -215,104 +211,71 @@ function clearRequests() {
 }
 
 .search-wrapper {
-  position: relative;
-  width: 240px;
-
-  :deep(.k-icon) {
-    position: absolute;
-    left: 9px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-tertiary);
-    width: 15px;
-    height: 15px;
-    pointer-events: none;
-  }
-}
-
-.search-input {
-  width: 100%;
-  height: 28px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-primary);
-  border-radius: var(--radius-md);
-  padding: 0 10px 0 30px;
-  font-size: 12px;
-  color: var(--text-primary);
-  outline: none;
-  font-family: var(--font-sans);
-
-  &:focus {
-    border-color: var(--border-focus);
-  }
-}
-
-.btn-icon {
-  width: 28px;
-  height: 28px;
-  padding: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--text-secondary);
-  border: 1px solid var(--border-primary);
-  cursor: pointer;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
 
-  :deep(.k-icon) {
-    width: 14px;
-    height: 14px;
+  .search-input {
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 12px;
+    color: var(--text-primary);
+    width: 200px;
+
+    &::placeholder {
+      color: var(--text-tertiary);
+    }
+  }
+}
+
+.req-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th, td {
+    text-align: left;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border-secondary);
+    vertical-align: middle;
   }
 
-  &:hover {
-    background: var(--bg-hover);
+  th {
+    color: var(--text-tertiary);
+    font-weight: 500;
+    font-size: 12px;
+    background: var(--bg-secondary);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  .col-method  { width: 80px; }
+  .col-status  { width: 80px; }
+  .col-remote  { width: 140px; }
+  .col-latency { width: 100px; }
+  .col-size    { width: 140px; }
+  .col-time    { width: 96px; }
+
+  .text-left { text-align: left; }
+  .text-center { text-align: center; }
+
+  .cell-path {
+    font-family: var(--font-mono);
+    font-size: 12px;
     color: var(--text-primary);
   }
-}
 
-.req-header {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 24px;
-  font-size: 11px;
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 500;
-  border-bottom: 1px solid var(--border-secondary);
-  background: var(--bg-secondary);
-}
-
-.req-list {
-  flex: 1 1 0;
-  min-height: 0;
-  overflow-y: auto;
-}
-
-.req-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 24px;
-  border-bottom: 1px solid var(--border-primary);
-  font-size: 13px;
-  transition: background 0.1s;
-
-  &:hover {
-    background: var(--bg-hover);
+  .cell-remote {
+    font-size: 12px;
+    color: var(--text-tertiary);
   }
 }
-
-.col-method  { min-width: 52px; }
-.col-status  { min-width: 40px; }
-.col-path    { flex: 1; min-width: 0; }
-.col-remote  { min-width: 110px; }
-.col-latency { min-width: 60px; text-align: right; }
-.col-size    { min-width: 60px; text-align: right; }
-.col-time    { min-width: 80px; text-align: right; }
 
 .method-badge {
   display: inline-flex;
@@ -320,15 +283,17 @@ function clearRequests() {
   justify-content: center;
   padding: 2px 8px;
   border-radius: var(--radius-sm);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   font-family: var(--font-mono);
+  min-width: 50px;
 
   &.method-get    { background: var(--accent-muted);  color: var(--accent); }
   &.method-post   { background: var(--success-muted); color: var(--success); }
   &.method-put    { background: var(--warning-muted); color: var(--warning); }
   &.method-delete { background: var(--error-muted);   color: var(--error); }
   &.method-patch  { background: var(--warning-muted); color: var(--warning); }
+  &.method-ws     { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
   &.method-other  { background: var(--bg-hover); color: var(--text-secondary); }
 }
 
@@ -347,30 +312,11 @@ function clearRequests() {
   &.status-err { background: var(--error-muted);   color: var(--error); }
 }
 
-.req-path {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.req-remote {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-tertiary);
-}
-
-.req-latency { font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); }
-.req-size { font-size: 12px; color: var(--text-tertiary); }
-.req-time { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); }
-
 .empty {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px;
   color: var(--text-tertiary);
   font-size: 13px;
 }

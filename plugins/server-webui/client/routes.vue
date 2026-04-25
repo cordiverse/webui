@@ -1,111 +1,115 @@
 <template>
-  <div class="server-routes">
-    <div class="route-stats">
-      <div class="stat-card">
-        <div class="stat-label">Total Routes</div>
-        <div class="stat-value">{{ stats.totalRoutes }}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Requests (1h)</div>
-        <div class="stat-value">{{ formatCount(stats.requestsLastHour) }}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Avg Latency</div>
-        <div class="stat-value">{{ stats.avgLatency }}ms</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Error Rate</div>
-        <div class="stat-value">{{ formatRate(stats.errorRate) }}</div>
-      </div>
-    </div>
+  <k-layout>
+    <template #header>
+      <span class="crumb">Routes</span>
+      <span class="crumb-sub" v-if="data">
+        {{ data.routes.length }} routes · {{ data.stats.requestsLastHour }} req/h
+      </span>
+    </template>
 
-    <div class="route-table-wrap">
-      <table class="data-table">
+    <div class="routes-body">
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="stat-value">{{ data?.stats.totalRoutes ?? 0 }}</div>
+          <div class="stat-label">Total Routes</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ data?.stats.requestsLastHour ?? 0 }}</div>
+          <div class="stat-label">Requests (1h)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ formatDuration(data?.stats.avgLatency) }}</div>
+          <div class="stat-label">Avg Latency</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ ((data?.stats.errorRate ?? 0) * 100).toFixed(1) }}%</div>
+          <div class="stat-label">Error Rate</div>
+        </div>
+      </div>
+
+      <table class="route-table">
+        <colgroup>
+          <col class="col-method"/>
+          <col class="col-path"/>
+          <col class="col-plugin"/>
+          <col class="col-requests"/>
+          <col class="col-latency"/>
+          <col class="col-status"/>
+        </colgroup>
         <thead>
           <tr>
-            <th class="col-method">Method</th>
-            <th>Path</th>
-            <th class="col-plugin">Plugin</th>
-            <th class="col-count">Requests</th>
-            <th class="col-avg">Avg</th>
-            <th class="col-status">Last Status</th>
+            <th>Method</th>
+            <th class="text-left">Path</th>
+            <th class="text-left">Plugin</th>
+            <th class="text-center">Requests</th>
+            <th class="text-center">Avg Latency</th>
+            <th class="text-center">Last Status</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="route of routes" :key="route.id">
-            <td><span class="method-badge" :class="methodClass(route.method)">{{ route.method }}</span></td>
-            <td><span class="route-path">{{ route.path }}</span></td>
-            <td><span class="route-plugin">{{ route.plugin || '—' }}</span></td>
-            <td>{{ route.requests }}</td>
-            <td><span class="latency">{{ route.requests ? route.avgLatency + 'ms' : '—' }}</span></td>
             <td>
+              <span class="method-badge" :class="methodClass(route.method)">{{ route.method }}</span>
+            </td>
+            <td class="cell-path text-left">{{ fullPath(route) }}</td>
+            <td class="cell-plugin text-left">{{ pluginLabel(route.plugin) }}</td>
+            <td class="text-center">{{ route.requests || '—' }}</td>
+            <td class="text-center">{{ route.requests ? formatDuration(route.avgLatency) : '—' }}</td>
+            <td class="text-center">
               <span v-if="route.lastStatus" class="status-code" :class="statusClass(route.lastStatus)">
                 {{ route.lastStatus }}
               </span>
               <span v-else>—</span>
             </td>
           </tr>
-          <tr v-if="!routes.length">
-            <td colspan="6" class="empty">暂无路由注册</td>
-          </tr>
         </tbody>
       </table>
+      <div v-if="!routes.length" class="empty">暂无已注册的路由</div>
     </div>
-  </div>
+  </k-layout>
 </template>
 
 <script lang="ts" setup>
 
 import { computed } from 'vue'
-import { useRpc } from '@cordisjs/client'
-import type { Data } from '../src'
+import { useContext, useRpc } from '@cordisjs/client'
+import type {} from '@cordisjs/plugin-loader-webui/client'
+import type { Data, ServerRoute } from '../src'
+import { formatDuration, methodClass, statusClass } from './utils'
 
+const ctx = useContext()
 const data = useRpc<Data>()
 
 const routes = computed(() => data.value?.routes ?? [])
-const stats = computed(() => data.value?.stats ?? {
-  totalRoutes: 0,
-  requestsLastHour: 0,
-  avgLatency: 0,
-  errorRate: 0,
-})
 
-function methodClass(method: string) {
-  const m = method.toLowerCase()
-  if (m === 'ws') return 'method-ws'
-  if (['get', 'post', 'put', 'delete', 'patch'].includes(m)) return 'method-' + m
-  return 'method-other'
+function fullPath(route: ServerRoute) {
+  return (route.interceptPath ?? '') + route.path
 }
 
-function statusClass(status: number) {
-  if (!status) return 'status-err'
-  return 'status-' + Math.floor(status / 100) + 'xx'
-}
-
-function formatCount(n: number) {
-  if (n < 1000) return String(n)
-  return (n / 1000).toFixed(1) + 'k'
-}
-
-function formatRate(r: number) {
-  if (!r) return '0%'
-  const pct = r * 100
-  return pct < 10 ? pct.toFixed(1) + '%' : Math.round(pct) + '%'
+function pluginLabel(source?: string) {
+  if (!source) return '—'
+  const manager = ctx.get('manager')
+  if (!manager) return source
+  const prefix = manager.prefix
+  const local = prefix && source.startsWith(prefix) ? source.slice(prefix.length) : source
+  const entry = manager.plugins.value.entries[local]
+  if (!entry) return source
+  return manager.getLabel(entry)
 }
 
 </script>
 
 <style lang="scss" scoped>
 
-.server-routes {
-  display: flex;
-  flex-direction: column;
+.routes-body {
   flex: 1 1 0;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
-.route-stats {
+.stat-row {
   flex: 0 0 auto;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -115,27 +119,65 @@ function formatRate(r: number) {
 
 .stat-card {
   padding: 14px 16px;
-
-  .stat-label {
-    margin-bottom: 4px;
-  }
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
 
   .stat-value {
     font-size: 22px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    color: var(--text-tertiary);
   }
 }
 
-.route-table-wrap {
-  flex: 1 1 0;
-  overflow-y: auto;
-  padding: 0 24px 24px;
-}
+.route-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
 
-.col-method  { width: 80px; }
-.col-plugin  { width: 160px; }
-.col-count   { width: 100px; }
-.col-avg     { width: 80px; }
-.col-status  { width: 100px; }
+  th, td {
+    text-align: left;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border-secondary);
+    vertical-align: middle;
+  }
+
+  th {
+    color: var(--text-tertiary);
+    font-weight: 500;
+    font-size: 12px;
+    background: var(--bg-secondary);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  .col-method  { width: 80px; }
+  .col-plugin  { width: 160px; }
+  .col-requests { width: 100px; }
+  .col-latency { width: 100px; }
+  .col-status  { width: 100px; }
+
+  .text-left { text-align: left; }
+  .text-center { text-align: center; }
+
+  .cell-path {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-primary);
+  }
+
+  .cell-plugin {
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+}
 
 .method-badge {
   display: inline-flex;
@@ -157,23 +199,6 @@ function formatRate(r: number) {
   &.method-other  { background: var(--bg-hover); color: var(--text-secondary); }
 }
 
-.route-path {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  color: var(--text-primary);
-}
-
-.route-plugin {
-  font-size: 12px;
-  color: var(--text-tertiary);
-}
-
-.latency {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
 .status-code {
   display: inline-flex;
   padding: 2px 6px;
@@ -190,9 +215,12 @@ function formatRate(r: number) {
 }
 
 .empty {
-  text-align: center;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--text-tertiary);
-  padding: 32px;
+  font-size: 13px;
 }
 
 </style>

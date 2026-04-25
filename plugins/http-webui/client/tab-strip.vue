@@ -1,15 +1,6 @@
 <template>
   <div class="tab-strip">
     <div
-      class="strip-tab history-tab"
-      :class="{ active: activeId === 'history' }"
-      @click="$emit('switch', 'history')"
-      title="History"
-    >
-      <k-icon name="http:history"/>
-    </div>
-
-    <div
       v-for="tab of tabs"
       :key="tab.id"
       class="strip-tab"

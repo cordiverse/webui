@@ -1,5 +1,5 @@
 import { Context } from 'cordis'
-import type {} from 'minato'
+import type {} from '@cordisjs/plugin-database'
 import type {} from '@cordisjs/plugin-webui'
 import z from 'schemastery'
 
@@ -124,7 +124,7 @@ export function apply(ctx: Context, config: Config) {
     ctx.get('logger')?.warn?.('initial refresh failed: %s', error?.message ?? error)
   })
 
-  ctx.on('minato/model' as any, () => {
+  ctx.on('database/model' as any, () => {
     // a new table was registered — push the schema immediately, then update
     // counts when stats become available.
     entry.refresh()

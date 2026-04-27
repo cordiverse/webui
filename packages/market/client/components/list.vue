@@ -1,5 +1,5 @@
 <template>
-  <slot name="header" v-bind="{ all, packages, hasFilter: hasFilter(modelValue) }"></slot>
+  <slot name="header" v-bind="{ packages, hasFilter: hasFilter(modelValue) }"></slot>
   <template v-if="packages.length">
     <div class="package-list">
       <market-package
@@ -22,9 +22,9 @@
 
 <script lang="ts" setup>
 
-import { computed, inject, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { SearchObject } from '@cordisjs/registry'
-import { getSorted, getFiltered, hasFilter, kConfig } from '../utils'
+import { getSorted, hasFilter } from '../utils'
 import MarketPackage from './package.vue'
 
 const props = defineProps<{
@@ -37,11 +37,7 @@ const props = defineProps<{
 
 const emit = defineEmits(['update:modelValue', 'update:page'])
 
-const config = inject(kConfig, {})
-
-const all = computed(() => getSorted(props.data, props.modelValue))
-
-const packages = computed(() => getFiltered(all.value, props.modelValue, config))
+const packages = computed(() => getSorted(props.data, props.modelValue))
 
 const limit = computed(() => {
   for (const word of props.modelValue) {

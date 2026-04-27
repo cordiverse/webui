@@ -30,7 +30,7 @@
         <span class="text">{{ t(`badge.${key}`) }}</span>
         <span class="spacer"></span>
         <span class="count" v-if="data">
-          {{ data.filter(x => validate(x, item.query, config)).length }}
+          {{ countFor(item.query) }}
         </span>
       </div>
     </template>
@@ -40,7 +40,7 @@
 <script lang="ts" setup>
 
 import { computed, inject, ref, watch } from 'vue'
-import { Badge, badges, kConfig, validate, comparators, useI18n } from '../utils'
+import { Badge, badges, kConfig, getFiltered, comparators, useI18n } from '../utils'
 import { SearchObject } from '@cordisjs/registry'
 import MarketIcon from '../icons'
 
@@ -60,6 +60,12 @@ const words = ref<string[]>([])
 watch(() => props.modelValue, (value) => {
   words.value = value.slice()
 }, { immediate: true, deep: true })
+
+const showWords = computed(() => words.value.filter(w => w.startsWith('show:')))
+
+function countFor(query: string) {
+  return getFiltered(props.data ?? [], [query, ...showWords.value], config).length
+}
 
 const activeSort = computed<string[]>(() => {
   let word = words.value.find(w => w.startsWith('sort:'))

@@ -3,7 +3,7 @@
     <template #header>
       <span class="crumb">Plugin Market</span>
       <span class="crumb-sub">
-        {{ filterActive ? `找到 ${filteredCount} 个匹配` : market?.total ? `共 ${market.total} 个插件` : '' }}
+        {{ filterActive ? `找到 ${filteredCount} 个匹配` : `共 ${filteredCount} 个插件` }}
       </span>
     </template>
 
@@ -60,7 +60,7 @@
           v-if="packageCount"
           v-model="words"
           v-model:page="currentPage"
-          :data="packages"
+          :data="filtered"
           :installed="isInstalled"
           #action="data"
         >
@@ -90,6 +90,7 @@
 import { computed, provide, ref, watch, nextTick } from 'vue'
 import { message, send, useRpc } from '@cordisjs/client'
 import { MarketSearch, MarketFilter, MarketList, getFiltered, hasFilter, kConfig } from '@cordisjs/market'
+import type { SearchObject } from '@cordisjs/registry'
 import type { Data } from '../src'
 import ActionButton from './action.vue'
 import DetailDialog from './detail.vue'
@@ -123,7 +124,8 @@ provide(kShowConfirm, showConfirm)
 provide(kShowManual, showManual)
 
 const filterActive = computed(() => hasFilter(words.value))
-const filteredCount = computed(() => filterActive.value ? getFiltered(packages.value, words.value).length : 0)
+const filtered = computed(() => getFiltered(packages.value as SearchObject[], words.value, { installed: isInstalled }))
+const filteredCount = computed(() => filtered.value.length)
 
 const searchRef = ref<InstanceType<typeof MarketSearch>>()
 const bodyRef = ref<HTMLElement>()

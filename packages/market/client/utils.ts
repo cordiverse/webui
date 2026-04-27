@@ -146,10 +146,7 @@ interface ValidateConfig extends MarketConfig {
 export const kConfig = Symbol('market.config') as InjectionKey<MarketConfig>
 
 export function getSorted(market: SearchObject[], words: string[]) {
-  return market?.slice().filter((data) => {
-    return (!data.manifest?.hidden || words.includes('show:hidden'))
-      && (!data.deprecated || words.includes('show:deprecated'))
-  }).sort((a, b) => {
+  return market?.slice().sort((a, b) => {
     for (let word of words) {
       if (!word.startsWith('sort:')) continue
       let order = 1
@@ -168,6 +165,8 @@ export function getSorted(market: SearchObject[], words: string[]) {
 
 export function getFiltered(market: SearchObject[], words: string[], config?: MarketConfig) {
   return market.filter((data) => {
+    if (data.manifest?.hidden && !words.includes('show:hidden')) return false
+    if (data.deprecated && !words.includes('show:deprecated')) return false
     const users = getUsers(data)
     return words.every((word) => {
       return validate(data, word, { ...config, users })

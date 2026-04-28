@@ -1,7 +1,7 @@
 {
   "name": "@cordisjs/client",
   "description": "Koishi Console Client",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "type": "module",
   "exports": {
     ".": "./client/index.ts",
@@ -55,7 +55,7 @@
     "yakumo": "^3.1.1"
   },
   "dependencies": {
-    "@cordisjs/components": "0.1.0",
+    "@cordisjs/components": "0.1.1",
     "@maikolib/vite-plugin-yaml": "^1.1.1",
     "@vitejs/plugin-vue": "^5.2.4",
     "@vueuse/core": "^13.9.0",

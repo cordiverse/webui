@@ -84,14 +84,12 @@ class NodeWebUI extends WebUI {
     if (this.config.devMode) await this.createVite()
     this.serveAssets()
 
-    this.ctx.on('server/ready', () => {
-      const target = this.ctx.server.baseUrl + this.config.uiPath
-      const loader = this.ctx.get('loader')
-      if (this.config.open && !loader?.envData.clientCount && !process.env.CORDIS_AGENT) {
-        open(target)
-      }
-      this.ctx.logger.info('webui is available at %c', target)
-    })
+    const target = this.ctx.server.baseUrl + this.config.uiPath
+    const loader = this.ctx.get('loader')
+    if (this.config.open && !loader?.envData.clientCount && !process.env.CORDIS_AGENT) {
+      open(target)
+    }
+    this.ctx.logger.info('webui is available at %c', target)
   }
 
   addListener<K extends keyof Events>(event: K, callback: Events[K]) {

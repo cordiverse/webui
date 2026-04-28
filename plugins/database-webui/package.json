@@ -1,7 +1,7 @@
 {
   "name": "@cordisjs/plugin-database-webui",
-  "description": "WebUI for browsing minato tables",
-  "version": "0.1.0",
+  "description": "WebUI for browsing database tables",
+  "version": "0.2.0",
   "type": "module",
   "exports": {
     ".": {
@@ -41,8 +41,8 @@
       "dist"
     ],
     "description": {
-      "en": "Browse and preview minato tables in the webui console",
-      "zh": "在网页控制台中浏览 minato 数据表"
+      "en": "Browse and preview database tables in the webui console",
+      "zh": "在网页控制台中浏览数据表"
     },
     "service": {
       "required": [
@@ -52,15 +52,15 @@
     }
   },
   "peerDependencies": {
-    "@cordisjs/plugin-webui": "^0.4.2",
-    "cordis": "^4.0.0-rc.3",
-    "minato": "^4.0.0"
+    "@cordisjs/plugin-database": "^4.0.1",
+    "@cordisjs/plugin-webui": "^0.5.0",
+    "cordis": "^4.0.0-rc.4"
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.4.2",
-    "@cordisjs/plugin-webui": "^0.4.2",
-    "cordis": "^4.0.0-rc.3",
-    "minato": "^4.0.0"
+    "@cordisjs/client": "^0.5.0",
+    "@cordisjs/plugin-database": "^4.0.1",
+    "@cordisjs/plugin-webui": "^0.5.0",
+    "cordis": "^4.0.0-rc.4"
   },
   "dependencies": {
     "cosmokit": "^1.8.1",

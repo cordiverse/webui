@@ -1,7 +1,7 @@
 {
   "name": "@cordisjs/market",
   "description": "Market UI for Cordis",
-  "version": "4.2.5",
+  "version": "4.3.0",
   "main": "client/index.ts",
   "files": [
     "client"

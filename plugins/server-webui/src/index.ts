@@ -315,6 +315,4 @@ export function apply(ctx: Context, config: Config) {
 
   const refreshInterval = setInterval(() => entry.refresh(), 5000)
   ctx.effect(() => () => clearInterval(refreshInterval))
-
-  ctx.on('server/ready', () => entry.refresh())
 }

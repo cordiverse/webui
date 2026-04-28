@@ -58,15 +58,15 @@
   "peerDependencies": {
     "@cordisjs/plugin-loader": "^1.0.0-rc.3",
     "@cordisjs/plugin-timer": "^1.1.1",
-    "@cordisjs/plugin-webui": "^0.5.1",
+    "@cordisjs/plugin-webui": "^0.5.2",
     "cordis": "^4.0.0-rc.4"
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.5.1",
+    "@cordisjs/client": "^0.5.2",
     "@cordisjs/plugin-hmr": "^1.0.11",
     "@cordisjs/plugin-loader": "^1.0.0-rc.3",
     "@cordisjs/plugin-timer": "^1.1.1",
-    "@cordisjs/plugin-webui": "^0.5.1",
+    "@cordisjs/plugin-webui": "^0.5.2",
     "@types/pnpapi": "^0.0.5",
     "cordis": "^4.0.0-rc.4"
   },

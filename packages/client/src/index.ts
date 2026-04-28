@@ -5,7 +5,7 @@ import { resolve } from 'node:path'
 import unocss from 'unocss/vite'
 import uno from 'unocss/preset-uno'
 import vue from '@vitejs/plugin-vue'
-import yaml from '@maikolib/vite-plugin-yaml'
+import yaml from '@cordisjs/unyaml/vite'
 import { fileURLToPath } from 'node:url'
 
 declare module 'yakumo' {

@@ -6,7 +6,7 @@ import * as vite from 'vite'
 import unocss from 'unocss/vite'
 import uno from 'unocss/preset-uno'
 import vue from '@vitejs/plugin-vue'
-import yaml from '@maikolib/vite-plugin-yaml'
+import yaml from '@cordisjs/unyaml/vite'
 
 function findModulePath(id: string) {
   const path = fileURLToPath(import.meta.resolve(id)).replace(/\\/g, '/')

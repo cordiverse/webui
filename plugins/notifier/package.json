@@ -59,7 +59,7 @@
   },
   "devDependencies": {
     "@cordisjs/client": "^0.5.1",
-    "@cordisjs/plugin-loader-webui": "^0.7.0",
+    "@cordisjs/plugin-loader-webui": "^0.7.1",
     "@cordisjs/plugin-webui": "^0.5.1",
     "cordis": "^4.0.0-rc.4"
   },

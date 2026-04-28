@@ -2,6 +2,8 @@ import { Context, icons } from '@cordisjs/client'
 import {} from '../src'
 import Main from './index.vue'
 import Deps from './deps.vue'
+import Dialogs from './dialogs.vue'
+import PluginMissing from './plugin-missing.vue'
 import IconMarket from './icons/market.vue'
 import IconDeps from './icons/deps.vue'
 
@@ -23,5 +25,15 @@ export default (ctx: Context) => {
     icon: 'activity:deps',
     order: 510,
     component: Deps,
+  })
+
+  ctx.client.router.slot({
+    type: 'global',
+    component: Dialogs,
+  })
+
+  ctx.client.router.slot({
+    type: 'plugin-missing',
+    component: PluginMissing,
   })
 }

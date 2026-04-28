@@ -46,7 +46,7 @@
 
         <k-content v-else>
           <h1>{{ currentEntry.name }}</h1>
-          <k-slot name="plugin-missing" single>
+          <k-slot name="plugin-missing" single :data="{ name: currentEntry.name }">
             <k-comment type="danger">
               <p>此插件尚未安装。</p>
             </k-comment>

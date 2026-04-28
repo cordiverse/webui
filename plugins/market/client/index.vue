@@ -78,10 +78,6 @@
         />
       </div>
     </div>
-
-    <detail-dialog/>
-    <confirm-dialog/>
-    <manual-dialog/>
   </k-layout>
 </template>
 
@@ -93,9 +89,6 @@ import { MarketSearch, MarketFilter, MarketList, getFiltered, hasFilter, kConfig
 import type { SearchObject } from '@cordisjs/registry'
 import type { Data } from '../src'
 import ActionButton from './action.vue'
-import DetailDialog from './detail.vue'
-import ConfirmDialog from './confirm.vue'
-import ManualDialog from './manual.vue'
 import { kActivePackage, kPackagesMap, kDependencies, kRefresh, kShowConfirm, kShowManual } from './context'
 import { activePackage, showConfirm, showManual, storage } from './store'
 

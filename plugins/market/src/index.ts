@@ -33,7 +33,7 @@ export interface Data {
 }
 
 export const name = 'market'
-export const inject = ['http', 'webui']
+export const inject = ['http', 'logger', 'webui']
 
 export interface Config {
   endpoint: string

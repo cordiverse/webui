@@ -1,6 +1,6 @@
 import { Context } from 'cordis'
 import { Dict } from 'cosmokit'
-import type { HTTP } from '@cordisjs/plugin-http'
+import type { Http } from '@cordisjs/plugin-http'
 import type {} from '@cordisjs/plugin-webui'
 import type {} from '@cordisjs/plugin-server-proxy'
 import type { WebSocket as UndiciWebSocket } from 'undici'
@@ -116,7 +116,7 @@ export function apply(ctx: Context, config: Config) {
     }
   }
 
-  ctx.on('http/fetch', async function (this: HTTP, url, init, _httpConfig, next) {
+  ctx.on('http/fetch', async function (this: Http, url, init, _httpConfig, next) {
     const method = String(init.method ?? 'GET').toUpperCase()
     const requestHeaders = headersToDict(init.headers as any)
     const fiber = this?.ctx?.fiber
@@ -186,7 +186,7 @@ export function apply(ctx: Context, config: Config) {
     }
   }, { global: true })
 
-  ctx.on('http/websocket', function (this: HTTP, url, init, _config, next) {
+  ctx.on('http/websocket', function (this: Http, url, init, _config, next) {
     const requestHeaders = headersToDict(init.headers as any)
     const fiber = this?.ctx?.fiber
     const source = fiber ? ctx.get('loader')?.locate(fiber) : undefined

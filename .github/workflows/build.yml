@@ -70,6 +70,8 @@ jobs:
         run: corepack enable
       - name: Install
         run: yarn --no-immutable
+      - name: Build
+        run: yarn build
       - name: Unit Test
         run: yarn test:json
       - name: Report Coverage

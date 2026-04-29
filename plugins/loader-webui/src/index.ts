@@ -62,6 +62,15 @@ export default class NodeManager extends Manager {
     return (this.mainTask ||= this.collect())
   }
 
+  protected reset() {
+    this.scanTask = undefined
+    this.mainTask = undefined
+    this.candidates = Object.create(null)
+    this.metaDeps = Object.create(null)
+    this.pkgTasks = Object.create(null)
+    this.ecosystems = []
+  }
+
   private async scan() {
     const meta = JSON.parse(await readFile(this.baseDir + '/package.json', 'utf8')) as PackageJson
     for (const key of ['dependencies']) {

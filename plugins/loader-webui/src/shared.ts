@@ -291,6 +291,17 @@ export abstract class Manager extends Service {
   abstract getPackages(): Promise<LocalObject[]>
   abstract getDependencies(): Promise<Dependency[]>
 
+  /** Drop cached scan results so subsequent reads re-walk node_modules. */
+  protected reset() {}
+
+  /** Force re-scan and re-broadcast the full packages dict. */
+  async refresh() {
+    this.reset()
+    this.packages = Object.create(null)
+    await this.getPackages()
+    this.entry?.refresh()
+  }
+
   flushPackage(name: string) {
     this.pending.add(name)
     this.flushTimer ??= setTimeout(() => {

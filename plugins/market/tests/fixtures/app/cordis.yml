@@ -1,0 +1,25 @@
+- id: log
+  name: '@cordisjs/plugin-logger'
+- id: timer
+  name: '@cordisjs/plugin-timer'
+- id: http
+  name: '@cordisjs/plugin-http'
+- id: server
+  name: '@cordisjs/plugin-server'
+  config:
+    port: __SERVER_PORT__
+- id: webui
+  name: '@cordisjs/plugin-webui'
+  config:
+    apiPath: /api
+- id: loader-webui
+  name: '@cordisjs/plugin-loader-webui'
+- id: market
+  name: '@cordisjs/plugin-market'
+  config:
+    endpoint: __MARKET_ENDPOINT__
+    timeout: 15000
+    ttl: 60000
+    registry:
+      endpoint: https://registry.npmjs.org
+      timeout: 30000

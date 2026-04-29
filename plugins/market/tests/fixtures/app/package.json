@@ -1,0 +1,19 @@
+{
+  "name": "@cordis-market-fixture/app",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "packageManager": "yarn@4.14.1",
+  "dependencies": {
+    "@cordisjs/plugin-http": "^1.4.0",
+    "@cordisjs/plugin-include": "^1.0.3",
+    "@cordisjs/plugin-loader": "^1.0.0-rc.3",
+    "@cordisjs/plugin-loader-webui": "portal:../../../../loader-webui",
+    "@cordisjs/plugin-logger": "^1.0.2",
+    "@cordisjs/plugin-market": "portal:../../..",
+    "@cordisjs/plugin-server": "^1.5.0",
+    "@cordisjs/plugin-timer": "^1.1.1",
+    "@cordisjs/plugin-webui": "portal:../../../../webui",
+    "cordis": "^4.0.0-rc.4"
+  }
+}

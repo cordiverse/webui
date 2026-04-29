@@ -200,7 +200,11 @@ class Installer extends Service {
 
   async exec(args: string[]): Promise<number> {
     const name = this.agent?.name ?? 'npm'
-    if (name !== 'yarn') args.unshift('install')
+    if (name === 'yarn') {
+      args.unshift('--no-immutable')
+    } else {
+      args.unshift('install')
+    }
     return new Promise<number>((resolve) => {
       const child = spawn(name, args, { cwd: this.cwd, shell: process.platform === 'win32' })
       const prefix = `[market:${name}]`
@@ -236,6 +240,7 @@ class Installer extends Service {
     }
 
     this.refresh()
+    await this.ctx.get('_manager')?.refresh()
     return 0
   }
 }

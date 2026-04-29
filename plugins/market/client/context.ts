@@ -1,8 +1,9 @@
 import type { InjectionKey, Ref, ComputedRef } from 'vue'
 import type { Dict } from 'cosmokit'
 import type { Dependency, SearchObject } from '../src'
+import type { ActivePackage } from './store'
 
-export const kActivePackage: InjectionKey<Ref<string>> = Symbol('market.active')
+export const kActivePackage: InjectionKey<Ref<ActivePackage>> = Symbol('market.active')
 export const kPackagesMap: InjectionKey<ComputedRef<Dict<SearchObject>>> = Symbol('market.packages')
 export const kDependencies: InjectionKey<ComputedRef<Dict<Dependency>>> = Symbol('market.deps')
 export const kRefresh: InjectionKey<() => void> = Symbol('market.refresh')

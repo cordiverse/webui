@@ -242,7 +242,7 @@ function upgradeAll() {
 }
 
 function openDetail(name: string) {
-  activePackage.value = name
+  activePackage.value = { name, bulkModeEnabled: true }
 }
 
 async function refresh() {

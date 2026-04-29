@@ -11,7 +11,7 @@ import { activePackage } from './store'
 const props = defineProps<{ name: string }>()
 
 function onClick() {
-  activePackage.value = props.name
+  activePackage.value = { name: props.name, bulkModeEnabled: false }
 }
 
 </script>

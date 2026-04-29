@@ -1,7 +1,7 @@
 {
   "name": "@cordisjs/plugin-market",
   "description": "Plugin market for Cordis",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "type": "module",
   "exports": {
     ".": {
@@ -60,7 +60,7 @@
   },
   "devDependencies": {
     "@cordisjs/client": "^0.5.2",
-    "@cordisjs/market": "^4.3.3",
+    "@cordisjs/market": "^4.3.4",
     "@cordisjs/plugin-http": "^1.5.0",
     "@cordisjs/plugin-include": "^1.0.3",
     "@cordisjs/plugin-loader": "^1.0.0-rc.3",

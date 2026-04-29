@@ -14,7 +14,13 @@ export const storage = useStorage<MarketStorage>('market', 1, () => ({
   override: {},
 }))
 
+export interface ActivePackage {
+  name: string
+  /** Whether the global bulk-mode toggle should apply to this dialog. */
+  bulkModeEnabled: boolean
+}
+
 // Module-level singletons so dialogs work across pages
-export const activePackage = ref('')
+export const activePackage = ref<ActivePackage>({ name: '', bulkModeEnabled: true })
 export const showConfirm = ref(false)
 export const showManual = ref(false)

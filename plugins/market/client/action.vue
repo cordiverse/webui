@@ -26,10 +26,10 @@ const props = defineProps<{
 const name = computed(() => props.data.package.name)
 const installed = computed(() => Boolean(props.deps[name.value]))
 
-const activeName = inject(kActivePackage)!
+const activePackage = inject(kActivePackage)!
 
 function open() {
-  activeName.value = name.value
+  activePackage.value = { name: name.value, bulkModeEnabled: true }
 }
 
 </script>

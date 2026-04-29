@@ -9,6 +9,16 @@
       <div class="detail-header">
         <span class="detail-name">{{ shortname }}</span>
         <span v-if="isWorkspace" class="workspace-tag">工作区</span>
+        <a
+          v-if="homepage"
+          class="homepage-icon"
+          :href="homepage"
+          target="_blank"
+          rel="noopener"
+          title="主页"
+        >
+          <k-icon name="external"/>
+        </a>
         <el-select
           v-if="!isWorkspace && versionKeys.length"
           v-model="selectedVersion"
@@ -23,14 +33,14 @@
           />
         </el-select>
       </div>
+
+      <p v-if="desc" class="desc mt-3 mb-0">{{ desc }}</p>
     </template>
 
     <template v-if="pkg">
       <p v-if="danger" class="banner danger">{{ danger }}</p>
       <p v-if="warning" class="banner warning">{{ warning }}</p>
       <p v-if="repairHint" class="banner danger">{{ repairHint }}</p>
-
-      <p v-if="desc" class="desc">{{ desc }}</p>
 
       <div class="meta-grid">
         <div class="meta-row">
@@ -93,43 +103,31 @@
     </template>
 
     <template #footer>
-      <div class="footer-row">
-        <el-checkbox v-model="bulkMode">批量操作模式</el-checkbox>
-        <a
-          v-if="homepage"
-          :href="homepage"
-          target="_blank"
-          rel="noopener"
-          class="homepage-link"
-        >
-          主页 →
-        </a>
-        <span class="footer-spacer"/>
-        <el-button @click="show = false">取消</el-button>
-        <el-button
-          v-if="manager && isInstalled && !isWorkspace"
-          @click="onConfigure"
-        >
-          {{ hasForks ? '配置' : '添加配置' }}
+      <el-checkbox v-if="bulkModeEnabled" v-model="bulkMode" class="footer-bulk">批量操作模式</el-checkbox>
+      <el-button @click="show = false">取消</el-button>
+      <el-button
+        v-if="manager && isInstalled && !isWorkspace"
+        @click="onConfigure"
+      >
+        {{ hasForks ? '配置' : '添加配置' }}
+      </el-button>
+      <template v-if="isWorkspace">
+        <el-button v-if="isInstalled" type="danger" :loading="busy" @click="onRemove">移除</el-button>
+        <el-button v-else type="primary" :loading="busy" @click="onAddWorkspace">添加</el-button>
+      </template>
+      <template v-else-if="versionKeys.length">
+        <el-button v-if="showRemoveButton" type="danger" :loading="busy" @click="onUninstallClick">
+          {{ bulkMode ? '等待卸载' : '卸载' }}
         </el-button>
-        <template v-if="isWorkspace">
-          <el-button v-if="isInstalled" type="danger" :loading="busy" @click="onRemove">移除</el-button>
-          <el-button v-else type="primary" :loading="busy" @click="onAddWorkspace">添加</el-button>
-        </template>
-        <template v-else-if="versionKeys.length">
-          <el-button v-if="showRemoveButton" type="danger" :loading="busy" @click="onUninstallClick">
-            {{ bulkMode ? '等待卸载' : '卸载' }}
-          </el-button>
-          <el-button
-            type="primary"
-            :loading="busy"
-            :disabled="!selectedVersion || unchanged"
-            @click="onInstall"
-          >
-            {{ installButtonText }}
-          </el-button>
-        </template>
-      </div>
+        <el-button
+          type="primary"
+          :loading="busy"
+          :disabled="!selectedVersion || unchanged"
+          @click="onInstall"
+        >
+          {{ installButtonText }}
+        </el-button>
+      </template>
     </template>
   </el-dialog>
 
@@ -144,12 +142,9 @@
       该插件存在 {{ forks.length }} 份配置, 是否一并删除？
     </p>
     <template #footer>
-      <div class="footer-row">
-        <span class="footer-spacer"/>
-        <el-button @click="showRemoveConfigDialog = false">取消</el-button>
-        <el-button @click="confirmUninstall(false)">仅卸载</el-button>
-        <el-button type="danger" :loading="busy" @click="confirmUninstall(true)">同时删除配置</el-button>
-      </div>
+      <el-button @click="showRemoveConfigDialog = false">取消</el-button>
+      <el-button @click="confirmUninstall(false)">仅卸载</el-button>
+      <el-button type="danger" :loading="busy" @click="confirmUninstall(true)">同时删除配置</el-button>
     </template>
   </el-dialog>
 </template>
@@ -167,7 +162,12 @@ import { storage } from './store'
 
 const show = ref(false)
 
-const activeName = inject(kActivePackage)!
+const active = inject(kActivePackage)!
+const activeName = computed({
+  get: () => active.value.name,
+  set: (name) => { active.value = { ...active.value, name } },
+})
+const bulkModeEnabled = computed(() => active.value.bulkModeEnabled)
 const packages = inject(kPackagesMap)!
 const deps = inject(kDependencies)!
 const requestRefresh = inject(kRefresh)!
@@ -184,7 +184,7 @@ const showRemoveConfigDialog = ref(false)
 const pendingRemoveConfig = ref(false)
 
 const bulkMode = computed({
-  get: () => storage.value.bulkMode,
+  get: () => bulkModeEnabled.value && storage.value.bulkMode,
   set: (v) => { storage.value.bulkMode = v },
 })
 
@@ -522,6 +522,7 @@ function onAddWorkspace() {
 .detail-name {
   font-size: 16px;
   font-weight: 600;
+  line-height: 1;
   color: var(--text-primary);
 }
 
@@ -531,6 +532,27 @@ function onAddWorkspace() {
   border-radius: var(--radius-sm);
   background: var(--accent-muted, var(--bg-tertiary));
   color: var(--accent);
+}
+
+.homepage-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  transition: var(--color-transition);
+
+  &:hover {
+    background: var(--bg-hover);
+    color: var(--accent);
+  }
+
+  :deep(svg) {
+    width: 11px;
+    height: 11px;
+  }
 }
 
 .version-select {
@@ -556,7 +578,6 @@ function onAddWorkspace() {
 }
 
 .desc {
-  margin: 8px 0 12px;
   color: var(--text-secondary);
   font-size: 13px;
   line-height: 1.6;
@@ -641,24 +662,8 @@ function onAddWorkspace() {
   padding: 24px 0;
 }
 
-.footer-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.homepage-link {
-  color: var(--accent);
-  font-size: 12px;
-  text-decoration: none;
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
-
-.footer-spacer {
-  flex: 1;
+.footer-bulk {
+  margin-right: auto;
 }
 
 .remove-prompt {

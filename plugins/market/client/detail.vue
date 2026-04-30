@@ -2,7 +2,6 @@
   <el-dialog
     v-model="show"
     class="market-detail-dialog"
-    destroy-on-close
     width="680px"
   >
     <template #header>
@@ -123,8 +122,12 @@
         {{ hasEntries ? '配置' : '添加配置' }}
       </el-button>
       <template v-if="isWorkspace">
-        <el-button v-if="isInstalled" type="danger" :loading="busy" @click="onRemove">移除</el-button>
-        <el-button v-else type="primary" :loading="busy" @click="onAddWorkspace">添加</el-button>
+        <el-button v-if="isInstalled" type="danger" :loading="busy" @click="onRemove">
+          {{ bulkMode ? '等待移除' : '移除' }}
+        </el-button>
+        <el-button v-else type="primary" :loading="busy" @click="onAddWorkspace">
+          {{ bulkMode ? '等待添加' : '添加' }}
+        </el-button>
       </template>
       <template v-else-if="versionKeys.length">
         <el-button v-if="showRemoveButton" type="danger" :loading="busy" @click="onUninstallClick">
@@ -153,6 +156,7 @@
       该插件存在 {{ entries.length }} 份配置, 是否一并删除？
     </p>
     <template #footer>
+      <el-checkbox v-model="saveChoice" class="footer-bulk">记住我的选择</el-checkbox>
       <el-button @click="showRemoveConfigDialog = false">取消</el-button>
       <el-button @click="confirmUninstall(false)">仅卸载</el-button>
       <el-button type="danger" :loading="busy" @click="confirmUninstall(true)">同时删除配置</el-button>
@@ -171,8 +175,6 @@ import type {} from '@cordisjs/plugin-loader-webui/client'
 import type { RemotePackage, DependencyMetaKey } from '../src'
 import { kActivePackage, kPackagesMap, kDependencies, kRefresh } from './context'
 import { storage } from './store'
-
-const show = ref(false)
 
 const active = inject(kActivePackage)!
 const activeName = computed({
@@ -193,18 +195,16 @@ const entries = computed(() => {
 const hasEntries = computed(() => entries.value.length > 0)
 
 const showRemoveConfigDialog = ref(false)
-const pendingRemoveConfig = ref(false)
+const saveChoice = ref(false)
 
 const bulkMode = computed({
   get: () => bulkModeEnabled.value && storage.value.bulkMode,
   set: (v) => { storage.value.bulkMode = v },
 })
 
-watch(activeName, (name) => {
-  show.value = !!name
-})
-watch(show, (v) => {
-  if (!v) activeName.value = ''
+const show = ref(false)
+watch(active, () => {
+  if (active.value.name) show.value = true
 })
 
 const pkg = computed(() => {
@@ -445,18 +445,30 @@ function onUninstallClick() {
     show.value = false
     return
   }
-  if (manager.value && hasEntries.value) {
-    showRemoveConfigDialog.value = true
+  if (!manager.value || !hasEntries.value) {
+    runUninstall(false)
     return
   }
-  runUninstall(false)
+  const pref = storage.value.removeConfig
+  if (typeof pref === 'boolean') {
+    runUninstall(pref)
+    return
+  }
+  saveChoice.value = false
+  showRemoveConfigDialog.value = true
 }
 
 async function confirmUninstall(removeConfig: boolean) {
   showRemoveConfigDialog.value = false
-  pendingRemoveConfig.value = removeConfig
+  if (saveChoice.value) {
+    storage.value.removeConfig = removeConfig
+  }
+  saveChoice.value = false
   await runUninstall(removeConfig)
 }
+
+watch(active, (v) => console.log('active changed', v), { deep: true })                                                                  
+watch(show, (v) => console.log('show changed', v))    
 
 async function runUninstall(removeConfig: boolean) {
   const name = activeName.value
@@ -530,11 +542,21 @@ function onInstall() {
 }
 
 function onRemove() {
+  if (bulkMode.value) {
+    setOverride(activeName.value, '')
+    show.value = false
+    return
+  }
   runInstall({ [activeName.value]: null })
 }
 
 function onAddWorkspace() {
   const version = pkg.value?.package.version ?? '*'
+  if (bulkMode.value) {
+    setOverride(activeName.value, version)
+    show.value = false
+    return
+  }
   runInstall({ [activeName.value]: version })
 }
 

@@ -104,10 +104,6 @@
         <p>未检测到任何依赖。</p>
       </k-empty>
     </div>
-
-    <detail-dialog/>
-    <confirm-dialog/>
-    <manual-dialog/>
   </k-layout>
 </template>
 
@@ -117,9 +113,6 @@ import { computed, provide, ref, watch } from 'vue'
 import { send, useRpc } from '@cordisjs/client'
 import type { Dict } from 'cosmokit'
 import type { Data, RemotePackage, DependencyMetaKey } from '../src'
-import DetailDialog from './detail.vue'
-import ConfirmDialog from './confirm.vue'
-import ManualDialog from './manual.vue'
 import { kActivePackage, kPackagesMap, kDependencies, kRefresh, kShowConfirm, kShowManual } from './context'
 import { activePackage, showConfirm, showManual, storage } from './store'
 

@@ -84,6 +84,7 @@
 <script lang="ts" setup>
 
 import { computed, provide, ref, watch, nextTick } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { message, send, useRpc } from '@cordisjs/client'
 import { MarketSearch, MarketFilter, MarketList, getFiltered, hasFilter, kConfig } from '@cordisjs/market'
 import type { SearchObject } from '@cordisjs/registry'
@@ -102,6 +103,28 @@ const packageCount = computed(() => packages.value.length)
 
 const words = ref<string[]>([''])
 const pending = ref(new Set<string>())
+
+const route = useRoute()
+const router = useRouter()
+
+const prompt = computed(() => words.value.filter(w => w).join(' '))
+
+watch(() => route.query.keyword, (keyword) => {
+  const value = Array.isArray(keyword) ? keyword.join(' ') : (keyword ?? '')
+  if (value === prompt.value) return
+  const parts = value.split(' ').map(w => w.toLowerCase())
+  if (parts[parts.length - 1]) parts.push('')
+  words.value = parts.length ? parts : ['']
+}, { immediate: true })
+
+watch(prompt, (value) => {
+  const { keyword: _, ...rest } = route.query
+  if (value) {
+    router.replace({ query: { keyword: value, ...rest } })
+  } else {
+    router.replace({ query: rest })
+  }
+})
 
 const pendingCount = computed(() => Object.keys(storage.value.override).length)
 

@@ -207,15 +207,14 @@ class Installer extends Service {
     }
     return new Promise<number>((resolve) => {
       const child = spawn(name, args, { cwd: this.cwd, shell: process.platform === 'win32' })
-      const prefix = `[market:${name}]`
       child.stdout.on('data', (data) => {
         for (const line of data.toString().split('\n')) {
-          if (line) this.ctx.logger.info('%c %s', prefix, line)
+          if (line) this.ctx.logger.info(line)
         }
       })
       child.stderr.on('data', (data) => {
         for (const line of data.toString().split('\n')) {
-          if (line) this.ctx.logger.warn('%c %s', prefix, line)
+          if (line) this.ctx.logger.warn(line)
         }
       })
       child.on('exit', (code) => resolve(code ?? -1))

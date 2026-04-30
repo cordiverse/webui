@@ -44,7 +44,7 @@
     "build"
   ],
   "peerDependencies": {
-    "yakumo": "^3.1.1"
+    "yakumo": "^3.1.2"
   },
   "peerDependenciesMeta": {
     "yakumo": {
@@ -52,7 +52,7 @@
     }
   },
   "devDependencies": {
-    "yakumo": "^3.1.1"
+    "yakumo": "^3.1.2"
   },
   "dependencies": {
     "@cordisjs/components": "0.1.1",

@@ -34,27 +34,31 @@
       </tbody>
     </table>
     <template #footer>
-      <div class="footer-row">
-        <span class="footer-spacer"/>
-        <el-button type="danger" plain @click="clearAll" :disabled="!entries.length">
-          丢弃改动
-        </el-button>
-        <el-button
-          type="primary"
-          :loading="busy"
-          :disabled="!entries.length"
-          @click="apply"
-        >
-          确认安装
-        </el-button>
-      </div>
+      <el-checkbox
+        v-model="removeConfig"
+        :disabled="!hasRemove || !manager"
+        class="footer-checkbox"
+      >
+        为新卸载的依赖删除配置
+      </el-checkbox>
+      <el-button type="danger" plain @click="clearAll" :disabled="!entries.length">
+        丢弃改动
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="busy"
+        :disabled="!entries.length"
+        @click="apply"
+      >
+        确认安装
+      </el-button>
     </template>
   </el-dialog>
 </template>
 
 <script lang="ts" setup>
 
-import { computed, inject, ref } from 'vue'
+import { computed, inject, ref, watch } from 'vue'
 import { message, send, useInject } from '@cordisjs/client'
 import type { Dict } from 'cosmokit'
 import { kDependencies, kRefresh, kShowConfirm } from './context'
@@ -68,6 +72,12 @@ const manager = useInject('manager')
 const busy = ref(false)
 
 const entries = computed(() => Object.entries(storage.value.override))
+const hasRemove = computed(() => entries.value.some(([, v]) => v === ''))
+
+const removeConfig = ref(storage.value.removeConfig === true)
+watch(show, (v) => {
+  if (v) removeConfig.value = storage.value.removeConfig === true
+})
 
 function clearAll() {
   storage.value.override = {}
@@ -80,10 +90,13 @@ async function apply() {
   const payload: Dict<string | null> = {}
   // capture which packages are newly added (not yet installed)
   const newlyInstalled: string[] = []
+  const removals: string[] = []
   for (const [name, version] of entries.value) {
     payload[name] = version === '' ? null : '^' + version
     if (version !== '' && !deps.value[name]?.resolved) {
       newlyInstalled.push(name)
+    } else if (version === '') {
+      removals.push(name)
     }
   }
   try {
@@ -92,13 +105,23 @@ async function apply() {
       message({ message: '安装失败, 请查看控制台日志', type: 'error' })
       return
     }
-    // ensure config nodes for newly installed packages
     if (manager.value) {
+      // ensure config nodes for newly installed packages
       for (const name of newlyInstalled) {
         try {
           await manager.value.ensure(name, true)
         } catch (err) {
           console.warn('ensure config for', name, err)
+        }
+      }
+      // optionally remove config for newly removed packages
+      if (removeConfig.value) {
+        for (const name of removals) {
+          try {
+            await manager.value.remove(name)
+          } catch (err) {
+            console.warn('remove config for', name, err)
+          }
         }
       }
     }
@@ -170,14 +193,8 @@ async function apply() {
   }
 }
 
-.footer-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.footer-spacer {
-  flex: 1;
+.footer-checkbox {
+  margin-right: auto;
 }
 
 </style>

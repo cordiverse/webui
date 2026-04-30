@@ -18,9 +18,11 @@ export function useContext() {
 
 export function useInject<K extends string & keyof Context>(name: K): Ref<Context[K]> {
   const parent = inject(kContext)!
-  const service = ref<any>(markRaw(parent.get(name)!))
+  const initial = parent.get(name)
+  const service = ref<any>(typeof initial == 'object' && initial ? markRaw(initial) : initial)
   onScopeDispose(parent.on('internal/service', () => {
-    service.value = markRaw(parent.get(name)!)
+    const value = parent.get(name)
+    service.value = typeof value == 'object' && value ? markRaw(value) : value
   }))
   return service
 }

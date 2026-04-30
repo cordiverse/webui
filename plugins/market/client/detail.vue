@@ -9,16 +9,6 @@
       <div class="detail-header">
         <span class="detail-name">{{ shortname }}</span>
         <span v-if="isWorkspace" class="workspace-tag">工作区</span>
-        <a
-          v-if="homepage"
-          class="homepage-icon"
-          :href="homepage"
-          target="_blank"
-          rel="noopener"
-          title="主页"
-        >
-          <k-icon name="external"/>
-        </a>
         <el-select
           v-if="!isWorkspace && versionKeys.length"
           v-model="selectedVersion"
@@ -38,6 +28,27 @@
     </template>
 
     <template v-if="pkg">
+      <div v-if="links.length" class="links-row">
+        <a
+          v-for="link in links"
+          :key="link.label"
+          class="link-button"
+          :href="link.href"
+          target="_blank"
+          rel="noopener"
+        >
+          {{ link.label }}
+          <k-icon name="external"/>
+        </a>
+      </div>
+
+      <p v-if="updateHint" class="banner primary">
+        {{ updateHint }}
+        <a class="banner-action" @click="onAddWorkspace">点击添加</a>
+      </p>
+      <p v-if="outdatedHint" class="banner primary">
+        {{ outdatedHint }}
+      </p>
       <p v-if="danger" class="banner danger">{{ danger }}</p>
       <p v-if="warning" class="banner warning">{{ warning }}</p>
       <p v-if="repairHint" class="banner danger">{{ repairHint }}</p>
@@ -106,10 +117,10 @@
       <el-checkbox v-if="bulkModeEnabled" v-model="bulkMode" class="footer-bulk">批量操作模式</el-checkbox>
       <el-button @click="show = false">取消</el-button>
       <el-button
-        v-if="manager && isInstalled && !isWorkspace"
+        v-if="manager && isInstalled"
         @click="onConfigure"
       >
-        {{ hasForks ? '配置' : '添加配置' }}
+        {{ hasEntries ? '配置' : '添加配置' }}
       </el-button>
       <template v-if="isWorkspace">
         <el-button v-if="isInstalled" type="danger" :loading="busy" @click="onRemove">移除</el-button>
@@ -139,7 +150,7 @@
     append-to-body
   >
     <p class="remove-prompt">
-      该插件存在 {{ forks.length }} 份配置, 是否一并删除？
+      该插件存在 {{ entries.length }} 份配置, 是否一并删除？
     </p>
     <template #footer>
       <el-button @click="showRemoveConfigDialog = false">取消</el-button>
@@ -156,6 +167,7 @@ import { message, send, useInject } from '@cordisjs/client'
 import { useI18nText } from '@cordisjs/components'
 import { parse, satisfies } from 'semver'
 import type { Dict } from 'cosmokit'
+import type {} from '@cordisjs/plugin-loader-webui/client'
 import type { RemotePackage, DependencyMetaKey } from '../src'
 import { kActivePackage, kPackagesMap, kDependencies, kRefresh } from './context'
 import { storage } from './store'
@@ -174,11 +186,11 @@ const requestRefresh = inject(kRefresh)!
 
 const manager = useInject('manager')
 
-const forks = computed(() => {
+const entries = computed(() => {
   if (!manager.value || !activeName.value) return []
   return manager.value.get(activeName.value) ?? []
 })
-const hasForks = computed(() => forks.value.length > 0)
+const hasEntries = computed(() => entries.value.length > 0)
 
 const showRemoveConfigDialog = ref(false)
 const pendingRemoveConfig = ref(false)
@@ -210,7 +222,38 @@ const shortname = computed(() => pkg.value?.shortname ?? activeName.value)
 const current = computed(() => deps.value[activeName.value]?.resolved)
 const isInstalled = computed(() => !!deps.value[activeName.value])
 const isWorkspace = computed(() => !!deps.value[activeName.value]?.workspace)
-const homepage = computed(() => pkg.value?.package.links?.homepage || pkg.value?.package.links?.repository)
+const links = computed<Array<{ label: string; href: string }>>(() => {
+  const list = pkg.value?.package.links
+  if (!list) return []
+  const out: Array<{ label: string; href: string }> = []
+  if (list.homepage) out.push({ label: '主页', href: list.homepage })
+  if (list.npm && current.value && !isWorkspace.value) {
+    out.push({ label: `npm @ ${current.value}`, href: `${list.npm}/v/${current.value}` })
+  } else if (list.npm) {
+    out.push({ label: 'npm', href: list.npm })
+  }
+  if (list.repository) out.push({ label: '存储库', href: list.repository })
+  if (list.bugs) out.push({ label: '问题反馈', href: list.bugs })
+  return out
+})
+
+const outdatedHint = computed(() => {
+  if (isWorkspace.value || !current.value) return ''
+  const latest = versionKeys.value[0]
+  if (!latest || latest === current.value) return ''
+  try {
+    if (parse(latest) && parse(current.value) && parse(latest)!.compare(current.value) <= 0) return ''
+  } catch {}
+  return `当前的插件版本 ${current.value} 不是最新 (${latest})。`
+})
+
+const updateHint = computed(() => {
+  // workspace package whose name is not in dependencies — suggest adding
+  if (!isWorkspace.value) return ''
+  if (!activeName.value) return ''
+  if (deps.value[activeName.value]) return ''
+  return '尚未将当前插件列入依赖。'
+})
 
 const tt = useI18nText()
 const desc = computed(() => pkg.value?.manifest?.description ? tt(pkg.value.manifest.description) : '')
@@ -402,7 +445,7 @@ function onUninstallClick() {
     show.value = false
     return
   }
-  if (manager.value && hasForks.value) {
+  if (manager.value && hasEntries.value) {
     showRemoveConfigDialog.value = true
     return
   }
@@ -534,27 +577,6 @@ function onAddWorkspace() {
   color: var(--accent);
 }
 
-.homepage-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
-  transition: var(--color-transition);
-
-  &:hover {
-    background: var(--bg-hover);
-    color: var(--accent);
-  }
-
-  :deep(svg) {
-    width: 11px;
-    height: 11px;
-  }
-}
-
 .version-select {
   width: 200px;
   margin-left: auto;
@@ -574,6 +596,49 @@ function onAddWorkspace() {
   &.warning {
     background: var(--warning-muted, rgba(250, 204, 21, 0.1));
     color: var(--warning, #facc15);
+  }
+
+  &.primary {
+    background: var(--accent-muted, rgba(96, 165, 250, 0.1));
+    color: var(--accent);
+  }
+}
+
+.banner-action {
+  margin-left: 4px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.links-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 4px;
+}
+
+.link-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-primary);
+  color: var(--text-secondary);
+  background: transparent;
+  text-decoration: none;
+  transition: var(--color-transition);
+
+  &:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--bg-hover);
+  }
+
+  :deep(svg) {
+    width: 10px;
+    height: 10px;
   }
 }
 

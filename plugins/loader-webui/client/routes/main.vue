@@ -7,7 +7,7 @@
     <k-slot name="plugin-details">
       <!-- dependency -->
       <k-slot-item :order="1000">
-        <k-slot name="plugin-dependency" single>
+        <k-slot name="plugin-dependency" single :data="{ env }">
           <k-comment
             v-for="({ required, provider }, name) in env.using" :key="name"
             :type="provider ? 'success' : required ? 'warning' : 'primary'">

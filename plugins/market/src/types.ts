@@ -85,6 +85,15 @@ export interface SearchPackage extends DatedPackage, Pick<RemotePackage, Depende
 
 export interface Manifest {
   description?: string | Dict<string>
+  service?: Manifest.Service
+}
+
+export namespace Manifest {
+  export interface Service {
+    required?: string[]
+    optional?: string[]
+    implements?: string[]
+  }
 }
 
 export interface Score {

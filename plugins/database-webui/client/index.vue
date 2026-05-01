@@ -89,10 +89,6 @@ function closeTab(id: string) {
   closeTabState(id)
 }
 
-function refresh() {
-  send('database-webui.refresh')
-}
-
 ctx.client.action.menu('databaseTab', [
   { id: '.close', label: '关闭' },
   { id: '.closeOthers', label: '关闭其他' },

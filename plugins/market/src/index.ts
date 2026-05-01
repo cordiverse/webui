@@ -54,26 +54,32 @@ export function apply(ctx: Context, config: Config) {
   ctx.plugin(Market, config)
 
   ctx.inject(['installer', 'market'], (ctx) => {
-    let dependencies: Dict<Dependency> = {}
-
     const entry = ctx.webui.addEntry<Data>({
       path: '@cordisjs/plugin-market/dist',
       base: import.meta.url,
       dev: '../client/index.ts',
       prod: '../dist/manifest.json',
-    }, () => ({
+    }, {
       market: ctx.market.snapshot(),
-      dependencies,
-    }))
+      dependencies: {},
+    })
+
+    const refreshMarket = () => {
+      entry.mutate((d) => {
+        d.market = ctx.market.snapshot()
+      })
+    }
 
     const refreshDeps = async () => {
-      dependencies = await ctx.installer.getDeps().catch(() => ({}))
-      entry.refresh()
+      const dependencies = await ctx.installer.getDeps().catch(() => ({}))
+      entry.mutate((d) => {
+        d.dependencies = dependencies
+      })
     }
 
     refreshDeps()
 
-    ctx.effect(() => ctx.market.subscribe(() => entry.refresh()))
+    ctx.effect(() => ctx.market.subscribe(refreshMarket))
 
     ctx.webui.addListener('market/refresh', async () => {
       await ctx.market.refresh(true)

@@ -3,26 +3,26 @@
     <template #header>
       <span class="crumb">Routes</span>
       <span class="crumb-sub" v-if="data">
-        {{ data.routes.length }} routes · {{ data.stats.requestsLastHour }} req/h
+        {{ routes.length }} routes · {{ stats.requestsLastHour }} req/h
       </span>
     </template>
 
     <div class="routes-body">
       <div class="stat-row">
         <div class="stat-card">
-          <div class="stat-value">{{ data?.stats.totalRoutes ?? 0 }}</div>
+          <div class="stat-value">{{ routes.length }}</div>
           <div class="stat-label">Total Routes</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">{{ data?.stats.requestsLastHour ?? 0 }}</div>
+          <div class="stat-value">{{ stats.requestsLastHour }}</div>
           <div class="stat-label">Requests (1h)</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">{{ formatDuration(data?.stats.avgLatency) }}</div>
+          <div class="stat-value">{{ formatDuration(stats.avgLatency) }}</div>
           <div class="stat-label">Avg Latency</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">{{ ((data?.stats.errorRate ?? 0) * 100).toFixed(1) }}%</div>
+          <div class="stat-value">{{ (stats.errorRate * 100).toFixed(1) }}%</div>
           <div class="stat-label">Error Rate</div>
         </div>
       </div>
@@ -71,7 +71,7 @@
 
 <script lang="ts" setup>
 
-import { computed } from 'vue'
+import { computed, onUnmounted, ref } from 'vue'
 import { useContext, useRpc } from '@cordisjs/client'
 import type {} from '@cordisjs/plugin-loader-webui/client'
 import type { Data, ServerRoute } from '../src'
@@ -80,7 +80,33 @@ import { formatDuration, methodClass, statusClass } from './utils'
 const ctx = useContext()
 const data = useRpc<Data>()
 
-const routes = computed(() => data.value?.routes ?? [])
+const routes = computed<ServerRoute[]>(() => Object.values(data.value?.routes ?? {}))
+
+// Sliding-window stats are computed on the client from `requests`, driven by
+// a lightweight `now` tick so windows still slide when the server is idle.
+const now = ref(Date.now())
+const tick = setInterval(() => { now.value = Date.now() }, 30_000)
+onUnmounted(() => clearInterval(tick))
+
+const stats = computed(() => {
+  const horizon = now.value - 3600_000
+  const requests = data.value?.requests ?? []
+  let count = 0
+  let errors = 0
+  let totalLatency = 0
+  for (const req of requests) {
+    if (req.startTime < horizon) continue
+    if (!req.endTime) continue
+    count++
+    totalLatency += req.endTime - req.startTime
+    if (req.status >= 400 || req.status === 0) errors++
+  }
+  return {
+    requestsLastHour: count,
+    avgLatency: count ? Math.round(totalLatency / count) : 0,
+    errorRate: count ? errors / count : 0,
+  }
+})
 
 function fullPath(route: ServerRoute) {
   return (route.interceptPath ?? '') + route.path

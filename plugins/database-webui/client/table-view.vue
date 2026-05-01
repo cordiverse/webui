@@ -88,7 +88,7 @@ const props = defineProps<{
 
 const loading = ref(false)
 const error = ref('')
-const total = ref(props.info?.count ?? 0)
+const total = ref(0)
 
 const rows = computed(() => {
   const key = cacheKey(props.tab)
@@ -126,10 +126,6 @@ async function load() {
 }
 
 watch(() => cacheKey(props.tab), () => load(), { immediate: true })
-
-watch(() => props.info?.count, (n) => {
-  if (typeof n === 'number') total.value = n
-})
 
 function reload() {
   rowCache.delete(cacheKey(props.tab))

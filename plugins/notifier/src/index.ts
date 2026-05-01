@@ -29,11 +29,11 @@ export class Notifier {
     this.dispose = ctx.effect(() => {
       ctx.notifier.store.push(this)
       this.update(options)
-      ctx.notifier.entry?.refresh()
+      ctx.notifier.refresh()
       return () => {
         this.clearActions()
         remove(ctx.notifier.store, this)
-        ctx.notifier.entry?.refresh()
+        ctx.notifier.refresh()
       }
     })
   }
@@ -65,7 +65,7 @@ export class Notifier {
       })
     }
     Object.assign(this.options, options)
-    this.ctx.notifier.entry?.refresh()
+    this.ctx.notifier.refresh()
   }
 
   toJSON(): Notifier.Data {
@@ -109,13 +109,17 @@ class NotifierService extends Service {
         base: import.meta.url,
         dev: '../client/index.ts',
         prod: '../dist/manifest.json',
-      }, () => ({
-        notifiers: this.store.map(notifier => notifier.toJSON()),
-      }))
+      }, { notifiers: [] as Notifier.Data[] })
 
       ctx.webui.addListener('notifier/button', (id: string) => {
         return this.actions[id]()
       })
+    })
+  }
+
+  refresh() {
+    this.entry?.mutate((d) => {
+      d.notifiers = this.store.map(notifier => notifier.toJSON())
     })
   }
 

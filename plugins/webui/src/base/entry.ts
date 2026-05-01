@@ -1,8 +1,8 @@
 import { Context } from 'cordis'
-import { Client } from './index.ts'
 import type { Manifest } from 'vite'
 import { fileURLToPath } from 'node:url'
 import { readFileSync } from 'node:fs'
+import { DeltaState, observe } from '@cordisjs/muon'
 import { EntryData } from '../../shared'
 
 export namespace Entry {
@@ -14,32 +14,31 @@ export namespace Entry {
   }
 }
 
-export class Entry<T = any> {
+export class Entry<T extends object = any> {
   public id = Math.random().toString(36).slice(2)
   public dispose: () => void
+  public state = new DeltaState()
 
   private _disposed = false
   private _manifest: Manifest | undefined
 
-  constructor(public ctx: Context, public files: Entry.Files, public data?: (client: Client) => T) {
+  constructor(public ctx: Context, public files: Entry.Files, public data: T) {
     ctx.webui.entries[this.id] = this
-    ctx.webui.broadcast('entry:init', (client: Client) => ({
+    ctx.webui.broadcast('entry:init', {
       serverId: ctx.webui.id,
-      clientId: client.id,
       entries: {
-        [this.id]: this.toJSON(client),
+        [this.id]: this.toJSON(),
       },
-    }))
+    })
     this.dispose = ctx.effect(() => () => {
       this._disposed = true
       delete this.ctx.webui.entries[this.id]
-      ctx.webui.broadcast('entry:init', (client: Client) => ({
+      ctx.webui.broadcast('entry:init', {
         serverId: ctx.webui.id,
-        clientId: client.id,
         entries: {
           [this.id]: null,
         },
-      }))
+      })
     }, 'ctx.webui.addEntry()')
   }
 
@@ -50,29 +49,21 @@ export class Entry<T = any> {
     return this._manifest = manifest
   }
 
-  refresh() {
+  mutate(fn: (data: T) => void): void {
     if (this._disposed) return
-    this.ctx.webui.broadcast('entry:update', (client: Client) => ({
-      id: this.id,
-      data: this.data?.(client),
-    }))
+    const mutation = observe(this.data, fn)
+    if (!mutation) return
+    const delta = this.state.dump(mutation)
+    this.ctx.webui.broadcast('entry:delta', { id: this.id, ...delta })
   }
 
-  patch(data: any, key?: string) {
-    if (this._disposed) return
-    this.ctx.webui.broadcast('entry:patch', {
-      id: this.id,
-      data,
-      key,
-    })
-  }
-
-  toJSON(client: Client): EntryData | undefined {
+  toJSON(): EntryData | undefined {
     try {
       return {
         files: this.ctx.webui.getEntryFiles(this),
         entryId: this.ctx.get('loader')?.locate(),
-        data: JSON.parse(JSON.stringify(this.data?.(client))),
+        data: JSON.parse(JSON.stringify(this.data)),
+        cursor: this.state.snapshot(),
       }
     } catch (e) {
       this.ctx.logger.error(e)

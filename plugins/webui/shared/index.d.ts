@@ -1,26 +1,28 @@
+import type { Delta, DeltaOp, PathSegment } from '@cordisjs/muon'
+
+export interface DeltaCursor {
+  p: PathSegment[]
+  o: DeltaOp
+}
+
 export interface EntryData {
   files: string[]
   entryId?: string
   data?: any
+  cursor?: DeltaCursor
 }
 
 export interface EntryInit {
   entries: Dict<EntryData>
   serverId: string
-  clientId: string
+  clientId?: string
 }
 
-export interface EntryUpdate extends EntryData {
+export interface EntryDelta extends Delta {
   id: string
-}
-
-export interface EntryPatch extends EntryData {
-  id: string
-  key?: string
 }
 
 export interface Events {
   'entry:init'(data: EntryInit): void
-  'entry:update'(data: EntryUpdate): void
-  'entry:patch'(data: EntryPatch): void
+  'entry:delta'(data: EntryDelta): void
 }

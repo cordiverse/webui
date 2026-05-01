@@ -47,18 +47,15 @@ export abstract class WebUI extends Service {
   abstract getEntryFiles(entry: Entry): string[]
   abstract addListener<K extends keyof Events>(event: K, callback: Events[K]): void
 
-  addEntry<T>(files: Entry.Files, data?: (client: Client) => T) {
-    return new Entry(this.ctx, files, data)
+  addEntry<T extends object>(files: Entry.Files, data: T) {
+    return new Entry<T>(this.ctx, files, data)
   }
 
-  async broadcast(type: string, body: any) {
-    const handles = Object.values(this.clients)
-    if (!handles.length) return
-    await Promise.all(Object.values(this.clients).map(async (client) => {
-      const data = { type, body }
-      if (typeof body === 'function') data.body = await body(client)
-      client.socket.send(JSON.stringify(data))
-    }))
+  broadcast(type: string, body: any) {
+    const payload = JSON.stringify({ type, body })
+    for (const client of Object.values(this.clients)) {
+      client.socket.send(payload)
+    }
   }
 }
 

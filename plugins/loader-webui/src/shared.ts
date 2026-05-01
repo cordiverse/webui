@@ -179,21 +179,28 @@ export abstract class Manager extends Service {
       base: import.meta.url,
       dev: '../client/index.ts',
       prod: '../dist/manifest.json',
-    }, () => (this.getPackages(), {
+    }, {
       entries: this.getEntries(),
       packages: this.packages,
       services: this.getServices(),
       prefix: this.rootPrefix,
-    }))
+    })
+
+    // kick off package scan; results will arrive via flushPackage
+    this.getPackages()
 
     const updateEntries = this.ctx.debounce(() => {
-      this.entry?.patch({ entries: this.getEntries() })
+      this.entry?.mutate((d) => {
+        d.entries = this.getEntries()
+      })
     }, 0)
 
     this.ctx.on('loader/config-update', updateEntries)
 
     this.ctx.on('internal/service', this.ctx.debounce(() => {
-      this.entry?.patch({ services: this.getServices() })
+      this.entry?.mutate((d) => {
+        d.services = this.getServices()
+      })
     }, 0))
 
     this.ctx.on('internal/plugin', (fiber) => {
@@ -299,15 +306,20 @@ export abstract class Manager extends Service {
     this.reset()
     this.packages = Object.create(null)
     await this.getPackages()
-    this.entry?.refresh()
+    this.entry?.mutate((d) => {
+      d.packages = this.packages
+    })
   }
 
   flushPackage(name: string) {
     this.pending.add(name)
     this.flushTimer ??= setTimeout(() => {
-      this.entry?.patch(pick(this.packages, this.pending), 'packages')
+      const updates = pick(this.packages, this.pending)
       this.pending.clear()
       this.flushTimer = undefined
+      this.entry?.mutate((d) => {
+        Object.assign(d.packages, updates)
+      })
     }, 100)
   }
 

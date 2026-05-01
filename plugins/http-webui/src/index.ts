@@ -84,35 +84,40 @@ function sizeOfRecv(data: any): number {
 }
 
 export function apply(ctx: Context, config: Config) {
-  const history: HistoryEntry[] = []
   let nextId = 0
-
-  const data = (): Data => ({
-    history,
-    limit: config.historyLimit,
-    proxyBaseUrl: ctx.get('server.proxy')!.baseUrl,
-  })
 
   const entry = ctx.webui.addEntry<Data>({
     path: '@cordisjs/plugin-http-webui/dist',
     base: import.meta.url,
     dev: '../client/index.ts',
     prod: '../dist/manifest.json',
-  }, data)
+  }, {
+    history: [],
+    limit: config.historyLimit,
+    proxyBaseUrl: ctx.get('server.proxy')!.baseUrl,
+  })
 
   function pushRecord(record: HistoryEntry) {
-    history.push(record)
-    while (history.length > config.historyLimit) history.shift()
-    entry.refresh()
+    entry.mutate((d) => {
+      d.history.push(record)
+      // TODO: trim oldest with a front-truncate op when supported by muon
+    })
   }
 
-  function makeThrottledRefresh() {
-    let lastRefresh = 0
-    return () => {
+  function update(id: number, fn: (record: HistoryEntry) => void) {
+    entry.mutate((d) => {
+      const record = d.history.find(r => r.id === id)
+      if (record) fn(record)
+    })
+  }
+
+  function makeThrottledUpdate(id: number) {
+    let last = 0
+    return (fn: (record: HistoryEntry) => void) => {
       const now = performance.now()
-      if (now - lastRefresh < 100) return
-      lastRefresh = now
-      entry.refresh()
+      if (now - last < 100) return
+      last = now
+      update(id, fn)
     }
   }
 
@@ -138,21 +143,24 @@ export function apply(ctx: Context, config: Config) {
     }
     pushRecord(record)
 
-    const throttledRefresh = makeThrottledRefresh()
+    const throttledUpdate = makeThrottledUpdate(record.id)
 
-    function finalize() {
-      record.endTime = Date.now()
-      entry.refresh()
+    function finalize(fn: (record: HistoryEntry) => void = () => {}) {
+      update(record.id, (r) => {
+        fn(r)
+        r.endTime = Date.now()
+      })
     }
 
     try {
       const response = await next()
-      record.status = response.status
-      record.statusText = response.statusText
-      record.responseHeaders = headersToDict(response.headers)
       const declaredSize = parseSize(response.headers)
-      if (declaredSize) record.bytesIn = declaredSize
-      entry.refresh()
+      update(record.id, (r) => {
+        r.status = response.status
+        r.statusText = response.statusText
+        r.responseHeaders = headersToDict(response.headers)
+        if (declaredSize) r.bytesIn = declaredSize
+      })
 
       if (!response.body) {
         finalize()
@@ -163,13 +171,11 @@ export function apply(ctx: Context, config: Config) {
       const counter = new TransformStream<Uint8Array, Uint8Array>({
         transform(chunk, controller) {
           total += chunk.byteLength
-          record.bytesIn = total
-          throttledRefresh()
+          throttledUpdate((r) => { r.bytesIn = total })
           controller.enqueue(chunk)
         },
         flush() {
-          if (total) record.bytesIn = total
-          finalize()
+          finalize((r) => { if (total) r.bytesIn = total })
         },
       })
       return new Response(response.body.pipeThrough(counter), {
@@ -178,10 +184,11 @@ export function apply(ctx: Context, config: Config) {
         headers: response.headers,
       })
     } catch (e: any) {
-      record.status = 0
-      record.statusText = 'Error'
-      record.error = String(e?.message ?? e)
-      finalize()
+      finalize((r) => {
+        r.status = 0
+        r.statusText = 'Error'
+        r.error = String(e?.message ?? e)
+      })
       throw e
     }
   }, { global: true })
@@ -208,43 +215,48 @@ export function apply(ctx: Context, config: Config) {
     }
     pushRecord(record)
 
-    const throttledRefresh = makeThrottledRefresh()
+    const throttledUpdate = makeThrottledUpdate(record.id)
+    let bytesIn = 0
+    let bytesOut = sizeOfSent((init as any)?.body) || 0
 
     const originalSend = socket.send.bind(socket)
     socket.send = function (this: UndiciWebSocket, ...args: any[]) {
-      record.bytesOut += sizeOfSent(args[0])
-      throttledRefresh()
+      bytesOut += sizeOfSent(args[0])
+      throttledUpdate((r) => { r.bytesOut = bytesOut })
       return (originalSend as any)(...args)
     } as typeof socket.send
 
     socket.addEventListener('message', (event) => {
-      record.bytesIn += sizeOfRecv(event.data)
-      throttledRefresh()
+      bytesIn += sizeOfRecv(event.data)
+      throttledUpdate((r) => { r.bytesIn = bytesIn })
     })
 
     socket.addEventListener('open', () => {
-      record.status = 101
-      record.statusText = 'Switching Protocols'
-      record.wsStatus = 'open'
-      entry.refresh()
+      update(record.id, (r) => {
+        r.status = 101
+        r.statusText = 'Switching Protocols'
+        r.wsStatus = 'open'
+      })
     })
 
     socket.addEventListener('close', (event) => {
-      record.endTime = Date.now()
-      if (record.wsStatus === 'connecting') {
-        record.wsStatus = 'error'
-        record.error = event.reason || 'Connection failed'
-      } else {
-        record.wsStatus = 'closed'
-      }
-      entry.refresh()
+      update(record.id, (r) => {
+        r.endTime = Date.now()
+        if (r.wsStatus === 'connecting') {
+          r.wsStatus = 'error'
+          r.error = event.reason || 'Connection failed'
+        } else {
+          r.wsStatus = 'closed'
+        }
+      })
     })
 
     return socket
   }, { global: true })
 
   ctx.webui.addListener('http-webui.clear', () => {
-    history.length = 0
-    entry.refresh()
+    entry.mutate((d) => {
+      d.history.length = 0
+    })
   })
 }

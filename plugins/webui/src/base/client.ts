@@ -9,7 +9,7 @@ export class Client {
   constructor(readonly ctx: Context, public socket: WebSocket) {
     socket.addEventListener('message', this.receive)
     const body: EntryInit = {
-      entries: mapValues(this.ctx.webui.entries, entry => entry.toJSON(this)!),
+      entries: mapValues(this.ctx.webui.entries, entry => entry.toJSON()!),
       serverId: this.ctx.webui.id,
       clientId: this.id,
     }

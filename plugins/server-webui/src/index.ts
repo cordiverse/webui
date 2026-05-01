@@ -1,6 +1,6 @@
 import { Context } from 'cordis'
-import { Dict, Time } from 'cosmokit'
 import type Server from '@cordisjs/plugin-server'
+import type {} from '@cordisjs/plugin-timer'
 import type {} from '@cordisjs/plugin-webui'
 import z from 'schemastery'
 
@@ -36,21 +36,13 @@ export interface ServerRequest {
   plugin?: string
 }
 
-export interface Stats {
-  totalRoutes: number
-  requestsLastHour: number
-  avgLatency: number
-  errorRate: number
-}
-
 export interface Data {
   listening: boolean
   host: string
   port: number
   baseUrl: string
-  routes: ServerRoute[]
+  routes: Record<string, ServerRoute>
   requests: ServerRequest[]
-  stats: Stats
   requestLimit: number
 }
 
@@ -64,7 +56,7 @@ export const Config: z<Config> = z.object({
   requestLimit: z.natural().default(500).description('请求历史的最大条数。'),
 })
 
-export const inject = ['server', 'webui']
+export const inject = ['server', 'timer', 'webui']
 
 function routeKey(method: string, path: string | RegExp, interceptPath?: string) {
   const p = typeof path === 'string' ? path : path.toString()
@@ -83,66 +75,46 @@ function resolvePlugin(ctx: Context, route: any): string | undefined {
 
 export function apply(ctx: Context, config: Config) {
   const server: Server = ctx.server
-  const stats = new Map<string, ServerRoute>()
-  const requests: ServerRequest[] = []
   let nextRequestId = 0
 
-  function snapshotRoutes(): ServerRoute[] {
-    const out: ServerRoute[] = []
+  // Build the current routes dict keyed by routeKey. Existing stats (per-route
+  // aggregates) are preserved across rebuilds so delta payloads only contain
+  // what actually changed.
+  function collectRoutes(prior: Record<string, ServerRoute>): Record<string, ServerRoute> {
+    const out: Record<string, ServerRoute> = {}
     for (const route of server.httpRoutes) {
       const interceptPath = route.config?.path || undefined
       const key = routeKey(route.method, route.path, interceptPath)
-      const prior = stats.get(key)
-      out.push({
+      const p = prior[key]
+      out[key] = {
         id: key,
         method: route.method.toUpperCase(),
         path: stringifyPath(route.path),
         interceptPath,
         plugin: resolvePlugin(ctx, route),
-        requests: prior?.requests ?? 0,
-        totalLatency: prior?.totalLatency ?? 0,
-        avgLatency: prior?.avgLatency ?? 0,
-        lastStatus: prior?.lastStatus,
-      })
+        requests: p?.requests ?? 0,
+        totalLatency: p?.totalLatency ?? 0,
+        avgLatency: p?.avgLatency ?? 0,
+        lastStatus: p?.lastStatus,
+      }
     }
     for (const route of server.wsRoutes) {
       const interceptPath = route.config?.path || undefined
       const key = routeKey('WS', route.path, interceptPath)
-      const prior = stats.get(key)
-      out.push({
+      const p = prior[key]
+      out[key] = {
         id: key,
         method: 'WS',
         path: stringifyPath(route.path),
         interceptPath,
         plugin: resolvePlugin(ctx, route),
-        requests: prior?.requests ?? 0,
-        totalLatency: prior?.totalLatency ?? 0,
-        avgLatency: prior?.avgLatency ?? 0,
-        lastStatus: prior?.lastStatus,
-      })
+        requests: p?.requests ?? 0,
+        totalLatency: p?.totalLatency ?? 0,
+        avgLatency: p?.avgLatency ?? 0,
+        lastStatus: p?.lastStatus,
+      }
     }
     return out
-  }
-
-  function computeStats(): Stats {
-    const now = Date.now()
-    const horizon = now - Time.hour
-    let count = 0
-    let errors = 0
-    let totalLatency = 0
-    for (const req of requests) {
-      if (req.startTime < horizon) continue
-      if (!req.endTime) continue
-      count++
-      totalLatency += req.endTime - req.startTime
-      if (req.status >= 400 || req.status === 0) errors++
-    }
-    return {
-      totalRoutes: server.httpRoutes.length + server.wsRoutes.length,
-      requestsLastHour: count,
-      avgLatency: count ? Math.round(totalLatency / count) : 0,
-      errorRate: count ? errors / count : 0,
-    }
   }
 
   const entry = ctx.webui.addEntry<Data>({
@@ -150,41 +122,82 @@ export function apply(ctx: Context, config: Config) {
     base: import.meta.url,
     dev: '../client/index.ts',
     prod: '../dist/manifest.json',
-  }, () => ({
+  }, {
     listening: Boolean(server.host && server.port),
     host: server.host ?? '',
     port: server.port ?? 0,
     baseUrl: server.baseUrl ?? '',
-    routes: snapshotRoutes(),
-    requests: [...requests],
-    stats: computeStats(),
+    routes: collectRoutes({}),
+    requests: [],
     requestLimit: config.requestLimit,
-  }))
+  })
 
-  function pushRequest(req: ServerRequest) {
-    requests.push(req)
-    while (requests.length > config.requestLimit) requests.shift()
-    entry.refresh()
+  // ------- refreshers (each touches only what actually changes) ------------
+
+  function refreshNetwork() {
+    entry.mutate((d) => {
+      const listening = Boolean(server.host && server.port)
+      const host = server.host ?? ''
+      const port = server.port ?? 0
+      const baseUrl = server.baseUrl ?? ''
+      if (d.listening !== listening) d.listening = listening
+      if (d.host !== host) d.host = host
+      if (d.port !== port) d.port = port
+      if (d.baseUrl !== baseUrl) d.baseUrl = baseUrl
+    })
   }
 
-  function finalizeRequest(req: ServerRequest, matchedKey?: string) {
-    if (matchedKey) {
-      const existing = stats.get(matchedKey) ?? {
-        id: matchedKey,
-        method: req.method,
-        path: req.route ?? req.path,
-        requests: 0,
-        totalLatency: 0,
-        avgLatency: 0,
-      } as ServerRoute
-      existing.requests += 1
-      existing.totalLatency += (req.endTime ?? req.startTime) - req.startTime
-      existing.avgLatency = Math.round(existing.totalLatency / existing.requests)
-      existing.lastStatus = req.status
-      stats.set(matchedKey, existing)
-    }
+  // Keyed-diff routes so unchanged entries don't produce any delta.
+  const refreshRoutes = ctx.debounce(() => {
+    const next = collectRoutes(entry.data.routes)
+    entry.mutate((d) => {
+      // remove routes that disappeared
+      for (const key of Object.keys(d.routes)) {
+        if (!(key in next)) delete d.routes[key]
+      }
+      // add/update routes
+      for (const key in next) {
+        const incoming = next[key]
+        const current = d.routes[key]
+        if (!current) {
+          d.routes[key] = incoming
+          continue
+        }
+        // field-level diff; aggregates live here and only touch when finalize changes them
+        if (current.method !== incoming.method) current.method = incoming.method
+        if (current.path !== incoming.path) current.path = incoming.path
+        if (current.interceptPath !== incoming.interceptPath) current.interceptPath = incoming.interceptPath
+        if (current.plugin !== incoming.plugin) current.plugin = incoming.plugin
+      }
+    })
+  }, 0)
 
-    entry.refresh()
+  ctx.on('internal/plugin', refreshRoutes)
+
+  function pushRequest(req: ServerRequest) {
+    entry.mutate((d) => {
+      d.requests.push(req)
+      // TODO: front-truncate once muon supports it; for now the array grows
+      // until clear().
+    })
+  }
+
+  function updateRequest(id: number, fn: (r: ServerRequest) => void) {
+    entry.mutate((d) => {
+      const r = d.requests.find((x) => x.id === id)
+      if (r) fn(r)
+    })
+  }
+
+  function bumpRouteAggregates(req: ServerRequest, key: string) {
+    entry.mutate((d) => {
+      const route = d.routes[key]
+      if (!route) return
+      route.requests += 1
+      route.totalLatency += (req.endTime ?? req.startTime) - req.startTime
+      route.avgLatency = Math.round(route.totalLatency / route.requests)
+      route.lastStatus = req.status
+    })
   }
 
   function findMatchedRoute(req: any) {
@@ -236,10 +249,17 @@ export function apply(ctx: Context, config: Config) {
           bytesOut = res.body.byteLength
         }
       }
-      reqEntry.endTime = Date.now()
-      reqEntry.status = res.status ?? 0
+      const endTime = Date.now()
+      const status = res.status ?? 0
+      updateRequest(reqEntry.id, (r) => {
+        r.endTime = endTime
+        r.status = status
+        r.bytesOut = bytesOut
+      })
+      reqEntry.endTime = endTime
+      reqEntry.status = status
       reqEntry.bytesOut = bytesOut
-      finalizeRequest(reqEntry, matched?.key)
+      if (matched?.key) bumpRouteAggregates(reqEntry, matched.key)
     }
   })
 
@@ -276,23 +296,24 @@ export function apply(ctx: Context, config: Config) {
     try {
       await next()
       // If we reach here, the upgrade succeeded
+      updateRequest(reqEntry.id, (r) => { r.status = 101 })
       reqEntry.status = 101
-      entry.refresh()
 
       // Hook into the WebSocket close event to finalize duration
-      // We need to find the accepted connection - it's added to route.clients during accept()
       if (matched) {
+        const matchedRef = matched
         // Wait a tick for the connection to be added to route.clients
         setImmediate(() => {
           for (const route of server.wsRoutes) {
-            if (stringifyPath(route.path) !== matched.path) continue
-            // Find the most recently added client (the one we just accepted)
+            if (stringifyPath(route.path) !== matchedRef.path) continue
             const clients = Array.from(route.clients)
             const ws = clients[clients.length - 1]
             if (!ws) continue
             ws.once('close', () => {
-              reqEntry.endTime = Date.now()
-              finalizeRequest(reqEntry, matched.key)
+              const endTime = Date.now()
+              updateRequest(reqEntry.id, (r) => { r.endTime = endTime })
+              reqEntry.endTime = endTime
+              bumpRouteAggregates(reqEntry, matchedRef.key)
             })
             break
           }
@@ -300,19 +321,33 @@ export function apply(ctx: Context, config: Config) {
       }
     } catch (error) {
       // Upgrade failed
+      const endTime = Date.now()
+      updateRequest(reqEntry.id, (r) => {
+        r.status = 500
+        r.endTime = endTime
+      })
       reqEntry.status = 500
-      reqEntry.endTime = Date.now()
-      finalizeRequest(reqEntry, matched?.key)
+      reqEntry.endTime = endTime
+      if (matched?.key) bumpRouteAggregates(reqEntry, matched.key)
       throw error
     }
   })
 
   ctx.webui.addListener('server-webui.clear', () => {
-    requests.length = 0
-    stats.clear()
-    entry.refresh()
+    entry.mutate((d) => {
+      d.requests.length = 0
+      for (const key in d.routes) {
+        const r = d.routes[key]
+        if (r.requests === 0 && r.totalLatency === 0 && r.avgLatency === 0 && r.lastStatus === undefined) continue
+        r.requests = 0
+        r.totalLatency = 0
+        r.avgLatency = 0
+        r.lastStatus = undefined
+      }
+    })
   })
 
-  const refreshInterval = setInterval(() => entry.refresh(), 5000)
-  ctx.effect(() => () => clearInterval(refreshInterval))
+  // Kick off an initial network-info sync in case server.host/port became
+  // available after addEntry ran.
+  refreshNetwork()
 }

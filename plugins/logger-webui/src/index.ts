@@ -109,7 +109,7 @@ export async function* apply(ctx: Context, config: Config) {
   )
 
   const initialRows = selectRecentStmt.all(config.bufferSize) as unknown as Row[]
-  const messages: Message[] = initialRows.reverse().map(rowToMessage)
+  const initialMessages: Message[] = initialRows.reverse().map(rowToMessage)
 
   const distinctRows = db
     .prepare('SELECT DISTINCT entry_id FROM logs WHERE entry_id IS NOT NULL')
@@ -121,7 +121,7 @@ export async function* apply(ctx: Context, config: Config) {
     base: import.meta.url,
     dev: '../client/index.ts',
     prod: '../dist/manifest.json',
-  }, () => ({ messages, entryIds: [...entryIds] }))
+  }, { messages: initialMessages, entryIds: [...entryIds] })
 
   ctx.webui.addListener('log.read', async (options) => {
     const limit = Math.min(options.limit ?? 500, 2000)
@@ -133,8 +133,12 @@ export async function* apply(ctx: Context, config: Config) {
   let pending: Message[] = []
   const flush = () => {
     if (!pending.length) return
-    entry.patch(pending, 'messages')
+    const batch = pending
     pending = []
+    // TODO: trim oldest entries past bufferSize once muon supports a front-truncate op.
+    entry.mutate((d) => {
+      d.messages.push(...batch)
+    })
   }
   const flushThrottled = ctx.throttle(flush, 100)
 
@@ -156,16 +160,14 @@ export async function* apply(ctx: Context, config: Config) {
       )
       message.id = Number(result.lastInsertRowid)
 
-      messages.push(message)
-      if (messages.length > config.bufferSize) {
-        messages.splice(0, messages.length - config.bufferSize)
-      }
       pending.push(message)
       flushThrottled()
 
       if (entryId && !entryIds.has(entryId)) {
         entryIds.add(entryId)
-        entry.patch([entryId], 'entryIds')
+        entry.mutate((d) => {
+          d.entryIds.push(entryId)
+        })
       }
     },
   }

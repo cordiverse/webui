@@ -44,7 +44,7 @@
     "build"
   ],
   "peerDependencies": {
-    "yakumo": "^3.1.2"
+    "yakumo": "^3.2.0"
   },
   "peerDependenciesMeta": {
     "yakumo": {
@@ -52,10 +52,11 @@
     }
   },
   "devDependencies": {
-    "yakumo": "^3.1.2"
+    "yakumo": "^3.2.0"
   },
   "dependencies": {
     "@cordisjs/components": "0.1.1",
+    "@cordisjs/muon": "^0.2.0",
     "@cordisjs/unyaml": "^2.0.3",
     "@vitejs/plugin-vue": "^5.2.4",
     "@vueuse/core": "^13.9.0",

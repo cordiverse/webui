@@ -131,12 +131,12 @@ describe('@cordisjs/plugin-market E2E', () => {
       })
       expect(res.status).to.equal(200)
 
-      // After install, expect an entry:update from loader-webui's entry
-      // whose packages dict contains the newly installed plugin.
+      // After install, expect an entry:delta from loader-webui's entry
+      // whose payload references the newly installed plugin.
       await waitFor(() => messages.slice(baseline).some((m) =>
-        m.type === 'entry:update'
+        m.type === 'entry:delta'
         && m.body?.id === loaderEntryId
-        && m.body?.data?.packages?.['@cordisjs/plugin-server-echo'],
+        && JSON.stringify(m.body ?? {}).includes('@cordisjs/plugin-server-echo'),
       ), 60_000)
 
       ws.close()

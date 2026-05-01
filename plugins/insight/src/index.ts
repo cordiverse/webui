@@ -26,14 +26,20 @@ export interface Config {}
 export const Config: z<Config> = z.object({})
 
 export function apply(ctx: Context) {
-  const entry = ctx.webui.addEntry({
+  const entry = ctx.webui.addEntry<{ nodes: Node[]; edges: Link[] }>({
     path: '@cordisjs/plugin-insight/dist',
     base: import.meta.url,
     dev: '../client/index.ts',
     prod: '../dist/manifest.json',
-  }, getGraph)
+  }, getGraph())
 
-  const update = ctx.debounce(() => entry.refresh(), 0)
+  const update = ctx.debounce(() => {
+    entry.mutate((d) => {
+      const next = getGraph()
+      d.nodes = next.nodes
+      d.edges = next.edges
+    })
+  }, 0)
   ctx.on('internal/plugin', update)
   ctx.on('internal/service', update)
   ctx.on('internal/status', update)

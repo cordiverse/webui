@@ -5,7 +5,6 @@ import z from 'schemastery'
 
 declare module '@cordisjs/plugin-webui' {
   interface Events {
-    'database-webui.refresh'(): Promise<void>
     'database-webui.query'(args: QueryArgs): Promise<QueryResult>
     'database-webui.update'(args: UpdateArgs): Promise<void>
   }
@@ -21,8 +20,6 @@ export interface FieldInfo {
 
 export interface TableInfo {
   name: string
-  count: number
-  size?: number
   primary: string[]
   fields: FieldInfo[]
 }
@@ -83,34 +80,18 @@ function describeFields(model: any): FieldInfo[] {
 }
 
 export function apply(ctx: Context, config: Config) {
-  // Per-table stats cache. Models themselves are read live from ctx.model.tables
-  // on each entry refresh, so newly extended tables show up immediately even
-  // before their counts are known.
-  const counts: Record<string, { count: number; size: number }> = {}
-
-  function buildSnapshot(): Data {
+  function buildTables(): TableInfo[] {
     const model = ctx.model
     const tables: TableInfo[] = []
     for (const name of Object.keys(model.tables).sort()) {
       const m = model.tables[name]
-      const stat = counts[name]
       tables.push({
         name,
-        count: stat?.count ?? 0,
-        size: stat?.size,
         primary: ([] as string[]).concat(m.primary ?? []),
         fields: describeFields(m),
       })
     }
-    return { tables }
-  }
-
-  async function refreshStats() {
-    const stats = await ctx.model.stats().catch(() => ({ size: 0, tables: {} as Record<string, { count: number; size: number }> }))
-    for (const [name, stat] of Object.entries(stats.tables ?? {})) {
-      counts[name] = stat
-    }
-    entry.refresh()
+    return tables
   }
 
   const entry = ctx.webui.addEntry<Data>({
@@ -118,24 +99,12 @@ export function apply(ctx: Context, config: Config) {
     base: import.meta.url,
     dev: '../client/index.ts',
     prod: '../dist/manifest.json',
-  }, buildSnapshot)
-
-  refreshStats().catch((error: any) => {
-    ctx.get('logger')?.warn?.('initial refresh failed: %s', error?.message ?? error)
-  })
+  }, { tables: buildTables() })
 
   ctx.on('database/model' as any, () => {
-    // a new table was registered — push the schema immediately, then update
-    // counts when stats become available.
-    entry.refresh()
-    refreshStats().catch(() => {})
-  })
-
-  const interval = setInterval(() => refreshStats().catch(() => {}), 10_000)
-  ctx.effect(() => () => clearInterval(interval))
-
-  ctx.webui.addListener('database-webui.refresh', async () => {
-    await refreshStats()
+    entry.mutate((d) => {
+      d.tables = buildTables()
+    })
   })
 
   ctx.webui.addListener('database-webui.query', async ({ table, limit, offset, sort }) => {
@@ -152,10 +121,6 @@ export function apply(ctx: Context, config: Config) {
     }
     const rows = await (model.get as any)(table, {}, cursor)
     const stats = await model.stats().catch(() => ({ tables: {} as Record<string, { count: number; size: number }> }))
-    for (const [name, stat] of Object.entries(stats.tables ?? {})) {
-      counts[name] = stat
-    }
-    entry.refresh()
     const total = stats.tables?.[table]?.count ?? rows.length
     return { rows, total }
   })

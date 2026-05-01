@@ -13,7 +13,6 @@
         @click="$emit('open', t.name)"
       >
         <span class="table-name">{{ t.name }}</span>
-        <span class="table-count">{{ formatCount(t.count) }}</span>
       </div>
       <div v-if="!tables.length" class="sidebar-empty">
         没有已注册的表。
@@ -34,12 +33,6 @@ defineProps<{
 defineEmits<{
   (e: 'open', name: string): void
 }>()
-
-function formatCount(n: number) {
-  if (n < 1000) return String(n)
-  if (n < 1_000_000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k'
-  return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M'
-}
 
 </script>
 
@@ -112,13 +105,6 @@ function formatCount(n: number) {
 
 .table-item.active .table-name {
   color: var(--accent);
-}
-
-.table-count {
-  flex: 0 0 auto;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-tertiary);
 }
 
 .sidebar-empty {

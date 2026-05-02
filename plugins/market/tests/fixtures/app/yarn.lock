@@ -40,10 +40,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@cordisjs/muon@npm:^0.2.0":
-  version: 0.2.0
-  resolution: "@cordisjs/muon@npm:0.2.0"
-  checksum: 10c0/c8e1fb4fc9f770dd402b82199831a846545fe906f2c0ca702aa54e6763135b0a06f48b0bde9a5ceca8b359d829138df867640b6ad3cb58901f7642b5dce97c54
+"@cordisjs/muon@npm:^0.2.1":
+  version: 0.2.1
+  resolution: "@cordisjs/muon@npm:0.2.1"
+  dependencies:
+    cosmokit: "npm:^1.8.1"
+  checksum: 10c0/e719c6bd694e4223dc2e8be1aad247418a38a816fca9a4c72f6de777318c781c1990db7d3695d149e071d50dd93ab50599b2a3be2236afa47e4ff754e7f23a1a
   languageName: node
   linkType: hard
 
@@ -166,7 +168,7 @@ __metadata:
   resolution: "@cordisjs/plugin-webui@portal:../../../../webui::locator=%40cordis-market-fixture%2Fapp%40workspace%3A."
   dependencies:
     "@cordisjs/fetch-file": "npm:^1.0.3"
-    "@cordisjs/muon": "npm:^0.2.0"
+    "@cordisjs/muon": "npm:^0.2.1"
     cosmokit: "npm:^1.8.1"
     es-module-lexer: "npm:^2.0.0"
     open: "npm:^11.0.0"

@@ -189,7 +189,6 @@ class NodeWebUI extends WebUI {
     return ({
       'vue': this.config.uiPath + '/vue.js',
       'vue-router': this.config.uiPath + '/vue-router.js',
-      '@vueuse/core': this.config.uiPath + '/vueuse.js',
       '@cordisjs/client': this.config.uiPath + '/client.js',
     })[name] ?? name
   }

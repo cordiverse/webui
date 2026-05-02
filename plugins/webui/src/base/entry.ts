@@ -62,7 +62,7 @@ export class Entry<T extends object = any> {
       return {
         files: this.ctx.webui.getEntryFiles(this),
         entryId: this.ctx.get('loader')?.locate(),
-        data: JSON.parse(JSON.stringify(this.data)),
+        data: this.data,
         cursor: this.state.snapshot(),
       }
     } catch (e) {

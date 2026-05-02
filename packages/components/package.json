@@ -25,9 +25,9 @@
     "component"
   ],
   "devDependencies": {
-    "@vueuse/core": "^13.9.0",
+    "@vueuse/core": "^14.3.0",
     "element-plus": "^2.13.5",
-    "vue": "^3.5.29"
+    "vue": "^3.5.33"
   },
   "peerDependencies": {
     "vue": "^3"

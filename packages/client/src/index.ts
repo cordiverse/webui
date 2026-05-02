@@ -46,7 +46,6 @@ export async function build(root: string, config: vite.UserConfig = {}) {
         external: [
           'vue',
           'vue-router',
-          '@vueuse/core',
           '@cordisjs/client',
         ],
         output: {
@@ -82,13 +81,6 @@ export async function build(root: string, config: vite.UserConfig = {}) {
     },
     define: {
       'process.env.NODE_ENV': '"production"',
-    },
-    css: {
-      preprocessorOptions: {
-        scss: {
-          api: 'modern-compiler',
-        },
-      },
     },
   } as vite.InlineConfig, config)) as RollupOutput[]
 
@@ -145,13 +137,9 @@ export async function createServer(baseDir: string, config: InlineConfig = {}) {
         'marked',
         'xss',
       ],
-    },
-    css: {
-      preprocessorOptions: {
-        scss: {
-          api: 'modern-compiler',
-        },
-      },
+      exclude: [
+        '@cordisjs/muon',
+      ],
     },
     build: {
       rollupOptions: {

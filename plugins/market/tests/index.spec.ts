@@ -1,7 +1,7 @@
+import { describe, it, beforeAll, afterAll, expect } from 'vitest'
 import { Context } from 'cordis'
 import Loader from '@cordisjs/plugin-loader'
 import { WebSocket } from 'ws'
-import { expect } from 'chai'
 import { pathToFileURL } from 'node:url'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
@@ -55,12 +55,12 @@ async function openClient(serverPort: number) {
 describe('@cordisjs/plugin-market E2E', () => {
   let mock: MockServer
 
-  before(async () => {
+  beforeAll(async () => {
     resetTmp()
     mock = await startMarketMock()
   })
 
-  after(async () => {
+  afterAll(async () => {
     await mock?.close().catch(() => {})
   })
 
@@ -69,23 +69,20 @@ describe('@cordisjs/plugin-market E2E', () => {
     let fixture: Fixture
     let serverPort: number
 
-    before(async function () {
-      this.timeout(180_000)
+    beforeAll(async () => {
       serverPort = await getFreePort()
       fixture = await setupFixture({
         marketEndpoint: `http://127.0.0.1:${mock.port}/index.json`,
         serverPort,
       })
       ctx = await bootCordis(fixture.cwd)
-    })
+    }, 180_000)
 
-    after(async () => {
+    afterAll(async () => {
       try { (ctx as any)?.root?.dispose?.() } catch {}
     })
 
-    it('reflects the freshly installed dependency in WS broadcast', async function () {
-      this.timeout(180_000)
-
+    it('reflects the freshly installed dependency in WS broadcast', async () => {
       const { ws, messages } = await openClient(serverPort)
       await waitFor(() => messages.some((m) => m.type === 'entry:init'), 10_000)
 
@@ -103,11 +100,9 @@ describe('@cordisjs/plugin-market E2E', () => {
 
       expect(existsSync(join(fixture.cwd, 'node_modules/@cordisjs/plugin-server-echo'))).to.be.true
       ws.close()
-    })
+    }, 180_000)
 
-    it('loader-webui packages list gains the newly installed entry', async function () {
-      this.timeout(180_000)
-
+    it('loader-webui packages list gains the newly installed entry', async () => {
       const { ws, messages } = await openClient(serverPort)
       await waitFor(() => messages.some((m) => m.type === 'entry:init'), 10_000)
 
@@ -140,6 +135,6 @@ describe('@cordisjs/plugin-market E2E', () => {
       ), 60_000)
 
       ws.close()
-    })
+    }, 180_000)
   })
 })

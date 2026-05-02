@@ -49,18 +49,10 @@ export async function build(root: string, config: vite.UserConfig = {}) {
       yaml(),
       ...config.plugins || [],
     ],
-    css: {
-      preprocessorOptions: {
-        scss: {
-          api: 'modern-compiler',
-        },
-      },
-    },
     resolve: {
       alias: {
         'vue': root + '/vue.js',
         'vue-router': root + '/vue-router.js',
-        '@vueuse/core': root + '/vueuse.js',
         '@cordisjs/client': root + '/client.js',
       },
     },
@@ -90,18 +82,6 @@ export default async function () {
         rollupOptions: {
           input: {
             'vue-router': findModulePath('vue-router') + '/dist/vue-router.esm-browser.js',
-          },
-          preserveEntrySignatures: 'strict',
-        },
-      },
-    }),
-    build(findModulePath('@vueuse/core'), {
-      build: {
-        outDir: dist,
-        emptyOutDir: false,
-        rollupOptions: {
-          input: {
-            'vueuse': findModulePath('@vueuse/core') + '/index.mjs',
           },
           preserveEntrySignatures: 'strict',
         },

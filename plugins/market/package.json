@@ -68,11 +68,9 @@
     "@cordisjs/plugin-server": "^1.5.0",
     "@cordisjs/plugin-timer": "^1.1.1",
     "@cordisjs/plugin-webui": "^0.5.2",
-    "@types/chai": "^5.2.3",
     "@types/semver": "^7.5.8",
     "@types/which-pm-runs": "^1.0.2",
     "@types/ws": "^8.18.1",
-    "chai": "^5.3.3",
     "cordis": "^4.0.0-rc.4",
     "ws": "^8.18.0"
   },

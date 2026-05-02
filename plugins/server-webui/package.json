@@ -1,7 +1,7 @@
 {
   "name": "@cordisjs/plugin-server-webui",
   "description": "WebUI for @cordisjs/plugin-server",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "exports": {
     ".": {
@@ -52,13 +52,14 @@
   },
   "peerDependencies": {
     "@cordisjs/plugin-server": "^1.5.0",
-    "@cordisjs/plugin-webui": "^0.5.2",
+    "@cordisjs/plugin-webui": "^0.6.0",
     "cordis": "^4.0.0-rc.4"
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.5.2",
+    "@cordisjs/client": "^0.6.0",
+    "@cordisjs/plugin-logger": "^1.0.2",
     "@cordisjs/plugin-server": "^1.5.0",
-    "@cordisjs/plugin-webui": "^0.5.2",
+    "@cordisjs/plugin-webui": "^0.6.0",
     "cordis": "^4.0.0-rc.4"
   },
   "dependencies": {

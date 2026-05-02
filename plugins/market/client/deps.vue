@@ -242,7 +242,9 @@ async function refresh() {
   if (refreshing.value) return
   refreshing.value = true
   try {
-    await send('market/refresh')
+    registryCache.value = {}
+    const scope = rowNames.value.filter(n => !deps.value[n]?.workspace)
+    await ensureRegistry(scope)
   } finally {
     setTimeout(() => refreshing.value = false, 400)
   }

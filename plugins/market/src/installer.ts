@@ -71,10 +71,8 @@ function getVersions(versions: RemotePackage[]) {
 class Installer extends Service {
   public manifestPath!: string
   public endpoint!: string
-  public fullCache: Dict<Dict<RemotePackage>> = {}
 
   private manifest!: LocalPackage
-  private pkgTasks: Dict<Promise<Dict<RemotePackage> | undefined>> = {}
   private depTask?: Promise<Dict<Dependency>>
   private agent = which()
 
@@ -102,29 +100,15 @@ class Installer extends Service {
     return [`@cordisjs/plugin-${name}`, `cordis-plugin-${name}`]
   }
 
-  private async _getPackage(name: string) {
+  async getPackage(name: string): Promise<Dict<RemotePackage> | undefined> {
     try {
       const registry = await this.ctx.http.get<Registry>(`${this.endpoint}/${name}`, {
         timeout: this.config.timeout,
       })
       const filtered = Object.values(registry.versions).filter(remote => !remote.deprecated)
-      this.fullCache[name] = getVersions(filtered.length ? filtered : Object.values(registry.versions))
-      return this.fullCache[name]
+      return getVersions(filtered.length ? filtered : Object.values(registry.versions))
     } catch (e: any) {
       this.ctx.logger.warn('failed to fetch registry for %c: %s', name, e?.message ?? e)
-    }
-  }
-
-  getPackage(name: string) {
-    return this.pkgTasks[name] ||= this._getPackage(name)
-  }
-
-  async findVersion(names: string[]) {
-    for (const name of names) {
-      const versions = await this.getPackage(name)
-      if (!versions) continue
-      const first = Object.keys(versions)[0]
-      if (first) return { [name]: first }
     }
   }
 
@@ -179,8 +163,6 @@ class Installer extends Service {
   }
 
   refresh() {
-    this.pkgTasks = {}
-    this.fullCache = {}
     this.depTask = undefined
   }
 

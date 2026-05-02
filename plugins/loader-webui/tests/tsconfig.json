@@ -1,0 +1,10 @@
+{
+  "extends": "../../../tsconfig",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": ".",
+    "types": ["vitest/globals", "node"]
+  },
+  "include": ["."],
+  "exclude": ["fixtures/.tmp"]
+}

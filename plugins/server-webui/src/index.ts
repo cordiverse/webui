@@ -132,8 +132,6 @@ export function apply(ctx: Context, config: Config) {
     requestLimit: config.requestLimit,
   })
 
-  // ------- refreshers (each touches only what actually changes) ------------
-
   function refreshNetwork() {
     entry.mutate((d) => {
       const listening = Boolean(server.host && server.port)

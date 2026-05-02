@@ -40,12 +40,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@cordisjs/muon@npm:^0.2.1":
-  version: 0.2.1
-  resolution: "@cordisjs/muon@npm:0.2.1"
+"@cordisjs/muon@npm:^0.2.2":
+  version: 0.2.2
+  resolution: "@cordisjs/muon@npm:0.2.2"
   dependencies:
     cosmokit: "npm:^1.8.1"
-  checksum: 10c0/e719c6bd694e4223dc2e8be1aad247418a38a816fca9a4c72f6de777318c781c1990db7d3695d149e071d50dd93ab50599b2a3be2236afa47e4ff754e7f23a1a
+  checksum: 10c0/a646bffca1cd6cce6c329a9df7c9a722fffa8da9eac54ecba89ef9411abe90203bb3f8708f937183f28bac56a910e0383374b1006caaae64f60258f48211b83a
   languageName: node
   linkType: hard
 
@@ -90,7 +90,7 @@ __metadata:
   peerDependencies:
     "@cordisjs/plugin-loader": ^1.0.0-rc.3
     "@cordisjs/plugin-timer": ^1.1.1
-    "@cordisjs/plugin-webui": ^0.5.2
+    "@cordisjs/plugin-webui": ^0.6.0
     cordis: ^4.0.0-rc.4
   languageName: node
   linkType: soft
@@ -129,7 +129,7 @@ __metadata:
     which-pm-runs: "npm:^1.1.0"
   peerDependencies:
     "@cordisjs/plugin-http": ^1.5.0
-    "@cordisjs/plugin-webui": ^0.5.2
+    "@cordisjs/plugin-webui": ^0.6.0
     cordis: ^4.0.0-rc.4
   languageName: node
   linkType: soft
@@ -168,13 +168,13 @@ __metadata:
   resolution: "@cordisjs/plugin-webui@portal:../../../../webui::locator=%40cordis-market-fixture%2Fapp%40workspace%3A."
   dependencies:
     "@cordisjs/fetch-file": "npm:^1.0.3"
-    "@cordisjs/muon": "npm:^0.2.1"
+    "@cordisjs/muon": "npm:^0.2.2"
     cosmokit: "npm:^1.8.1"
     es-module-lexer: "npm:^2.0.0"
     open: "npm:^11.0.0"
     schemastery: "npm:^3.18.0"
   peerDependencies:
-    "@cordisjs/client": ^0.5.2
+    "@cordisjs/client": ^0.6.0
     cordis: ^4.0.0-rc.4
   peerDependenciesMeta:
     "@cordisjs/client":

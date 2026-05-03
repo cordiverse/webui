@@ -1,7 +1,7 @@
 {
   "name": "@cordisjs/client",
   "description": "Koishi Console Client",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "type": "module",
   "exports": {
     ".": "./client/index.ts",

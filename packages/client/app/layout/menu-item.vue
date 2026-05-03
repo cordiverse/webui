@@ -1,7 +1,8 @@
 <template>
   <el-tooltip v-if="!hidden" :disabled="disabled" :content="toValue(item.label)" placement="bottom">
     <span class="menu-item" :class="[toValue(item.type), { disabled }]" @click="trigger">
-      <k-icon class="menu-icon" :name="toValue(item.icon)"></k-icon>
+      <k-icon v-if="typeof toValue(item.icon) === 'string'" class="menu-icon" :name="toValue(item.icon)"></k-icon>
+      <component v-else-if="toValue(item.icon)" :is="toValue(item.icon)" class="menu-icon"></component>
     </span>
   </el-tooltip>
 </template>

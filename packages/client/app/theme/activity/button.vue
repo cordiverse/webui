@@ -7,7 +7,8 @@
     :class="{ 'dragging': isDragging }"
     @dragstart="handleDragStart"
     @dragend="handleDragEnd">
-    <k-icon class="activity-button-icon" :name="data.icon"></k-icon>
+    <k-icon v-if="typeof data.icon === 'string'" class="activity-button-icon" :name="data.icon"></k-icon>
+    <component v-else :is="data.icon" class="activity-button-icon"></component>
   </component>
 </template>
 

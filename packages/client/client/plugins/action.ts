@@ -1,5 +1,5 @@
 import { Context, Service } from 'cordis'
-import { markRaw, MaybeRefOrGetter, reactive, shallowReactive, toValue } from 'vue'
+import { Component, markRaw, MaybeRefOrGetter, reactive, shallowReactive, toValue } from 'vue'
 import { useContext } from '../context'
 import { defineProperty, Dict, Intersect, remove } from 'cosmokit'
 import { insert } from '../utils'
@@ -18,7 +18,7 @@ export interface MenuItem {
   id: string
   label?: MaybeGetter<string | undefined>
   type?: MaybeGetter<string | undefined>
-  icon?: MaybeGetter<string | undefined>
+  icon?: MaybeGetter<string | Component | undefined>
   order?: number
 }
 
@@ -113,6 +113,9 @@ export default class ActionService {
   }
 
   menu(id: string, items: MenuItem[]) {
+    for (const item of items) {
+      if (item.icon && typeof item.icon === 'object') markRaw(item.icon)
+    }
     return this.ctx.effect(() => {
       const list = this.menus[id] ||= []
       items.forEach(item => insert(list, item))

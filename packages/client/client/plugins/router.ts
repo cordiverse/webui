@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory, RouteLocation, START_LOCATION } from 'vue-router'
 import { Context, Service } from 'cordis'
 import { insert } from '../utils'
-import { Component, MaybeRefOrGetter, reactive, ref, toValue } from 'vue'
+import { Component, isRef, markRaw, MaybeRefOrGetter, reactive, ref, toValue } from 'vue'
 import { global } from '../data'
 import { defineProperty, Dict, omit, remove } from 'cosmokit'
 import { Disposable } from 'cordis'
@@ -27,7 +27,7 @@ export namespace Activity {
     component: Component
     name: MaybeRefOrGetter<string>
     desc?: MaybeRefOrGetter<string>
-    icon?: MaybeRefOrGetter<string>
+    icon?: MaybeRefOrGetter<string | Component | undefined>
     order?: number
     authority?: number
     position?: 'top' | 'bottom'
@@ -82,7 +82,7 @@ export class Activity {
   }
 
   get icon() {
-    return toValue(this.options.icon ?? 'activity:default')
+    return toValue(this.options.icon) ?? 'activity:default'
   }
 
   get name() {
@@ -166,6 +166,9 @@ export default class RouterService {
 
   page(options: Activity.Options) {
     options.component = this.ctx.client.wrapComponent(options.component)
+    if (options.icon && typeof options.icon === 'object' && !isRef(options.icon)) {
+      markRaw(options.icon)
+    }
     return this.ctx.effect(() => {
       const activity = new Activity(this.ctx, options)
       return activity.setup()

@@ -5,7 +5,10 @@
     :class="[toValue(type), { disabled }]"
     @click.prevent="item?.action(ctx.client.action.createScope())"
   >
-    <span v-if="icon" class="k-menu-icon"><k-icon :name="icon"/></span>
+    <span v-if="icon" class="k-menu-icon">
+      <k-icon v-if="typeof icon === 'string'" :name="icon"/>
+      <component v-else :is="icon"/>
+    </span>
     {{ toValue(label) }}
   </div>
 </template>

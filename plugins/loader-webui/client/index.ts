@@ -12,12 +12,20 @@ import Remove from './dialogs/remove.vue'
 import MainPage from './routes/main.vue'
 import ReadmePage from './routes/readme.vue'
 import ConfigPage from './routes/config.vue'
-import EffectsPage from './routes/effects.vue'
+// import EffectsPage from './routes/effects.vue'
 import ServicesPage from './routes/services.vue'
 import InterceptPage from './routes/intercept.vue'
+import IconLoader from './icons/loader.vue'
+import IconAddGroup from './icons/add-group.vue'
+import IconAddPlugin from './icons/add-plugin.vue'
+import IconCheck from './icons/check.vue'
+import IconClone from './icons/clone.vue'
+import IconManage from './icons/manage.vue'
+import IconPlay from './icons/play.vue'
+import IconSave from './icons/save.vue'
+import IconStop from './icons/stop.vue'
 
 import './index.scss'
-import './icons'
 
 declare module '@cordisjs/client' {
   interface Context {
@@ -240,7 +248,7 @@ export default class Manager extends Service {
       id: 'plugins',
       path: '/plugins/:id*',
       name: '插件管理',
-      icon: 'activity:plugin',
+      icon: IconLoader,
       order: 800,
       authority: 4,
       component: Settings,
@@ -321,12 +329,12 @@ export default class Manager extends Service {
     this.ctx.client.action.menu('config.tree', [{
       id: 'config.tree.toggle',
       type: ({ config }) => config.tree?.disabled ? '' : this.type.value,
-      icon: ({ config }) => config.tree?.disabled ? 'play' : 'stop',
+      icon: ({ config }) => config.tree?.disabled ? IconPlay : IconStop,
       label: ({ config }) => (config.tree?.disabled ? '启用' : '停用')
         + (config.tree?.name === '@cordisjs/plugin-group' ? '分组' : '插件'),
     }, {
       id: '.save',
-      icon: ({ config }) => config.tree?.disabled ? 'save' : 'check',
+      icon: ({ config }) => config.tree?.disabled ? IconSave : IconCheck,
       label: ({ config }) => config.tree?.disabled ? '保存配置' : '重载配置',
     }, {
       id: '@separator',
@@ -343,19 +351,19 @@ export default class Manager extends Service {
       id: '@separator',
     }, {
       id: '.clone',
-      icon: 'clone',
+      icon: IconClone,
       label: '克隆配置',
     }, {
       id: '.manage',
-      icon: 'manage',
+      icon: IconManage,
       label: '管理多份配置',
     }, {
       id: '.add-plugin',
-      icon: 'add-plugin',
+      icon: IconAddPlugin,
       label: '添加插件',
     }, {
       id: '.add-group',
-      icon: 'add-group',
+      icon: IconAddGroup,
       label: '添加分组',
     }])
 

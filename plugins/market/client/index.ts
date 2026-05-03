@@ -35,14 +35,16 @@ export default (ctx: Context, data: Ref<Data>) => {
     component: Dialogs,
   })
 
-  ctx.client.router.slot({
-    type: 'plugin-missing',
-    component: PluginMissing,
-  })
+  ctx.inject(['manager'], (ctx) => {
+    ctx.client.router.slot({
+      type: 'plugin-missing',
+      component: PluginMissing,
+    })
 
-  ctx.client.router.slot({
-    type: 'plugin-dependency',
-    component: PluginDependency,
+    ctx.client.router.slot({
+      type: 'plugin-dependency',
+      component: PluginDependency,
+    })
   })
 
   // Auto-clear override entries that have been satisfied (or rendered moot)

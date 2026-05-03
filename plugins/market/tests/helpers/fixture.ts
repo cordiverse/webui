@@ -9,6 +9,30 @@ const testsDir = dirname(here)
 const srcFixture = join(testsDir, 'fixtures', 'app')
 const tmpRoot = join(testsDir, '.tmp')
 
+function yarnInstall(cwd: string) {
+  const result = spawnSync('yarn', ['install'], {
+    cwd,
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+    env: {
+      ...process.env,
+      // avoid yarn treating the fixture as part of an outer workspace
+      YARN_ENABLE_GLOBAL_CACHE: process.env.YARN_ENABLE_GLOBAL_CACHE ?? 'true',
+    },
+  })
+  if (result.status !== 0) {
+    throw new Error(`yarn install failed in ${cwd} (status ${result.status})`)
+  }
+}
+
+let sourceInstalled = false
+/** Install once per process in the source fixture so its yarn.lock stays in sync with package.json. */
+function ensureSourceInstalled() {
+  if (sourceInstalled) return
+  yarnInstall(srcFixture)
+  sourceInstalled = true
+}
+
 export interface SetupOptions {
   marketEndpoint: string
   serverPort: number
@@ -43,31 +67,22 @@ export function resetTmp() {
 }
 
 export async function setupFixture(options: SetupOptions): Promise<Fixture> {
+  ensureSourceInstalled()
+
   mkdirSync(tmpRoot, { recursive: true })
   const cwd = join(tmpRoot, options.name ?? 'app')
   rmSync(cwd, { recursive: true, force: true })
 
-  cpSync(srcFixture, cwd, { recursive: true })
+  // Preserve symlinks so portal deps (pointing at the market source via `../../..`)
+  // aren't dereferenced into bulky, stale copies. `.tmp/app` sits at the same depth
+  // as `fixtures/app` under tests/, so relative symlinks resolve identically.
+  cpSync(srcFixture, cwd, { recursive: true, verbatimSymlinks: true })
 
   const ymlPath = join(cwd, 'cordis.yml')
   const yml = readFileSync(ymlPath, 'utf-8')
     .replace('__MARKET_ENDPOINT__', options.marketEndpoint)
     .replace('__SERVER_PORT__', String(options.serverPort))
   writeFileSync(ymlPath, yml)
-
-  const result = spawnSync('yarn', ['install'], {
-    cwd,
-    stdio: 'inherit',
-    shell: process.platform === 'win32',
-    env: {
-      ...process.env,
-      // avoid yarn treating the fixture as part of an outer workspace
-      YARN_ENABLE_GLOBAL_CACHE: process.env.YARN_ENABLE_GLOBAL_CACHE ?? 'true',
-    },
-  })
-  if (result.status !== 0) {
-    throw new Error(`yarn install failed in ${cwd} (status ${result.status})`)
-  }
 
   return { cwd }
 }

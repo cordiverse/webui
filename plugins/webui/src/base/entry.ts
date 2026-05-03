@@ -51,6 +51,7 @@ export class Entry<T extends object = any> {
 
   mutate(fn: (data: T) => void): void {
     if (this._disposed) return
+    if (!this.data) return
     const mutation = observe(this.data, fn)
     if (!mutation) return
     const delta = this.state.dump(mutation)

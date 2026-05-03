@@ -54,14 +54,14 @@
   "peerDependencies": {
     "@cordisjs/plugin-http": "^1.5.0",
     "@cordisjs/plugin-server-proxy": "^1.2.0",
-    "@cordisjs/plugin-webui": "^0.6.2",
+    "@cordisjs/plugin-webui": "^0.6.3",
     "cordis": "^4.0.0-rc.4"
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.6.2",
+    "@cordisjs/client": "^0.6.3",
     "@cordisjs/plugin-http": "^1.5.0",
     "@cordisjs/plugin-server-proxy": "^1.2.0",
-    "@cordisjs/plugin-webui": "^0.6.2",
+    "@cordisjs/plugin-webui": "^0.6.3",
     "cordis": "^4.0.0-rc.4"
   },
   "dependencies": {

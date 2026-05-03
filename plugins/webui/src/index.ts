@@ -54,11 +54,6 @@ class NodeWebUI extends WebUI {
   constructor(public ctx: Context, public config: NodeWebUI.Config) {
     super(ctx)
 
-    ctx.server.ws(config.apiPath, async (req, next) => {
-      const socket = await next()
-      this.accept(socket as any)
-    })
-
     ctx.on('webui/connection', () => {
       const loader = ctx.get('loader')
       if (!loader) return
@@ -83,6 +78,11 @@ class NodeWebUI extends WebUI {
   async [Service.init]() {
     if (this.config.devMode) await this.createVite()
     this.serveAssets()
+
+    this.ctx.server.ws(this.config.apiPath, async (req, next) => {
+      const socket = await next()
+      this.accept(socket as any)
+    })
 
     const target = this.ctx.server.baseUrl + this.config.uiPath
     const loader = this.ctx.get('loader')
@@ -125,8 +125,8 @@ class NodeWebUI extends WebUI {
 
   private serveAssets() {
     this.ctx.server.get('{/*path}', async (req, res, next) => {
-      await next()
-      if (res.claimed) return
+      const innerResponse = await next()
+      if (innerResponse || res.claimed) return innerResponse
 
       const name = req.params.path ?? ''
       if (name.startsWith('-/modules/')) {
@@ -164,10 +164,10 @@ class NodeWebUI extends WebUI {
         return
       }
 
-      const response = await fetchFile(pathToFileURL(filename), {}, {
+      const fileResponse = await fetchFile(pathToFileURL(filename), {}, {
         onError: this.ctx.logger.warn,
       })
-      if (response.status !== 404) return response
+      if (fileResponse.status !== 404) return fileResponse
 
       // fallback to index.html
       if (!req.accepts('text/html; charset=utf-8')) {

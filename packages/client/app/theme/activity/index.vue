@@ -28,12 +28,15 @@ import ActivitySeparator from './separator.vue'
 const ctx = useContext()
 const config = useConfig()
 const trigger = useMenu('theme.activity')
-const { height, width } = useWindowSize()
+const { height } = useWindowSize()
 
 const groups = computed(() => {
   let hidden: Activity[]
-  const unit = width.value <= 768 ? 52 : 56
-  const total = height.value - (width.value <= 768 ? 4 : 8)
+  const root = getComputedStyle(document.documentElement)
+  const navWidth = parseFloat(root.getPropertyValue('--nav-width'))
+  const iconMargin = parseFloat(root.getPropertyValue('--nav-icon-margin'))
+  const unit = navWidth - iconMargin
+  const total = height.value - iconMargin
   const available = Object.fromEntries(Object
     .entries(ctx.client.router.pages)
     .filter(([, data]) => !data.disabled())

@@ -1,9 +1,9 @@
 import { Context } from 'cordis'
-import { deduplicate, defineProperty, Dict, pick } from 'cosmokit'
+import { defineProperty, Dict, pick } from 'cosmokit'
 import { dirname, join } from 'node:path'
 import { createRequire } from 'node:module'
 import { Dirent } from 'node:fs'
-import { readdir, readFile } from 'node:fs/promises'
+import { readdir, readFile, realpath } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import glob from 'fast-glob'
 import { Dependency, LocalObject, Manager } from './shared.ts'
@@ -38,9 +38,13 @@ interface Candidate extends Locator {
   package: PackageJson
 }
 
+interface PackageLocation {
+  name: string
+  path: string
+}
+
 export default class NodeManager extends Manager {
   private baseDir: string
-  private require: NodeJS.Require
   private ecosystems: Ecosystem[] = []
   private candidates: Dict<Candidate> = Object.create(null)
   private metaDeps: Dict<string> = Object.create(null)
@@ -51,7 +55,6 @@ export default class NodeManager extends Manager {
   constructor(ctx: Context) {
     super(ctx)
     this.baseDir = fileURLToPath(this.ctx.baseUrl!)
-    this.require = createRequire(this.baseDir + '/package.json')
   }
 
   async getDependencies() {
@@ -141,23 +144,27 @@ export default class NodeManager extends Manager {
   }
 
   private async loadNodeModules() {
-    // scan for candidate packages (dependencies and symlinks)
+    // walk up the directory tree, scanning every ancestor's node_modules;
+    // innermost level wins on collisions, matching Node's resolve algorithm.
     let root = this.baseDir
-    const dirTasks: Promise<string[]>[] = []
+    const dirTasks: Promise<PackageLocation[]>[] = []
     while (1) {
       dirTasks.push(this.loadDirectory(root))
       const parent = dirname(root)
       if (root === parent) break
       root = parent
     }
-    const names = deduplicate((await Promise.all(dirTasks)).flat(1))
-    const results = await Promise.all(names.map<Promise<Candidate | undefined>>(async (name) => {
+    const locations: Dict<string> = Object.create(null)
+    for (const { name, path } of (await Promise.all(dirTasks)).flat(1)) {
+      locations[name] ??= path
+    }
+    const results = await Promise.all(Object.entries(locations).map<Promise<Candidate | undefined>>(async ([name, link]) => {
       try {
-        const filename = this.require.resolve(name + '/package.json')
-        const workspace = !filename.includes('node_modules')
+        const path = await realpath(link)
+        const workspace = !path.includes('node_modules')
         return {
-          path: dirname(filename),
-          package: await this.loadMeta(filename),
+          path,
+          package: await this.loadMeta(path + '/package.json'),
           workspace,
           request: this.metaDeps[name],
         }
@@ -179,19 +186,19 @@ export default class NodeManager extends Manager {
       if (!outer.isDirectory() && !outer.isSymbolicLink()) return
       if (outer.name.startsWith('@')) {
         const dirents = await readdir(path + '/' + outer.name, { withFileTypes: true })
-        return Promise.all(dirents.map(async (inner) => {
+        return Promise.all(dirents.map<Promise<PackageLocation | undefined>>(async (inner) => {
           const name = outer.name + '/' + inner.name
           const isLink = inner.isSymbolicLink()
           const isDep = !!this.metaDeps[name]
-          if (isLink || isDep) return name
+          if (isLink || isDep) return { name, path: path + '/' + name }
         }))
       } else {
         const isLink = outer.isSymbolicLink()
         const isDep = !!this.metaDeps[outer.name]
-        if (isLink || isDep) return outer.name
+        if (isLink || isDep) return { name: outer.name, path: path + '/' + outer.name }
       }
     }))
-    return results.flat(1).filter((x): x is string => !!x)
+    return results.flat(1).filter((x): x is PackageLocation => !!x)
   }
 
   private async loadMeta(filename: string) {

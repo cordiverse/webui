@@ -113,7 +113,7 @@ class NodeWebUI extends WebUI {
     }
     const filename = fileURLToPath(new URL(entry.files.prod, entry.files.base))
     return Object.values(entry.getManifest())
-      // TODO filter entry files
+      .filter((chunk) => !chunk.isDynamicEntry)
       .map((chunk) => {
         if (this.config.devMode) {
           return `/vite/@fs/${resolve(filename, '..', chunk.file)}`
@@ -196,8 +196,9 @@ class NodeWebUI extends WebUI {
   private async transformImport(source: string) {
     let output = '', lastIndex = 0
     const [imports] = parse(source)
-    for (const { s, e, n } of imports) {
-      output += source.slice(lastIndex, s) + this.resolveImport(n)
+    for (const { s, e, n, t } of imports) {
+      const resolved = this.resolveImport(n)
+      output += source.slice(lastIndex, s) + (t === 2 ? JSON.stringify(resolved) : resolved)
       lastIndex = e
     }
     return output + source.slice(lastIndex)

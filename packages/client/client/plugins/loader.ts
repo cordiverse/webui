@@ -40,9 +40,6 @@ function cssLoader(ctx: Context, link: HTMLLinkElement) {
   })
 }
 
-defineProperty(jsLoader, 'reusable', true)
-defineProperty(cssLoader, 'reusable', true)
-
 const loaders: Dict<LoaderFactory> = {
   async [`.css`](ctx, url) {
     const link = document.createElement('link')
@@ -67,7 +64,7 @@ export interface LoadState {
 export default class LoaderService {
   public id?: string
 
-  public entries: Dict<LoadState> = shallowReactive({})
+  public entries = shallowReactive<Dict<LoadState>>({})
 
   public initTask: Promise<void>
 
@@ -120,7 +117,7 @@ export default class LoaderService {
               try {
                 ctx.$entry!.fibers[url] = await loaders[ext](ctx, url)
               } catch (e) {
-                console.error(e)
+                console.error(`[loader] failed to load ${url}:`, e)
               }
               return
             }

@@ -16,7 +16,7 @@ class BrowserWebUI extends WebUI {
 
   getEntryFiles(entry: Entry) {
     return Object.values(entry.getManifest())
-      // TODO filter entry files
+      .filter((chunk) => !chunk.isDynamicEntry)
       .map((chunk) => new URL(chunk.file, entry.files.base).href)
   }
 }

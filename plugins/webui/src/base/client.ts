@@ -10,7 +10,7 @@ export class Client {
     socket.addEventListener('message', this.receive)
     const body: EntryInit = {
       entries: mapValues(this.ctx.webui.entries, entry => entry.toJSON()!),
-      serverId: this.ctx.webui.id,
+      version: this.ctx.webui.version,
     }
     this.send({ type: 'entry:init', body })
   }

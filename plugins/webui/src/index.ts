@@ -47,10 +47,16 @@ interface HeartbeatConfig {
   timeout?: number
 }
 
+interface Manifest {
+  version: string
+  resolve: Record<string, string>
+}
+
 @Inject('server')
 class NodeWebUI extends WebUI {
   public vite?: ViteDevServer
   public root: string
+  private _manifest?: Manifest
 
   constructor(public ctx: Context, public config: NodeWebUI.Config) {
     super(ctx)
@@ -86,7 +92,13 @@ class NodeWebUI extends WebUI {
   }
 
   async [Service.init]() {
-    if (this.config.devMode) await this.createVite()
+    if (this.config.devMode) {
+      this.version = '__DEV__'
+      await this.createVite()
+    } else {
+      await this.loadManifest()
+    }
+
     this.serveAssets()
 
     this.ctx.server.ws(this.config.apiPath, async (req, next) => {
@@ -125,7 +137,7 @@ class NodeWebUI extends WebUI {
     if (!manifest) return []
     const filename = fileURLToPath(new URL(entry.files.prod, entry.files.base))
     return Object.values(manifest)
-      .filter((chunk) => !chunk.isDynamicEntry)
+      .filter((chunk) => chunk.isEntry || !chunk.file.endsWith('.js'))
       .map((chunk) => {
         if (this.config.devMode) {
           return `/vite/@fs/${resolve(filename, '..', chunk.file)}`
@@ -202,16 +214,21 @@ class NodeWebUI extends WebUI {
     })
   }
 
+  private async loadManifest() {
+    const filename = resolve(this.root, 'manifest.json')
+    const content = await readFile(filename, 'utf-8')
+    this._manifest = JSON.parse(content) as Manifest
+    this.version = this._manifest.version
+  }
+
   private resolveImport(name?: string) {
     if (!name) {
       this.ctx.logger.warn('cannot transform dynamic import names')
       return name
     }
-    return ({
-      'vue': this.config.uiPath + '/vue.js',
-      'vue-router': this.config.uiPath + '/vue-router.js',
-      '@cordisjs/client': this.config.uiPath + '/client.js',
-    })[name] ?? name
+    const file = this._manifest?.resolve[name]
+    if (!file) return name
+    return `${this.config.uiPath}/${file}`
   }
 
   private async transformImport(source: string) {

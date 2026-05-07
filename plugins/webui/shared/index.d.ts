@@ -14,7 +14,7 @@ export interface EntryData {
 
 export interface EntryInit {
   entries: Record<string, EntryData>
-  serverId: string
+  version: string
 }
 
 export interface EntryDelta extends Delta {

@@ -22,7 +22,7 @@ export type SocketListener = (this: Client, ...args: any[]) => void
 
 @Inject('logger', true, { name: 'webui' })
 export abstract class WebUI extends Service {
-  public id = Math.random().toString(36).slice(2)
+  public version!: string
 
   readonly entries: Dict<Entry> = Object.create(null)
   readonly listeners: Dict<(args?: any) => any> = Object.create(null)

@@ -33,7 +33,7 @@ export class Entry<T extends object = any> {
       if (!this._initialized) return
       delete this.ctx.webui.entries[this.id]
       ctx.webui.broadcast('entry:init', {
-        serverId: ctx.webui.id,
+        version: ctx.webui.version,
         entries: {
           [this.id]: null,
         },
@@ -63,7 +63,7 @@ export class Entry<T extends object = any> {
       this._initialized = true
     }
     this.ctx.webui.broadcast('entry:init', {
-      serverId: this.ctx.webui.id,
+      version: this.ctx.webui.version,
       entries: {
         [this.id]: this.toJSON()!,
       },

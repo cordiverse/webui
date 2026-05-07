@@ -1,6 +1,6 @@
 <template>
   <k-status v-if="progress < 1">
-    <el-progress :indeterminate="!ctx.client.loader.id" :percentage="progress * 100">
+    <el-progress :indeterminate="!ctx.client.loader.version" :percentage="progress * 100">
       正在加载页面组件
     </el-progress>
   </k-status>

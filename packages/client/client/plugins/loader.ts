@@ -61,7 +61,7 @@ export interface LoadState {
 }
 
 export default class LoaderService {
-  public id?: string
+  public version?: string
 
   public entries = shallowReactive<Dict<LoadState>>({})
 
@@ -81,11 +81,11 @@ export default class LoaderService {
 
     this.initTask = new Promise((resolve) => {
       this.ctx.on('entry:init', async (value) => {
-        const { serverId, entries } = value
-        if (this.id && serverId && this.id !== serverId as unknown) {
+        const { version, entries } = value
+        if (this.version && version && this.version !== version) {
           return window.location.reload()
         }
-        this.id = serverId
+        this.version = version
 
         await Promise.all(Object.entries(entries).map(([key, body]) => {
           if (this.entries[key]) {
@@ -123,7 +123,7 @@ export default class LoaderService {
           task.then(() => this.entries[key].done.value = true)
         }))
   
-        if (serverId) resolve()
+        if (version) resolve()
       })
     })
   }

@@ -52,6 +52,8 @@ interface Manifest {
   resolve: Record<string, string>
 }
 
+const IMMUTABLE = 'public, max-age=31536000, immutable'
+
 @Inject('server')
 class NodeWebUI extends WebUI {
   public vite?: ViteDevServer
@@ -171,15 +173,20 @@ class NodeWebUI extends WebUI {
           const prodBase = fileURLToPath(new URL(entry.files.prod, entry.files.base))
           const filename = resolve(prodBase, '..', file)
           if (this.config.devMode || !['.js', '.mjs'].includes(extname(file))) {
-            return fetchFile(pathToFileURL(filename), {}, {
+            const response = await fetchFile(pathToFileURL(filename), {}, {
               onError: this.ctx.logger.warn,
             })
+            if (response.status === 200) {
+              response.headers.set('cache-control', IMMUTABLE)
+            }
+            return response
           }
 
           // we only transform js imports in production mode
           const source = await readFile(filename, 'utf-8')
           res.status = 200
           res.headers.set('content-type', 'application/javascript; charset=utf-8')
+          res.headers.set('cache-control', IMMUTABLE)
           res.body = await this.transformImport(source)
           return
         }
@@ -196,7 +203,12 @@ class NodeWebUI extends WebUI {
       const fileResponse = await fetchFile(pathToFileURL(filename), {}, {
         onError: this.ctx.logger.warn,
       })
-      if (fileResponse.status !== 404) return fileResponse
+      if (fileResponse.status !== 404) {
+        if (!this.config.devMode && fileResponse.status === 200 && (name.endsWith('.js') || name.endsWith('.css'))) {
+          fileResponse.headers.set('cache-control', IMMUTABLE)
+        }
+        return fileResponse
+      }
 
       // fallback to index.html
       if (!req.accepts('text/html; charset=utf-8')) {

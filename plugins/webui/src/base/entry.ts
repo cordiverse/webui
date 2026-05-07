@@ -1,7 +1,8 @@
 import { Context } from 'cordis'
-import type { Manifest } from 'vite'
+import type * as vite from 'vite'
 import { fileURLToPath } from 'node:url'
 import { readFile } from 'node:fs/promises'
+import { dirname, relative, resolve } from 'node:path'
 import { DeltaState, observe } from '@cordisjs/muon'
 import { EntryData } from '../../shared'
 
@@ -12,22 +13,27 @@ export namespace Entry {
     dev?: string
     prod: string
   }
+
+  export interface Manifest {
+    url: string
+    path: string
+    chunks: vite.Manifest
+  }
 }
 
 export class Entry<T extends object = any> {
   public id = Math.random().toString(36).slice(2)
-  public manifestUrl?: string
+  public manifest?: Entry.Manifest
   public dispose: () => void
   public state = new DeltaState()
 
   private _initialized = false
   private _disposed = false
-  private _version = 0
-  private _manifest: Manifest | undefined
+  private _loadTask?: Promise<void>
+  private _dirty = false
 
   constructor(public ctx: Context, public files: Entry.Files, public data: T) {
-    this.manifestUrl = ctx.webui.resolveManifestUrl(files)
-    this.refresh()
+    this.initialize()
     this.dispose = ctx.effect(() => () => {
       this._disposed = true
       if (!this._initialized) return
@@ -41,33 +47,87 @@ export class Entry<T extends object = any> {
     }, 'ctx.webui.addEntry()')
   }
 
-  getManifest(): Manifest | undefined {
-    return this._manifest
-  }
-
-  async refresh() {
-    const version = ++this._version
-    if (this.manifestUrl) {
+  private async initialize() {
+    const url = this.ctx.webui.resolveManifestUrl(this.files)
+    if (url) {
+      this.manifest = { url, path: '', chunks: {} }
       try {
-        const content = await readFile(fileURLToPath(this.manifestUrl), 'utf-8')
-        if (this._disposed) return
-        if (version !== this._version) return
-        this._manifest = JSON.parse(content) as Manifest
+        await Promise.all([this._loadManifest(), this._resolvePath()])
       } catch (e) {
         this.ctx.logger.error(e)
         return
       }
     }
-    if (!this._initialized) {
-      this.ctx.webui.entries[this.id] = this
-      this._initialized = true
+    if (this._disposed) return
+    this.ctx.webui.entries[this.id] = this
+    this._initialized = true
+    this._broadcast()
+  }
+
+  async refreshManifest() {
+    try {
+      await this._loadManifest()
+    } catch (e) {
+      this.ctx.logger.error(e)
+      return
     }
+    if (this._disposed) return
+    this._broadcast()
+  }
+
+  private _broadcast() {
     this.ctx.webui.broadcast('entry:init', {
       version: this.ctx.webui.version,
       entries: {
         [this.id]: this.toJSON()!,
       },
     })
+  }
+
+  private _loadManifest(): Promise<void> {
+    if (this._loadTask) {
+      this._dirty = true
+      return this._loadTask
+    }
+    this._loadTask = (async () => {
+      try {
+        do {
+          this._dirty = false
+          const content = await readFile(fileURLToPath(this.manifest!.url), 'utf-8')
+          if (this._disposed) return
+          this.manifest!.chunks = JSON.parse(content)
+        } while (this._dirty)
+      } finally {
+        this._loadTask = undefined
+      }
+    })()
+    return this._loadTask
+  }
+
+  private async _resolvePath() {
+    if (this.files.path) {
+      this.manifest!.path = this.files.path
+      return
+    }
+    const baseDir = dirname(fileURLToPath(this.files.base))
+    const prodDir = dirname(fileURLToPath(new URL(this.files.prod, this.files.base)))
+    let dir = baseDir
+    while (true) {
+      try {
+        const content = await readFile(resolve(dir, 'package.json'), 'utf-8')
+        const pkg = JSON.parse(content)
+        if (pkg.name) {
+          const tail = relative(dir, prodDir).split(/[\\/]/).join('/')
+          this.manifest!.path = tail ? `${pkg.name}/${tail}` : pkg.name
+          return
+        }
+      } catch {}
+      const parent = dirname(dir)
+      if (parent === dir) {
+        throw new Error(`cannot resolve path from ${this.files.base}`)
+      }
+      dir = parent
+    }
   }
 
   mutate(fn: (data: T) => void): void {

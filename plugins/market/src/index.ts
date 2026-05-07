@@ -55,7 +55,6 @@ export function apply(ctx: Context, config: Config) {
 
   ctx.inject(['installer', 'market'], (ctx) => {
     const entry = ctx.webui.addEntry<Data>({
-      path: '@cordisjs/plugin-market/dist',
       base: import.meta.url,
       dev: '../client/index.ts',
       prod: '../dist/manifest.json',

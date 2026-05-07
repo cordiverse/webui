@@ -175,7 +175,6 @@ export abstract class Manager extends Service {
   @Inject('webui')
   injectWebUI() {
     this.entry = this.ctx.webui.addEntry({
-      path: '@cordisjs/plugin-insight/dist',
       base: import.meta.url,
       dev: '../client/index.ts',
       prod: '../dist/manifest.json',

@@ -117,7 +117,6 @@ export async function* apply(ctx: Context, config: Config) {
   const entryIds = new Set<string>(distinctRows.map(row => row.entry_id))
 
   const entry = ctx.webui.addEntry<Data>({
-    path: '@cordisjs/plugin-logger-webui/dist',
     base: import.meta.url,
     dev: '../client/index.ts',
     prod: '../dist/manifest.json',

@@ -69,10 +69,10 @@ class NodeWebUI extends WebUI {
 
     ctx.on('hmr/change', (url) => {
       for (const entry of Object.values(this.entries)) {
-        if (entry.manifestUrl !== url) continue
+        if (entry.manifest?.url !== url) continue
         const path = relative(ctx.get('hmr')!.baseDir, fileURLToPath(url))
         ctx.logger('hmr').info('reload webui entry manifest at %c', path)
-        entry.refresh()
+        entry.refreshManifest()
       }
     })
 
@@ -133,16 +133,15 @@ class NodeWebUI extends WebUI {
       const filename = fileURLToPath(new URL(entry.files.dev, entry.files.base))
       if (existsSync(filename)) return [`/vite/@fs/${filename}`]
     }
-    const manifest = entry.getManifest()
-    if (!manifest) return []
+    if (!entry.manifest) return []
     const filename = fileURLToPath(new URL(entry.files.prod, entry.files.base))
-    return Object.values(manifest)
+    return Object.values(entry.manifest.chunks)
       .filter((chunk) => chunk.isEntry || !chunk.file.endsWith('.js'))
       .map((chunk) => {
         if (this.config.devMode) {
           return `/vite/@fs/${resolve(filename, '..', chunk.file)}`
         } else {
-          return `${this.config.uiPath}/-/modules/${entry.files.path ?? entry.id}/${chunk.file}`
+          return `${this.config.uiPath}/-/modules/${entry.manifest!.path}/${chunk.file}`
         }
       })
   }
@@ -163,13 +162,10 @@ class NodeWebUI extends WebUI {
       const name = req.params.path ?? ''
       if (name.startsWith('-/modules/')) {
         for (const entry of Object.values(this.entries)) {
-          const key = entry.files.path ?? entry.id
-          if (!name.startsWith(`-/modules/${key}/`)) continue
+          if (!entry.manifest || !name.startsWith(`-/modules/${entry.manifest.path}/`)) continue
 
-          const file = name.slice(11 + key.length)
-          const manifest = entry.getManifest()
-          if (!manifest) continue
-          const chunkNames = Object.values(manifest).map(chunk => chunk.file)
+          const file = name.slice(11 + entry.manifest.path.length)
+          const chunkNames = Object.values(entry.manifest.chunks).map(chunk => chunk.file)
           if (!chunkNames.includes(file)) continue
 
           const prodBase = fileURLToPath(new URL(entry.files.prod, entry.files.base))

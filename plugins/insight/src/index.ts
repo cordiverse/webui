@@ -27,7 +27,6 @@ export const Config: z<Config> = z.object({})
 
 export function apply(ctx: Context) {
   const entry = ctx.webui.addEntry<{ nodes: Node[]; edges: Link[] }>({
-    path: '@cordisjs/plugin-insight/dist',
     base: import.meta.url,
     dev: '../client/index.ts',
     prod: '../dist/manifest.json',

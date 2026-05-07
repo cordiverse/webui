@@ -87,7 +87,6 @@ export function apply(ctx: Context, config: Config) {
   let nextId = 0
 
   const entry = ctx.webui.addEntry<Data>({
-    path: '@cordisjs/plugin-http-webui/dist',
     base: import.meta.url,
     dev: '../client/index.ts',
     prod: '../dist/manifest.json',

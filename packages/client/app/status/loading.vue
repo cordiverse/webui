@@ -1,5 +1,8 @@
 <template>
-  <k-status v-if="progress < 1">
+  <k-status v-if="!socket">
+    <span class="offline">连接已断开</span>
+  </k-status>
+  <k-status v-else-if="progress < 1">
     <el-progress :indeterminate="!ctx.client.loader.version" :percentage="progress * 100">
       正在加载页面组件
     </el-progress>
@@ -8,7 +11,7 @@
 
 <script lang="ts" setup>
 
-import { useContext } from '@cordisjs/client'
+import { useContext, socket } from '@cordisjs/client'
 import { computed } from 'vue'
 
 const ctx = useContext()
@@ -19,3 +22,10 @@ const progress = computed(() => {
 })
 
 </script>
+
+<style lang="scss" scoped>
+.offline {
+  color: var(--error, #e74c3c);
+  font-weight: 500;
+}
+</style>

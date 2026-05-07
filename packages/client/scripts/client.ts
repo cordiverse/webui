@@ -46,15 +46,13 @@ function takeManifest(output: RollupOutput): Record<string, any> {
 const cwd = resolve(fileURLToPath(import.meta.url), '../../../..')
 const dist = cwd + '/plugins/webui/dist'
 
+const EXTERNALS = ['vue', 'vue-router', '@cordisjs/client']
+
 interface BuildOptions extends vite.UserConfig {
   manifest?: boolean
 }
 
-async function build(root: string, externals: Record<string, string>, config: BuildOptions = {}) {
-  const alias: Record<string, string> = {}
-  for (const [name, file] of Object.entries(externals)) {
-    alias[name] = root + '/' + file
-  }
+async function build(root: string, config: BuildOptions = {}) {
   const { manifest, ...rest } = config
   const { rollupOptions = {} } = rest.build || {}
   return await vite.build({
@@ -67,18 +65,17 @@ async function build(root: string, externals: Record<string, string>, config: Bu
       ...rest.build,
       rollupOptions: {
         ...rollupOptions,
-        makeAbsoluteExternalsRelative: true,
-        external: Object.values(alias),
+        external: EXTERNALS,
         output: {
           format: 'module',
           entryFileNames: '[name]-[hash].js',
           chunkFileNames: '[name]-[hash].js',
           assetFileNames: '[name]-[hash].[ext]',
+          paths: Object.fromEntries(EXTERNALS.map((name) => [name, name])),
           ...rollupOptions.output,
         },
       },
     },
-    resolve: { alias },
     plugins: [
       vue(),
       yaml(),
@@ -95,11 +92,10 @@ export default async function () {
   const vueRaw = await readFile(findModulePath('vue') + '/dist/vue.runtime.esm-browser.prod.js')
   const vueFile = `vue-${shortHash(vueRaw)}.js`
   await writeFile(dist + '/' + vueFile, vueRaw)
-  const externalsVue = { vue: vueFile }
 
   // 2. vue-router.
   const routerRoot = findModulePath('vue-router') + '/dist'
-  const routerOutput = await build(routerRoot, externalsVue, {
+  const routerOutput = await build(routerRoot, {
     build: {
       rollupOptions: {
         input: { 'vue-router': routerRoot + '/vue-router.esm-browser.js' },
@@ -108,11 +104,10 @@ export default async function () {
     },
   })
   const routerFile = entryFileName(routerOutput)
-  const externalsClient = { ...externalsVue, 'vue-router': routerFile }
 
   // 3. client (incl. element-plus manual chunk).
   const clientRoot = cwd + '/packages/client/client'
-  const clientOutput = await build(clientRoot, externalsClient, {
+  const clientOutput = await build(clientRoot, {
     manifest: true,
     build: {
       chunkSizeWarningLimit: 1024 * 1024,
@@ -128,10 +123,9 @@ export default async function () {
     },
   })
   const clientFile = entryFileName(clientOutput)
-  const externalsApp = { ...externalsClient, '@cordisjs/client': clientFile }
 
   // 4. app (html entry) — emits Vite manifest at dist/.vite/manifest.json.
-  const appOutput = await build(cwd + '/packages/client/app', externalsApp, {
+  const appOutput = await build(cwd + '/packages/client/app', {
     manifest: true,
     plugins: [
       unocss({

@@ -162,6 +162,20 @@ class NodeWebUI extends WebUI {
       if (innerResponse || res.claimed) return innerResponse
 
       const name = req.params.path ?? ''
+
+      if (name.startsWith('-/vendors/')) {
+        const vendor = name.slice(10)
+        const file = this._manifest?.resolve[vendor]
+        if (!file) {
+          res.status = 404
+          return
+        }
+        res.status = 307
+        res.headers.set('location', `${this.config.uiPath}/${file}`)
+        res.headers.set('cache-control', 'no-cache')
+        return
+      }
+
       if (name.startsWith('-/modules/')) {
         for (const entry of Object.values(this.entries)) {
           if (!entry.manifest || !name.startsWith(`-/modules/${entry.manifest.path}/`)) continue
@@ -172,7 +186,7 @@ class NodeWebUI extends WebUI {
 
           const prodBase = fileURLToPath(new URL(entry.files.prod, entry.files.base))
           const filename = resolve(prodBase, '..', file)
-          if (this.config.devMode || !['.js', '.mjs'].includes(extname(file))) {
+          if (!['.js', '.mjs'].includes(extname(file))) {
             const response = await fetchFile(pathToFileURL(filename), {}, {
               onError: this.ctx.logger.warn,
             })
@@ -204,8 +218,18 @@ class NodeWebUI extends WebUI {
         onError: this.ctx.logger.warn,
       })
       if (fileResponse.status !== 404) {
-        if (!this.config.devMode && fileResponse.status === 200 && (name.endsWith('.js') || name.endsWith('.css'))) {
-          fileResponse.headers.set('cache-control', IMMUTABLE)
+        if (!this.config.devMode && fileResponse.status === 200) {
+          if (name.endsWith('.js') || name.endsWith('.mjs')) {
+            const source = await fileResponse.text()
+            res.status = 200
+            res.headers.set('content-type', 'application/javascript; charset=utf-8')
+            res.headers.set('cache-control', IMMUTABLE)
+            res.body = await this.transformImport(source)
+            return
+          }
+          if (name.endsWith('.css')) {
+            fileResponse.headers.set('cache-control', IMMUTABLE)
+          }
         }
         return fileResponse
       }
@@ -229,21 +253,14 @@ class NodeWebUI extends WebUI {
     this.version = this._manifest.version
   }
 
-  private resolveImport(name?: string) {
-    if (!name) {
-      this.ctx.logger.warn('cannot transform dynamic import names')
-      return name
-    }
-    const file = this._manifest?.resolve[name]
-    if (!file) return name
-    return `${this.config.uiPath}/${file}`
-  }
-
   private async transformImport(source: string) {
     let output = '', lastIndex = 0
     const [imports] = parse(source)
     for (const { s, e, n, t } of imports) {
-      const resolved = this.resolveImport(n)
+      if (!n) continue
+      const file = this._manifest?.resolve[n]
+      if (!file) continue
+      const resolved = `${this.config.uiPath}/-/vendors/${n}`
       output += source.slice(lastIndex, s) + (t === 2 ? JSON.stringify(resolved) : resolved)
       lastIndex = e
     }

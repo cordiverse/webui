@@ -46,6 +46,7 @@ export abstract class WebUI extends Service {
   }
 
   abstract getEntryFiles(entry: Entry): string[]
+  abstract resolveManifestUrl(files: Entry.Files): string | undefined
   abstract addListener<K extends keyof Events>(event: K, callback: Events[K]): void
 
   addEntry<T extends object = never>(files: Entry.Files, data?: T) {

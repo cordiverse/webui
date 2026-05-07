@@ -18,6 +18,11 @@ class BrowserWebUI extends WebUI {
     // TODO
     return []
   }
+
+  resolveManifestUrl(files: Entry.Files): string | undefined {
+    // TODO
+    return undefined
+  }
 }
 
 namespace BrowserWebUI {

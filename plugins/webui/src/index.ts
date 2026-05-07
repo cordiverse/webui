@@ -4,9 +4,9 @@ import type {} from '@cordisjs/plugin-logger'
 import type {} from '@cordisjs/plugin-server'
 import type {} from '@cordisjs/plugin-hmr'
 import type { EntryOptions } from '@cordisjs/plugin-loader'
-import type { FileSystemServeOptions, Logger as ViteLogger, Manifest, ViteDevServer } from 'vite'
+import type { FileSystemServeOptions, Logger as ViteLogger, ViteDevServer } from 'vite'
 import { extname, join, relative, resolve } from 'node:path'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { parse } from 'es-module-lexer'
@@ -121,8 +121,10 @@ class NodeWebUI extends WebUI {
       const filename = fileURLToPath(new URL(entry.files.dev, entry.files.base))
       if (existsSync(filename)) return [`/vite/@fs/${filename}`]
     }
+    const manifest = entry.getManifest()
+    if (!manifest) return []
     const filename = fileURLToPath(new URL(entry.files.prod, entry.files.base))
-    return Object.values(entry.getManifest())
+    return Object.values(manifest)
       .filter((chunk) => !chunk.isDynamicEntry)
       .map((chunk) => {
         if (this.config.devMode) {
@@ -131,6 +133,14 @@ class NodeWebUI extends WebUI {
           return `${this.config.uiPath}/-/modules/${entry.files.path ?? entry.id}/${chunk.file}`
         }
       })
+  }
+
+  resolveManifestUrl(files: Entry.Files): string | undefined {
+    if (this.config.devMode && files.dev) {
+      const devFile = fileURLToPath(new URL(files.dev, files.base))
+      if (existsSync(devFile)) return undefined
+    }
+    return new URL(files.prod, files.base).href
   }
 
   private serveAssets() {
@@ -145,11 +155,12 @@ class NodeWebUI extends WebUI {
           if (!name.startsWith(`-/modules/${key}/`)) continue
 
           const file = name.slice(11 + key.length)
-          const prodBase = fileURLToPath(new URL(entry.files.prod, entry.files.base))
-          const manifest: Manifest = JSON.parse(readFileSync(prodBase, 'utf-8'))
+          const manifest = entry.getManifest()
+          if (!manifest) continue
           const chunkNames = Object.values(manifest).map(chunk => chunk.file)
           if (!chunkNames.includes(file)) continue
 
+          const prodBase = fileURLToPath(new URL(entry.files.prod, entry.files.base))
           const filename = resolve(prodBase, '..', file)
           if (this.config.devMode || !['.js', '.mjs'].includes(extname(file))) {
             return fetchFile(pathToFileURL(filename), {}, {

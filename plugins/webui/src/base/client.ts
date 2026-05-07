@@ -11,7 +11,6 @@ export class Client {
     const body: EntryInit = {
       entries: mapValues(this.ctx.webui.entries, entry => entry.toJSON()!),
       serverId: this.ctx.webui.id,
-      clientId: this.id,
     }
     this.send({ type: 'entry:init', body })
   }

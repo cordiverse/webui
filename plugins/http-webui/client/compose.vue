@@ -118,8 +118,6 @@ function saveTooltip(tab: OpenTab) {
   return dirty.value[tab.id] ? '保存 (Ctrl+S)' : '已保存'
 }
 
-// --- save dialog ---
-
 const saveDialog = reactive({
   open: false,
   name: '',
@@ -188,8 +186,6 @@ ctx.client.action.action('httpCompose.save', {
   action: () => saveTab(activeTabId.value),
 })
 
-// --- close confirm dialog ---
-
 const closeDialog = reactive({
   open: false,
   tabId: '',
@@ -227,8 +223,6 @@ function closeConfirm(action: 'save' | 'discard') {
     if (ok) removeTab(tabId)
   })
 }
-
-// --- rename / delete ---
 
 const renameDialog = reactive({
   open: false,
@@ -269,8 +263,6 @@ function confirmRename() {
   if (target) target.name = name
   renameDialog.open = false
 }
-
-// --- tab context menu ---
 
 ctx.client.action.menu('httpTab', [
   { id: '.close', label: '关闭' },
@@ -317,8 +309,6 @@ ctx.client.action.action('httpTab.clone', {
     addTab(cloneTabState(httpTab.state))
   },
 })
-
-// --- consume pending tab from history page ---
 
 watch(pendingTab, (pt) => {
   if (!pt) return

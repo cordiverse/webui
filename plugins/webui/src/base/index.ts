@@ -6,6 +6,7 @@ import { WebSocket } from './types.ts'
 
 export * from './client.ts'
 export * from './entry.ts'
+export * from './types.ts'
 
 declare module 'cordis' {
   interface Context {

@@ -138,8 +138,6 @@ function saveTooltip(tab: OpenTab) {
   return dirty.value[tab.id] ? '保存 (Ctrl+S)' : '已保存'
 }
 
-// --- initial load ---
-
 function normalizeState(state: any) {
   if (!Array.isArray(state.events)) state.events = []
   if (!Array.isArray(state.wsMessages)) state.wsMessages = []
@@ -163,8 +161,6 @@ if (persisted) {
   }
 }
 
-// --- persistence ---
-
 let saveTimer: number | undefined
 watch([saved, tabs, activeId], () => {
   if (saveTimer) clearTimeout(saveTimer)
@@ -183,8 +179,6 @@ function persistToStorage() {
     activeId: activeId.value,
   })
 }
-
-// --- tab / saved operations ---
 
 function newTab() {
   const tab: OpenTab = { id: newId(), state: emptyTabState() }
@@ -221,8 +215,6 @@ function removeTab(id: string) {
     activeId.value = tabs.value[idx]?.id ?? tabs.value[idx - 1]?.id ?? 'history'
   }
 }
-
-// --- save dialog ---
 
 const saveDialog = reactive({
   open: false,
@@ -303,8 +295,6 @@ ctx.client.action.action('httpCompose.save', {
   action: () => saveTab(activeId.value),
 })
 
-// --- close confirm dialog ---
-
 const closeDialog = reactive({
   open: false,
   tabId: '',
@@ -343,8 +333,6 @@ function closeConfirm(action: 'save' | 'discard') {
     if (ok) removeTab(tabId)
   })
 }
-
-// --- rename / delete ---
 
 const renameDialog = reactive({
   open: false,
@@ -385,8 +373,6 @@ function confirmRename() {
   if (target) target.name = name
   renameDialog.open = false
 }
-
-// --- tab context menu ---
 
 ctx.client.action.menu('httpTab', [
   { id: '.close', label: '关闭' },
@@ -438,8 +424,6 @@ ctx.client.action.action('httpTab.clone', {
     activeId.value = tab.id
   },
 })
-
-// --- history context menu ---
 
 function kvFromDict(dict: Record<string, string> | undefined) {
   const rows = Object.entries(dict ?? {}).map(([key, value]) => ({ enabled: true, key, value }))

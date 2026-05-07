@@ -105,8 +105,6 @@ export function persistToStorage() {
   })
 }
 
-// --- ops ---
-
 export function addTab(state: TabState, savedId?: string): OpenTab {
   const tab: OpenTab = { id: newId(), state, savedId }
   tabs.value.push(tab)

@@ -16,6 +16,7 @@ export namespace Entry {
 
 export class Entry<T extends object = any> {
   public id = Math.random().toString(36).slice(2)
+  public manifestUrl: string
   public dispose: () => void
   public state = new DeltaState()
 
@@ -23,6 +24,7 @@ export class Entry<T extends object = any> {
   private _manifest: Manifest | undefined
 
   constructor(public ctx: Context, public files: Entry.Files, public data: T) {
+    this.manifestUrl = new URL(files.prod, files.base).href
     ctx.webui.entries[this.id] = this
     ctx.webui.broadcast('entry:init', {
       serverId: ctx.webui.id,
@@ -44,9 +46,19 @@ export class Entry<T extends object = any> {
 
   getManifest() {
     if (this._manifest) return this._manifest
-    const prodBase = fileURLToPath(new URL(this.files.prod, this.files.base))
-    const manifest: Manifest = JSON.parse(readFileSync(prodBase, 'utf-8'))
+    const manifest: Manifest = JSON.parse(readFileSync(fileURLToPath(this.manifestUrl), 'utf-8'))
     return this._manifest = manifest
+  }
+
+  refresh() {
+    if (this._disposed) return
+    this._manifest = undefined
+    this.ctx.webui.broadcast('entry:init', {
+      serverId: this.ctx.webui.id,
+      entries: {
+        [this.id]: this.toJSON(),
+      },
+    })
   }
 
   mutate(fn: (data: T) => void): void {

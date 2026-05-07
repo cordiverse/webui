@@ -2,6 +2,7 @@ import { Context, Inject, Service } from 'cordis'
 import { Dict, Time } from 'cosmokit'
 import type {} from '@cordisjs/plugin-logger'
 import type {} from '@cordisjs/plugin-server'
+import type {} from '@cordisjs/plugin-hmr'
 import type { EntryOptions } from '@cordisjs/plugin-loader'
 import type { FileSystemServeOptions, Logger as ViteLogger, Manifest, ViteDevServer } from 'vite'
 import { extname, join, relative, resolve } from 'node:path'
@@ -58,6 +59,15 @@ class NodeWebUI extends WebUI {
       const loader = ctx.get('loader')
       if (!loader) return
       loader.envData.clientCount = this.clients.size
+    })
+
+    ctx.on('hmr/change', (url) => {
+      for (const entry of Object.values(this.entries)) {
+        if (entry.manifestUrl !== url) continue
+        const path = relative(ctx.get('hmr')!.baseDir, fileURLToPath(url))
+        ctx.logger('hmr').info('reload webui entry manifest at %c', path)
+        entry.refresh()
+      }
     })
 
     this.root = fileURLToPath(config.devMode
@@ -231,34 +241,34 @@ class NodeWebUI extends WebUI {
     const loggedErrors = new WeakSet<object>()
     const customLogger: ViteLogger = {
       hasWarned: false,
-      info: (msg) => {
-        const plain = msg.replace(ansiRegex, '')
+      info: (message) => {
+        const plain = message.replace(ansiRegex, '')
         const match = /^hmr update\s+(.+)$/.exec(plain)
         if (match) {
-          const rels = match[1].split(/,\s*/).map((file) => {
+          const files = match[1].split(/,\s*/).map((file) => {
             const abs = file.startsWith('/@fs')
               ? file.slice(4)
               : resolve(this.root, file.replace(/^\//, ''))
             return relative(baseDir, abs)
           })
-          hmrLogger.info('update %s', rels.join(', '))
+          hmrLogger.info('update %s', files.join(', '))
           return
         }
-        logger.info(msg)
+        logger.info(message)
       },
-      warn: (msg) => {
+      warn: (message) => {
         customLogger.hasWarned = true
-        logger.warn(msg)
+        logger.warn(message)
       },
-      warnOnce: (msg) => {
-        if (loggedWarnings.has(msg)) return
-        loggedWarnings.add(msg)
+      warnOnce: (message) => {
+        if (loggedWarnings.has(message)) return
+        loggedWarnings.add(message)
         customLogger.hasWarned = true
-        logger.warn(msg)
+        logger.warn(message)
       },
-      error: (msg, opts) => {
-        if (opts?.error) loggedErrors.add(opts.error)
-        logger.error(msg)
+      error: (message, options) => {
+        if (options?.error) loggedErrors.add(options.error)
+        logger.error(message)
       },
       clearScreen: () => {},
       hasErrorLogged: (error) => loggedErrors.has(error),

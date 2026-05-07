@@ -66,6 +66,5 @@ export const icons = {
 
 export const locale = ref('zh-CN')
 export const socket = ref<any>(undefined)
-export const clientId = ref<string>('test-client')
 
 export default function install() {}

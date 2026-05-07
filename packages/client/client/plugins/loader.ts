@@ -2,7 +2,6 @@ import { Ref, ref, shallowReactive, reactive } from 'vue'
 import { Context, Fiber, Service } from 'cordis'
 import { defineProperty, Dict } from 'cosmokit'
 import { apply, DeltaState } from '@cordisjs/muon'
-import { clientId } from '../data'
 
 declare module 'cordis' {
   interface Context {
@@ -83,7 +82,6 @@ export default class LoaderService {
     this.initTask = new Promise((resolve) => {
       this.ctx.on('entry:init', async (value) => {
         const { serverId, entries } = value
-        if (value.clientId) clientId.value = value.clientId
         if (this.id && serverId && this.id !== serverId as unknown) {
           return window.location.reload()
         }
@@ -91,13 +89,12 @@ export default class LoaderService {
 
         await Promise.all(Object.entries(entries).map(([key, body]) => {
           if (this.entries[key]) {
-            if (body) return console.warn(`Entry ${key} already exists`)
             for (const fiber of Object.values(this.entries[key].fibers)) {
               fiber.dispose()
             }
             delete this.entries[key]
-            return
           }
+          if (!body) return
 
           const { files, entryId, data, cursor } = body
           const state = new DeltaState()

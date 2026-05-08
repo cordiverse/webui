@@ -1,7 +1,7 @@
 {
   "name": "@cordisjs/plugin-webui",
   "description": "Web User Interface for Koishi",
-  "version": "0.6.5",
+  "version": "0.7.0",
   "type": "module",
   "exports": {
     ".": {
@@ -53,7 +53,7 @@
     }
   },
   "peerDependencies": {
-    "@cordisjs/client": "0.6.5",
+    "@cordisjs/client": "0.7.0",
     "cordis": "^4.0.0-rc.4"
   },
   "peerDependenciesMeta": {
@@ -62,7 +62,7 @@
     }
   },
   "devDependencies": {
-    "@cordisjs/client": "0.6.5",
+    "@cordisjs/client": "0.7.0",
     "@cordisjs/plugin-hmr": "^1.0.14",
     "@cordisjs/plugin-loader": "^1.0.0-rc.3",
     "@cordisjs/plugin-logger": "^1.0.2",

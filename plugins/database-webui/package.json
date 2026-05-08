@@ -1,7 +1,7 @@
 {
   "name": "@cordisjs/plugin-database-webui",
   "description": "WebUI for browsing database tables",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "exports": {
     ".": {
@@ -53,13 +53,13 @@
   },
   "peerDependencies": {
     "@cordisjs/plugin-database": "^4.0.1",
-    "@cordisjs/plugin-webui": "^0.6.5",
+    "@cordisjs/plugin-webui": "^0.7.0",
     "cordis": "^4.0.0-rc.4"
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.6.5",
+    "@cordisjs/client": "^0.7.0",
     "@cordisjs/plugin-database": "^4.0.1",
-    "@cordisjs/plugin-webui": "^0.6.5",
+    "@cordisjs/plugin-webui": "^0.7.0",
     "cordis": "^4.0.0-rc.4"
   },
   "dependencies": {

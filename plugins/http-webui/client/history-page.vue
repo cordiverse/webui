@@ -16,13 +16,11 @@
 
 <script lang="ts" setup>
 
-import { useContext } from '@cordisjs/client'
-import { useRouter } from 'vue-router'
+import { useContext, send, useRouter } from '@cordisjs/client'
 import History from './history.vue'
 import { emptyKvRow, type TabState } from './types'
 import { pendingTab } from './state'
 import type { HistoryEntry } from '../src'
-import { send } from '@cordisjs/client'
 
 const ctx = useContext()
 const router = useRouter()

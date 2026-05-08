@@ -34,9 +34,8 @@
 
 <script lang="ts" setup>
 
-import { useRoute, useRouter } from '@cordisjs/client'
+import { useRoute, useRouter, useConfig, useContext } from '@cordisjs/client'
 import { computed, ref } from 'vue'
-import { useConfig, useContext } from '@cordisjs/client'
 
 interface TabOption {
   id: string

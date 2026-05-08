@@ -1,12 +1,10 @@
 import * as vite from 'vite'
 import { RollupOutput } from 'rollup'
 import { existsSync, promises as fs } from 'node:fs'
-import { resolve } from 'node:path'
 import unocss from 'unocss/vite'
 import uno from 'unocss/preset-uno'
 import vue from '@vitejs/plugin-vue'
 import yaml from '@cordisjs/unyaml/vite'
-import { fileURLToPath } from 'node:url'
 
 declare module 'yakumo' {
   interface PackageConfig {
@@ -14,27 +12,27 @@ declare module 'yakumo' {
   }
 }
 
-// Vite plugin: warns once per importer when a deprecated specifier is hit and
-// then defers to the resolve.alias config to actually rewrite the import.
-function deprecatedAliases(aliases: Record<string, string>): vite.Plugin {
+const DEPRECATED_ALIASES = {
+  'vue-router': '@cordisjs/client',
+}
+
+function deprecatedAliases(): vite.Plugin {
   const seen = new Set<string>()
   return {
     name: 'cordis:deprecated-aliases',
     enforce: 'pre',
-    resolveId(id, importer) {
-      const target = aliases[id]
+    async resolveId(id, importer, options) {
+      const target = DEPRECATED_ALIASES[id]
       if (!target) return
       const key = `${id}\0${importer ?? ''}`
-      if (seen.has(key)) return
-      seen.add(key)
-      const where = importer ? ` (in ${importer})` : ''
-      this.warn(`import from '${id}' is deprecated${where}; use '${target}' instead.`)
+      if (!seen.has(key)) {
+        seen.add(key)
+        const where = importer ? ` (in ${importer})` : ''
+        this.warn(`import from '${id}' is deprecated, use '${target}' instead${where}`)
+      }
+      return this.resolve(target, importer, { skipSelf: true, ...options })
     },
   }
-}
-
-const COMPAT_ALIASES = {
-  'vue-router': '@cordisjs/client',
 }
 
 export async function build(root: string, config: vite.UserConfig = {}) {
@@ -87,7 +85,7 @@ export async function build(root: string, config: vite.UserConfig = {}) {
           }),
         ],
       }),
-      deprecatedAliases(COMPAT_ALIASES),
+      deprecatedAliases(),
       {
         name: 'auto-import',
         transform(code, id, options) {
@@ -100,8 +98,6 @@ export async function build(root: string, config: vite.UserConfig = {}) {
     resolve: {
       alias: {
         '@cordisjs/components': '@cordisjs/client',
-        // Compat shim — see deprecatedAliases plugin above for the warning.
-        ...COMPAT_ALIASES,
       },
     },
     define: {
@@ -127,17 +123,8 @@ export async function build(root: string, config: vite.UserConfig = {}) {
 
 export interface InlineConfig extends vite.InlineConfig {}
 
-export async function createServer(baseDir: string, config: InlineConfig = {}) {
-  const root = resolve(fileURLToPath(import.meta.url), '../../app')
+export async function createServer(config: InlineConfig) {
   return vite.createServer(vite.mergeConfig({
-    root,
-    base: '/vite/',
-    server: {
-      middlewareMode: true,
-      fs: {
-        allow: [baseDir],
-      },
-    },
     plugins: [
       vue(),
       yaml(),
@@ -148,16 +135,14 @@ export async function createServer(baseDir: string, config: InlineConfig = {}) {
           }),
         ],
       }),
-      deprecatedAliases(COMPAT_ALIASES),
     ],
     resolve: {
-      // Compat shim — see deprecatedAliases plugin above for the warning.
-      alias: { ...COMPAT_ALIASES },
       dedupe: ['vue', 'vue-demi', 'element-plus', '@vueuse/core', '@popperjs/core', 'marked', 'xss'],
     },
     optimizeDeps: {
       include: [
         'vue',
+        'vue-demi',
         'element-plus',
         '@vueuse/core',
         '@popperjs/core',
@@ -167,11 +152,6 @@ export async function createServer(baseDir: string, config: InlineConfig = {}) {
       exclude: [
         '@cordisjs/muon',
       ],
-    },
-    build: {
-      rollupOptions: {
-        input: root + '/index.html',
-      },
     },
   } as vite.InlineConfig, config))
 }

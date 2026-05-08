@@ -54,11 +54,7 @@ interface Manifest {
 
 const IMMUTABLE = 'public, max-age=31536000, immutable'
 
-// Specifier aliases applied during import rewrite. Lets older plugin dist files
-// that still `import { useRoute, useRouter } from 'vue-router'` keep loading —
-// those symbols now live on `@cordisjs/client` and the vendor route resolves to
-// the same chunk regardless of which alias the source used.
-const SPECIFIER_ALIASES: Record<string, string> = {
+const DEPRECATED_ALIASES: Record<string, string> = {
   'vue-router': '@cordisjs/client',
 }
 
@@ -67,9 +63,6 @@ class NodeWebUI extends WebUI {
   public vite?: ViteDevServer
   public root: string
   private _manifest?: Manifest
-  // Files we've already warned about for deprecated specifier rewrites — keeps
-  // the log noise to one line per source file even if it imports a deprecated
-  // specifier multiple times.
   private _warnedAliases = new Set<string>()
 
   constructor(public ctx: Context, public config: NodeWebUI.Config) {
@@ -270,15 +263,15 @@ class NodeWebUI extends WebUI {
     const [imports] = parse(source)
     for (const { s, e, n, t } of imports) {
       if (!n) continue
-      const target = SPECIFIER_ALIASES[n] ?? n
+      const target = DEPRECATED_ALIASES[n] ?? n
       const file = this._manifest?.resolve[target]
       if (!file) continue
-      if (target !== n && !this._warnedAliases.has(filename)) {
-        this._warnedAliases.add(filename)
-        this.ctx.logger.warn(
-          `import from %c is deprecated (in %c); use %c instead.`,
-          n, filename, target,
-        )
+      const key = `${n}:${filename}`
+      if (target !== n && !this._warnedAliases.has(key)) {
+        this._warnedAliases.add(key)
+        const baseDir = fileURLToPath(this.ctx.baseUrl!)
+        const path = relative(baseDir, filename)
+        this.ctx.logger.warn(`dependency '%s' is deprecated, use '%s' instead (in %c)`, n, target, path)
       }
       const resolved = `${this.config.uiPath}/-/vendors/${target}`
       output += source.slice(lastIndex, s) + (t === 2 ? JSON.stringify(resolved) : resolved)
@@ -303,7 +296,7 @@ class NodeWebUI extends WebUI {
   }
 
   private async createVite() {
-    const { cacheDir, dev } = this.config
+    const { cacheDir } = this.config
     const { createServer } = await import('@cordisjs/client/lib')
 
     const logger = this.ctx.logger('vite')
@@ -347,11 +340,22 @@ class NodeWebUI extends WebUI {
       hasErrorLogged: (error) => loggedErrors.has(error),
     }
 
-    this.vite = await createServer(fileURLToPath(this.ctx.baseUrl!), {
+    const self = this
+    this.vite = await createServer({
+      root: this.root,
+      base: '/vite/',
       cacheDir: cacheDir && fileURLToPath(new URL(cacheDir, this.ctx.baseUrl)),
       server: {
-        fs: dev?.fs,
+        middlewareMode: true,
+        fs: {
+          allow: [baseDir],
+        },
         allowedHosts: true,
+      },
+      build: {
+        rollupOptions: {
+          input: this.root + '/index.html',
+        },
       },
       customLogger,
       plugins: [{
@@ -372,6 +376,22 @@ class NodeWebUI extends WebUI {
             ].join('\n') + '\n'
             return { code }
           }
+        },
+      }, {
+        name: 'deprecated-aliases',
+        enforce: 'pre',
+        async resolveId(id, importer, options) {
+          const target = DEPRECATED_ALIASES[id]
+          if (!target) return
+          const key = `${id}:${importer}`
+          if (!self._warnedAliases.has(key)) {
+            self._warnedAliases.add(key)
+            if (importer) {
+              const path = relative(baseDir, importer)
+              self.ctx.logger.warn(`dependency '%s' is deprecated, use '%s' instead (in %c)`, id, target, path)
+            }
+          }
+          return this.resolve(target, importer, { skipSelf: true, ...options })
         },
       }],
     })

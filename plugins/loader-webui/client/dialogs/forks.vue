@@ -42,8 +42,7 @@
 <script setup lang="ts">
 
 import { computed } from 'vue'
-import { useRouter } from '@cordisjs/client'
-import { send, useContext } from '@cordisjs/client'
+import { send, useContext, useRouter } from '@cordisjs/client'
 import { getStatusClass } from '../utils'
 import { EntryData } from '../../src'
 

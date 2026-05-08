@@ -31,9 +31,8 @@
 
 <script lang="ts" setup>
 
-import { send, useContext, useI18nText } from '@cordisjs/client'
-import { computed, nextTick, ref, watch } from 'vue'
-import { useRouter } from '@cordisjs/client'
+import { send, useContext, useI18nText, useRouter } from '@cordisjs/client'
+import { computed, ref } from 'vue'
 import { useAutoFocus } from '../utils'
 
 const ctx = useContext()

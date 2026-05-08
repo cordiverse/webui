@@ -84,8 +84,7 @@
 <script lang="ts" setup>
 
 import { computed, provide, ref, watch, nextTick } from 'vue'
-import { useRoute, useRouter } from '@cordisjs/client'
-import { message, send, useRpc } from '@cordisjs/client'
+import { useRoute, useRouter, message, send, useRpc } from '@cordisjs/client'
 import { MarketSearch, MarketFilter, MarketList, getFiltered, hasFilter, kConfig } from '@cordisjs/market'
 import type { SearchObject } from '@cordisjs/registry'
 import type { Data } from '../src'

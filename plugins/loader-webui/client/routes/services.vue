@@ -95,8 +95,7 @@
 <script lang="ts" setup>
 
 import { computed, ref } from 'vue'
-import { useRouter } from '@cordisjs/client'
-import { send, useContext } from '@cordisjs/client'
+import { useRouter, send, useContext } from '@cordisjs/client'
 import type { Provider } from '../../src'
 
 const ctx = useContext()

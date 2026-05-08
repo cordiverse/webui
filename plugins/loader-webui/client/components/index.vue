@@ -60,10 +60,8 @@
 <script setup lang="ts">
 
 import { computed, ref, watch } from 'vue'
-import { useRouter } from '@cordisjs/client'
-import { useContext, send } from '@cordisjs/client'
+import { useRouter, useContext, send } from '@cordisjs/client'
 import TreeView from './tree.vue'
-import type { SubRoute } from '..'
 
 interface TabOption {
   id: string

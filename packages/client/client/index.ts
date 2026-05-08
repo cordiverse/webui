@@ -79,8 +79,9 @@ export class ClientService extends Service {
       locale.value = config.value.locale ?? 'en-US'
     }, { flush: 'post' }))
 
-    this.loader.initTask.then(() => {
-      this.app.use(this.router.router)
+    this.loader.initTask.then(async () => {
+      this.router.router.install(this.app)
+      await this.router.router.ready()
       this.app.mount('#app')
     })
   }

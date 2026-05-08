@@ -46,7 +46,7 @@ function takeManifest(output: RollupOutput): Record<string, any> {
 const cwd = resolve(fileURLToPath(import.meta.url), '../../../..')
 const dist = cwd + '/plugins/webui/dist'
 
-const EXTERNALS = ['vue', 'vue-router', '@cordisjs/client']
+const EXTERNALS = ['vue', '@cordisjs/client']
 
 interface BuildOptions extends vite.UserConfig {
   manifest?: boolean
@@ -93,19 +93,7 @@ export default async function () {
   const vueFile = `vue-${shortHash(vueRaw)}.js`
   await writeFile(dist + '/' + vueFile, vueRaw)
 
-  // 2. vue-router.
-  const routerRoot = findModulePath('vue-router') + '/dist'
-  const routerOutput = await build(routerRoot, {
-    build: {
-      rollupOptions: {
-        input: { 'vue-router': routerRoot + '/vue-router.esm-browser.js' },
-        preserveEntrySignatures: 'strict',
-      },
-    },
-  })
-  const routerFile = entryFileName(routerOutput)
-
-  // 3. client (incl. element-plus manual chunk).
+  // 2. client (incl. element-plus manual chunk).
   const clientRoot = cwd + '/packages/client/client'
   const clientOutput = await build(clientRoot, {
     manifest: true,
@@ -124,7 +112,7 @@ export default async function () {
   })
   const clientFile = entryFileName(clientOutput)
 
-  // 4. app (html entry) — emits Vite manifest at dist/.vite/manifest.json.
+  // 3. app (html entry) — emits Vite manifest at dist/.vite/manifest.json.
   const appOutput = await build(cwd + '/packages/client/app', {
     manifest: true,
     plugins: [
@@ -134,7 +122,7 @@ export default async function () {
     ],
   })
 
-  // 5. read manifests + css assets straight out of the in-memory RollupOutputs
+  // 4. read manifests + css assets straight out of the in-memory RollupOutputs
   //    (no disk roundtrip, no ordering dependency on snapshotting client's
   //    manifest before app build overwrites it).
   const clientManifest = takeManifest(clientOutput)
@@ -144,18 +132,17 @@ export default async function () {
   const cssMerged = clientCssAsset.source.toString() + appCssAsset.source.toString()
   const cssFinal = `style-${shortHash(clientCssAsset.fileName + appCssAsset.fileName)}.css`
 
-  // 6. write WebuiManifest = { version, resolve }. version is a full sha256 of
+  // 5. write WebuiManifest = { version, resolve }. version is a full sha256 of
   //    BASE_VERSION concatenated with every generated artifact's filename (vue,
-  //    vue-router, client, element manualChunk, app entry, and the two
-  //    intermediate CSS filenames so a CSS-only change in either build still
-  //    bumps the version). Full-length to avoid collisions across builds —
-  //    a `version` mismatch is what tells clients to reload, so a collision
-  //    would silently leave them on stale code.
+  //    client, element manualChunk, app entry, and the two intermediate CSS
+  //    filenames so a CSS-only change in either build still bumps the version).
+  //    Full-length to avoid collisions across builds — a `version` mismatch is
+  //    what tells clients to reload, so a collision would silently leave them
+  //    on stale code.
   const elementChunk = Object.values(clientManifest).find((c: any) => c.name === 'element' && c.file?.endsWith('.js')) as any
   const appEntryChunk = Object.values(appManifest).find((c: any) => c.isEntry && c.file?.endsWith('.js')) as any
   const filenames = [
     vueFile,
-    routerFile,
     clientFile,
     elementChunk.file,
     appEntryChunk.file,
@@ -165,11 +152,10 @@ export default async function () {
   const version = fullHash(BASE_VERSION + filenames.join(''))
   const resolve: Record<string, string> = {
     'vue': vueFile,
-    'vue-router': routerFile,
     '@cordisjs/client': clientFile,
   }
 
-  // 7. patch index.html, drop intermediate css files, write merged css and the
+  // 6. patch index.html, drop intermediate css files, write merged css and the
   //    final manifest in parallel.
   const html = await readFile(dist + '/index.html', 'utf-8')
   const htmlPatched = html.replace(/style-[A-Za-z0-9_-]+\.css/g, cssFinal)

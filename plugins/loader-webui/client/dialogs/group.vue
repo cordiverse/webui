@@ -17,7 +17,7 @@
 <script setup lang="ts">
 
 import { ref, computed, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter } from '@cordisjs/client'
 import { send, useContext } from '@cordisjs/client'
 import { useAutoFocus } from '../utils'
 

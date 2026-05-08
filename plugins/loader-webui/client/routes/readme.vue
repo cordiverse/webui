@@ -7,7 +7,7 @@
 <script lang="ts" setup>
 
 import { computed, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter } from '@cordisjs/client'
 import { send, useContext, useRpc } from '@cordisjs/client'
 import { Data } from '../../src'
 

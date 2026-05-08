@@ -7,7 +7,7 @@
 <script lang="ts" setup>
 
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter } from '@cordisjs/client'
 import { useContext } from '@cordisjs/client'
 import effectTree from '../components/effect-tree.vue'
 

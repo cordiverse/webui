@@ -31,7 +31,7 @@
 <script lang="ts" setup>
 
 import { computed, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute } from '@cordisjs/client'
 import { Activity, useConfig, useMenu } from '@cordisjs/client'
 import { Placement } from 'element-plus'
 import ActivityButton from './button.vue'

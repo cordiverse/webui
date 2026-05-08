@@ -14,6 +14,29 @@ declare module 'yakumo' {
   }
 }
 
+// Vite plugin: warns once per importer when a deprecated specifier is hit and
+// then defers to the resolve.alias config to actually rewrite the import.
+function deprecatedAliases(aliases: Record<string, string>): vite.Plugin {
+  const seen = new Set<string>()
+  return {
+    name: 'cordis:deprecated-aliases',
+    enforce: 'pre',
+    resolveId(id, importer) {
+      const target = aliases[id]
+      if (!target) return
+      const key = `${id}\0${importer ?? ''}`
+      if (seen.has(key)) return
+      seen.add(key)
+      const where = importer ? ` (in ${importer})` : ''
+      this.warn(`import from '${id}' is deprecated${where}; use '${target}' instead.`)
+    },
+  }
+}
+
+const COMPAT_ALIASES = {
+  'vue-router': '@cordisjs/client',
+}
+
 export async function build(root: string, config: vite.UserConfig = {}) {
   if (!existsSync(root + '/client')) return
 
@@ -45,7 +68,6 @@ export async function build(root: string, config: vite.UserConfig = {}) {
         makeAbsoluteExternalsRelative: true,
         external: [
           'vue',
-          'vue-router',
           '@cordisjs/client',
         ],
         output: {
@@ -65,6 +87,7 @@ export async function build(root: string, config: vite.UserConfig = {}) {
           }),
         ],
       }),
+      deprecatedAliases(COMPAT_ALIASES),
       {
         name: 'auto-import',
         transform(code, id, options) {
@@ -77,6 +100,8 @@ export async function build(root: string, config: vite.UserConfig = {}) {
     resolve: {
       alias: {
         '@cordisjs/components': '@cordisjs/client',
+        // Compat shim — see deprecatedAliases plugin above for the warning.
+        ...COMPAT_ALIASES,
       },
     },
     define: {
@@ -123,14 +148,16 @@ export async function createServer(baseDir: string, config: InlineConfig = {}) {
           }),
         ],
       }),
+      deprecatedAliases(COMPAT_ALIASES),
     ],
     resolve: {
-      dedupe: ['vue', 'vue-demi', 'vue-router', 'element-plus', '@vueuse/core', '@popperjs/core', 'marked', 'xss'],
+      // Compat shim — see deprecatedAliases plugin above for the warning.
+      alias: { ...COMPAT_ALIASES },
+      dedupe: ['vue', 'vue-demi', 'element-plus', '@vueuse/core', '@popperjs/core', 'marked', 'xss'],
     },
     optimizeDeps: {
       include: [
         'vue',
-        'vue-router',
         'element-plus',
         '@vueuse/core',
         '@popperjs/core',

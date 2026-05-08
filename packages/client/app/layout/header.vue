@@ -12,7 +12,7 @@
 
 <script lang="ts" setup>
 
-import { useRoute } from 'vue-router'
+import { useRoute } from '@cordisjs/client'
 
 const route = useRoute()
 

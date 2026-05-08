@@ -5,21 +5,23 @@
 // 2. Attach a fake `ctx.client` exposing the sub-services Manager reads from
 //    (router / action / wrapComponent). Provides spy-able `page`, `slot`,
 //    `menu`, `action`.
-// 3. Create a memory-history vue-router and wire it into both `ctx.client.router.router`
-//    (so `manager.currentEntry` / `currentRoute` read the same router the
-//    component's `useRoute` / `useRouter` sees) and into `global.plugins` of
-//    `@vue/test-utils`.
+// 3. Create a memory-backed test router and wire it into both
+//    `ctx.client.router.router` (so `manager.currentEntry` / `currentRoute`
+//    read the same router the component's `useRoute` / `useRouter` sees) and
+//    into `global.provide` of `@vue/test-utils` (via the shim's kRoute / kRouter
+//    symbols).
 // 4. Instantiate Manager on the context with the given `Data` ref.
 // 5. Provide the test context via `kContext` (from the shim) so `useContext`
 //    inside SFCs picks it up.
 
 import { mount, type ComponentMountingOptions, type VueWrapper } from '@vue/test-utils'
 import { ref, type Component, type Ref } from 'vue'
-import { createMemoryHistory, createRouter, type Router, type RouteRecordRaw } from 'vue-router'
 import { Context } from 'cordis'
 import { vi, type Mock } from 'vitest'
 
-import { kContext, send } from '../../../../tests/shims/cordisjs-client'
+import {
+  createTestRouter, kContext, kRoute, kRouter, send, type TestRouter,
+} from '../../../../tests/shims/cordisjs-client'
 import Manager from '../../client/index'
 import type { Data } from '../../src'
 
@@ -29,8 +31,6 @@ export interface MountOptions {
   listeners?: Record<string, (...args: any[]) => any>
   /** Initial router location (e.g. `/plugins/e1/config`). Defaults to `/`. */
   initialRoute?: string
-  /** Extra vue-router routes merged into the memory router. */
-  routes?: RouteRecordRaw[]
   /** Extra props forwarded to the mounted component. */
   props?: Record<string, any>
 }
@@ -40,7 +40,7 @@ export interface MountResult<C> {
   ctx: Context & { manager: Manager }
   manager: Manager
   data: Ref<Data>
-  router: Router
+  router: TestRouter
   send: Mock
   /** Spy record for `ctx.client.router.*` and `ctx.client.action.*` calls. */
   clientSpies: {
@@ -57,19 +57,10 @@ export async function mountWithManager<C extends Component>(
   component: C,
   options: MountOptions,
 ): Promise<MountResult<C>> {
-  const { data, listeners = {}, initialRoute = '/', routes = [], props = {} } = options
+  const { data, listeners = {}, initialRoute = '/', props = {} } = options
   const dataRef = ref(data) as Ref<Data>
 
-  const router = createRouter({
-    history: createMemoryHistory(),
-    routes: [
-      { path: '/', component: { template: '<div />' } },
-      { path: '/plugins/:pathMatch(.*)*', component: { template: '<div><slot /></div>' } },
-      ...routes,
-    ],
-  })
-  await router.push(initialRoute)
-  await router.isReady()
+  const router = createTestRouter(initialRoute)
 
   const page = vi.fn()
   const slot = vi.fn()
@@ -102,8 +93,11 @@ export async function mountWithManager<C extends Component>(
   const wrapper = mount(component, {
     props,
     global: {
-      provide: { [kContext]: ctx },
-      plugins: [router],
+      provide: {
+        [kContext]: ctx,
+        [kRouter]: router,
+        [kRoute]: router.currentRoute,
+      },
     },
   } as ComponentMountingOptions<C>)
 

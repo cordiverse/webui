@@ -54,11 +54,23 @@ interface Manifest {
 
 const IMMUTABLE = 'public, max-age=31536000, immutable'
 
+// Specifier aliases applied during import rewrite. Lets older plugin dist files
+// that still `import { useRoute, useRouter } from 'vue-router'` keep loading —
+// those symbols now live on `@cordisjs/client` and the vendor route resolves to
+// the same chunk regardless of which alias the source used.
+const SPECIFIER_ALIASES: Record<string, string> = {
+  'vue-router': '@cordisjs/client',
+}
+
 @Inject('server')
 class NodeWebUI extends WebUI {
   public vite?: ViteDevServer
   public root: string
   private _manifest?: Manifest
+  // Files we've already warned about for deprecated specifier rewrites — keeps
+  // the log noise to one line per source file even if it imports a deprecated
+  // specifier multiple times.
+  private _warnedAliases = new Set<string>()
 
   constructor(public ctx: Context, public config: NodeWebUI.Config) {
     super(ctx)
@@ -143,7 +155,7 @@ class NodeWebUI extends WebUI {
         if (this.config.devMode) {
           return `/vite/@fs/${resolve(filename, '..', chunk.file)}`
         } else {
-          return `${this.config.uiPath}/-/modules/${entry.manifest!.path}/${chunk.file}`
+          return `${this.config.uiPath}/-/v1/modules/${entry.manifest!.path}/${chunk.file}`
         }
       })
   }
@@ -176,11 +188,11 @@ class NodeWebUI extends WebUI {
         return
       }
 
-      if (name.startsWith('-/modules/')) {
+      if (name.startsWith('-/v1/modules/')) {
         for (const entry of Object.values(this.entries)) {
-          if (!entry.manifest || !name.startsWith(`-/modules/${entry.manifest.path}/`)) continue
+          if (!entry.manifest || !name.startsWith(`-/v1/modules/${entry.manifest.path}/`)) continue
 
-          const file = name.slice(11 + entry.manifest.path.length)
+          const file = name.slice(14 + entry.manifest.path.length)
           const chunkNames = Object.values(entry.manifest.chunks).map(chunk => chunk.file)
           if (!chunkNames.includes(file)) continue
 
@@ -201,7 +213,7 @@ class NodeWebUI extends WebUI {
           res.status = 200
           res.headers.set('content-type', 'application/javascript; charset=utf-8')
           res.headers.set('cache-control', IMMUTABLE)
-          res.body = await this.transformImport(source)
+          res.body = await this.transformImport(source, filename)
           return
         }
         res.status = 404
@@ -224,7 +236,7 @@ class NodeWebUI extends WebUI {
             res.status = 200
             res.headers.set('content-type', 'application/javascript; charset=utf-8')
             res.headers.set('cache-control', IMMUTABLE)
-            res.body = await this.transformImport(source)
+            res.body = await this.transformImport(source, filename)
             return
           }
           if (name.endsWith('.css')) {
@@ -253,14 +265,22 @@ class NodeWebUI extends WebUI {
     this.version = this._manifest.version
   }
 
-  private async transformImport(source: string) {
+  private async transformImport(source: string, filename: string) {
     let output = '', lastIndex = 0
     const [imports] = parse(source)
     for (const { s, e, n, t } of imports) {
       if (!n) continue
-      const file = this._manifest?.resolve[n]
+      const target = SPECIFIER_ALIASES[n] ?? n
+      const file = this._manifest?.resolve[target]
       if (!file) continue
-      const resolved = `${this.config.uiPath}/-/vendors/${n}`
+      if (target !== n && !this._warnedAliases.has(filename)) {
+        this._warnedAliases.add(filename)
+        this.ctx.logger.warn(
+          `import from %c is deprecated (in %c); use %c instead.`,
+          n, filename, target,
+        )
+      }
+      const resolved = `${this.config.uiPath}/-/vendors/${target}`
       output += source.slice(lastIndex, s) + (t === 2 ? JSON.stringify(resolved) : resolved)
       lastIndex = e
     }

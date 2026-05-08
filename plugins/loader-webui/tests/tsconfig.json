@@ -1,8 +1,8 @@
 {
   "extends": "../../../tsconfig",
   "compilerOptions": {
-    "rootDir": ".",
-    "outDir": ".",
+    "composite": false,
+    "noEmit": true,
     "types": ["vitest/globals", "node"]
   },
   "include": ["."],

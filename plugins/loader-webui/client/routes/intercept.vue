@@ -25,7 +25,7 @@
 <script lang="ts" setup>
 
 import { computed, watchEffect } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter } from '@cordisjs/client'
 import { clone, useContext } from '@cordisjs/client'
 import { formProps } from './utils'
 

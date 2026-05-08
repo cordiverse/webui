@@ -29,7 +29,7 @@
 
 <script lang="ts" setup>
 
-import { useRoute } from 'vue-router'
+import { useRoute } from '@cordisjs/client'
 import { LegacyMenuItem, useContext } from '@cordisjs/client'
 import LayoutHeader from './header.vue'
 import LayoutMenuItem from './menu-item.vue'

@@ -15,7 +15,7 @@
 <script lang="ts" setup>
 
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter } from '@cordisjs/client'
 import { useContext, useRpc } from '@cordisjs/client'
 import { formProps } from './utils'
 import { Data } from '../../src'

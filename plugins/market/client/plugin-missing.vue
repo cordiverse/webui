@@ -12,7 +12,7 @@
 <script lang="ts" setup>
 
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter } from '@cordisjs/client'
 import { useRpc } from '@cordisjs/client'
 import type { Data } from '../src'
 import { activePackage } from './store'

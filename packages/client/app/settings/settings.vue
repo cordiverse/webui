@@ -34,7 +34,7 @@
 
 <script lang="ts" setup>
 
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter } from '@cordisjs/client'
 import { computed, ref } from 'vue'
 import { useConfig, useContext } from '@cordisjs/client'
 

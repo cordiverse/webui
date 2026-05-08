@@ -33,7 +33,7 @@
 
 import { send, useContext, useI18nText } from '@cordisjs/client'
 import { computed, nextTick, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter } from '@cordisjs/client'
 import { useAutoFocus } from '../utils'
 
 const ctx = useContext()

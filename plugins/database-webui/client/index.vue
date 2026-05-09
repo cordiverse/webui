@@ -41,7 +41,7 @@
 <script lang="ts" setup>
 
 import { computed } from 'vue'
-import { send, useContext, useRpc } from '@cordisjs/client'
+import { useContext, useRpc } from '@cordisjs/client'
 import Sidebar from './sidebar.vue'
 import TabStrip from './tab-strip.vue'
 import TableView from './table-view.vue'

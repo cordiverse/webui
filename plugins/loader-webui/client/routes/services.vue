@@ -95,11 +95,12 @@
 <script lang="ts" setup>
 
 import { computed, ref } from 'vue'
-import { useRouter, send, useContext } from '@cordisjs/client'
-import type { Provider } from '../../src'
+import { useRouter, useContext, useRpc } from '@cordisjs/client'
+import type { Data, Provider } from '../../src'
 
 const ctx = useContext()
 const router = useRouter()
+const rpc = useRpc<Data>()
 
 const showAddDependency = ref(false)
 const showCreateIsolate = ref(false)
@@ -142,7 +143,7 @@ function getService(name: string, label: string | true) {
 }
 
 function addDependency() {
-  send('manager.config.update', {
+  rpc.value?.updateConfig({
     id: currentEntry.value.id,
     inject: {
       ...currentEntry.value.inject,
@@ -152,7 +153,7 @@ function addDependency() {
 }
 
 function createIsolate() {
-  send('manager.config.update', {
+  rpc.value?.updateConfig({
     id: currentEntry.value.id,
     isolate: {
       ...currentEntry.value.isolate,

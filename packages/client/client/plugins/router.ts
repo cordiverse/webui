@@ -217,8 +217,6 @@ function getActivityId(path: string) {
   return path.replace(/^\//, '') || ''
 }
 
-export const redirectTo = ref<string>()
-
 export class Activity {
   id!: string
   _disposables: Disposable[] = []
@@ -238,21 +236,23 @@ export class Activity {
     yield () => delete this.ctx.client.router.pages[this.id]
     this.handleUpdate()
     yield () => {
-      const { meta, fullPath } = this.ctx.client.router.router.currentRoute.value
+      const router = this.ctx.client.router
+      const { meta, fullPath } = router.router.currentRoute.value
       this._disposables.forEach(dispose => dispose())
       if (meta?.activity === this) {
-        redirectTo.value = fullPath
-        this.ctx.client.router.router.replace(this.ctx.client.router.cache['home'] || '/')
+        router.redirectTo.value = fullPath
+        router.router.replace(router.cache['home'] || '/')
       }
     }
   }
 
   handleUpdate() {
-    if (redirectTo.value) {
-      const location = this.ctx.client.router.router.resolve(redirectTo.value)
+    const router = this.ctx.client.router
+    if (router.redirectTo.value) {
+      const location = router.router.resolve(router.redirectTo.value)
       if (location.matched.length) {
-        redirectTo.value = undefined
-        this.ctx.client.router.router.replace(location.fullPath)
+        router.redirectTo.value = undefined
+        router.router.replace(location.fullPath)
       }
     }
   }
@@ -280,6 +280,7 @@ export default class RouterService {
   public cache = reactive<Record<keyof any, string>>({})
   public pages = reactive<Dict<Activity>>({})
   public router = new Router(global.uiPath)
+  public redirectTo = ref<string>()
 
   constructor(public ctx: Context) {
     defineProperty(this, Service.tracker, {
@@ -305,7 +306,7 @@ export default class RouterService {
     ctx.effect(() => this.router.beforeEach(async (to, from) => {
       if (to.matched.length) {
         if (to.matched[0].path !== '/') {
-          redirectTo.value = undefined
+          this.redirectTo.value = undefined
         }
         return
       }
@@ -316,7 +317,7 @@ export default class RouterService {
         if (resolved.matched.length) return resolved.fullPath
       }
 
-      redirectTo.value = to.fullPath
+      this.redirectTo.value = to.fullPath
       const result = this.cache['home'] || '/'
       if (result === to.fullPath) return
       return result

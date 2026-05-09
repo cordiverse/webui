@@ -32,9 +32,9 @@
 <script lang="ts" setup>
 
 import { PropType, ref, computed } from 'vue'
-import { Schema, SchemaBase, useContext, send } from '@cordisjs/client'
+import { Schema, SchemaBase, useContext, useRpc } from '@cordisjs/client'
 import { watchDebounced } from '@vueuse/core'
-import { EvalResult } from '../../src'
+import type { Data, EvalResult } from '../../src'
 
 const props = defineProps({
   schema: {} as PropType<Schema>,
@@ -49,12 +49,13 @@ const emit = defineEmits(['update:modelValue'])
 const ctx = useContext()
 const config = SchemaBase.useModel()
 const result = ref<EvalResult>({})
+const rpc = useRpc<Data>()
 
 const currentEntry = computed(() => ctx.manager.currentEntry!)
 
 watchDebounced(() => props.modelValue.__jsExpr, async (expr) => {
   if (!expr) return result.value = {}
-  result.value = await send('manager.config.eval', {
+  result.value = await rpc.value!.evalConfig({
     id: currentEntry.value.id,
     expr,
     schema: props.schema,

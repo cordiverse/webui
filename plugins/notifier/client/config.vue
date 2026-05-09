@@ -8,7 +8,7 @@
 
 import { Element } from '@cordisjs/element'
 import type {} from '@cordisjs/plugin-loader-webui/client'
-import { useContext, useRpc, send } from '@cordisjs/client'
+import { useContext, useRpc } from '@cordisjs/client'
 import type NotifierService from '../src'
 import { h, computed, resolveComponent, FunctionalComponent } from 'vue'
 
@@ -38,7 +38,7 @@ const render: FunctionalComponent<{ children: Element[] }> = ({ children }, ctx)
     } else if (type === 'button') {
       return h(resolveComponent('el-button'), {
         ...attrs,
-        onClick: () => send('notifier/button', attrs.onClick),
+        onClick: () => data.value?.button(attrs.onClick),
       }, {
         default: () => render({ children }, ctx),
       })

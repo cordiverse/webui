@@ -167,16 +167,17 @@
 <script lang="ts" setup>
 
 import { computed, inject, ref, watch } from 'vue'
-import { message, send, useInject } from '@cordisjs/client'
+import { message, useInject, useRpc } from '@cordisjs/client'
 import { useI18nText } from '@cordisjs/components'
 import { parse, satisfies } from 'semver'
 import type { Dict } from 'cosmokit'
 import type {} from '@cordisjs/plugin-loader-webui/client'
-import type { RemotePackage, DependencyMetaKey } from '../src'
+import type { Data, RemotePackage, DependencyMetaKey } from '../src'
 import { kActivePackage, kPackagesMap, kDependencies, kRefresh } from './context'
 import { storage } from './store'
 
 const active = inject(kActivePackage)!
+const rpc = useRpc<Data>()
 const activeName = computed({
   get: () => active.value.name,
   set: (name) => { active.value = { ...active.value, name } },
@@ -270,7 +271,7 @@ const versionKeys = computed(() => Object.keys(registryForActive.value))
 async function ensureRegistry(names: string[]) {
   const missing = names.filter(n => !registryCache.value[n])
   if (!missing.length) return
-  const result = await send('market/registry', missing)
+  const result = await rpc.value!.registry(missing)
   registryCache.value = { ...registryCache.value, ...result }
 }
 
@@ -487,7 +488,7 @@ async function runInstallRaw(payload: Dict<string | null>): Promise<number> {
   if (busy.value) return 1
   busy.value = true
   try {
-    const code = await send('market/install', payload)
+    const code = await rpc.value!.install(payload)
     if (code) {
       message({ message: '安装失败, 请查看控制台日志', type: 'error' })
     } else {

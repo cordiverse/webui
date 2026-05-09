@@ -3,13 +3,6 @@ import type {} from '@cordisjs/plugin-database'
 import type {} from '@cordisjs/plugin-webui'
 import z from 'schemastery'
 
-declare module '@cordisjs/plugin-webui' {
-  interface Events {
-    'database-webui.query'(args: QueryArgs): Promise<QueryResult>
-    'database-webui.update'(args: UpdateArgs): Promise<void>
-  }
-}
-
 export interface FieldInfo {
   name: string
   type: string
@@ -26,6 +19,8 @@ export interface TableInfo {
 
 export interface Data {
   tables: TableInfo[]
+  query(args: QueryArgs): Promise<QueryResult>
+  update(args: UpdateArgs): Promise<void>
 }
 
 export interface QueryArgs {
@@ -98,53 +93,53 @@ export function apply(ctx: Context, config: Config) {
     base: import.meta.url,
     dev: '../client/index.ts',
     prod: '../dist/manifest.json',
-  }, { tables: buildTables() })
+  }, {
+    tables: buildTables(),
+    async query({ table, limit, offset, sort }) {
+      const model = ctx.model
+      if (!model.tables[table]) {
+        throw new Error(`unknown table: ${table}`)
+      }
+      const cursor: any = {
+        limit: Math.max(1, Math.min(limit | 0, 1000)),
+        offset: Math.max(0, offset | 0),
+      }
+      if (sort?.field) {
+        cursor.sort = { [sort.field]: sort.direction === 'desc' ? 'desc' : 'asc' }
+      }
+      const rows = await (model.get as any)(table, {}, cursor)
+      const stats = await model.stats().catch(() => ({ tables: {} as Record<string, { count: number; size: number }> }))
+      const total = stats.tables?.[table]?.count ?? rows.length
+      return { rows, total }
+    },
+    async update({ table, where, field, value }) {
+      const model = ctx.model
+      const m = model.tables[table]
+      if (!m) throw new Error(`unknown table: ${table}`)
+      const primary = ([] as string[]).concat(m.primary ?? [])
+      if (!primary.length) throw new Error(`table "${table}" has no primary key, cannot update`)
+      for (const key of primary) {
+        if (where[key] === undefined || where[key] === null) {
+          throw new Error(`missing primary key: ${key}`)
+        }
+      }
+      const meta = m.fields?.[field]
+      if (!meta) throw new Error(`unknown field: ${field}`)
+      if (primary.includes(field)) throw new Error(`cannot modify primary key: ${field}`)
+      if (meta.relation) throw new Error(`cannot modify relation field: ${field}`)
+      if (String(meta.deftype ?? meta.type) === 'expr') {
+        throw new Error(`cannot modify computed field: ${field}`)
+      }
+      const result = await (model.set as any)(table, where, { [field]: value })
+      if (!result || (result.matched ?? 0) === 0) {
+        throw new Error('no rows matched')
+      }
+    },
+  })
 
   ctx.on('database/model' as any, () => {
     entry.mutate((d) => {
       d.tables = buildTables()
     })
-  })
-
-  ctx.webui.addListener('database-webui.query', async ({ table, limit, offset, sort }) => {
-    const model = ctx.model
-    if (!model.tables[table]) {
-      throw new Error(`unknown table: ${table}`)
-    }
-    const cursor: any = {
-      limit: Math.max(1, Math.min(limit | 0, 1000)),
-      offset: Math.max(0, offset | 0),
-    }
-    if (sort?.field) {
-      cursor.sort = { [sort.field]: sort.direction === 'desc' ? 'desc' : 'asc' }
-    }
-    const rows = await (model.get as any)(table, {}, cursor)
-    const stats = await model.stats().catch(() => ({ tables: {} as Record<string, { count: number; size: number }> }))
-    const total = stats.tables?.[table]?.count ?? rows.length
-    return { rows, total }
-  })
-
-  ctx.webui.addListener('database-webui.update', async ({ table, where, field, value }) => {
-    const model = ctx.model
-    const m = model.tables[table]
-    if (!m) throw new Error(`unknown table: ${table}`)
-    const primary = ([] as string[]).concat(m.primary ?? [])
-    if (!primary.length) throw new Error(`table "${table}" has no primary key, cannot update`)
-    for (const key of primary) {
-      if (where[key] === undefined || where[key] === null) {
-        throw new Error(`missing primary key: ${key}`)
-      }
-    }
-    const meta = m.fields?.[field]
-    if (!meta) throw new Error(`unknown field: ${field}`)
-    if (primary.includes(field)) throw new Error(`cannot modify primary key: ${field}`)
-    if (meta.relation) throw new Error(`cannot modify relation field: ${field}`)
-    if (String(meta.deftype ?? meta.type) === 'expr') {
-      throw new Error(`cannot modify computed field: ${field}`)
-    }
-    const result = await (model.set as any)(table, where, { [field]: value })
-    if (!result || (result.matched ?? 0) === 0) {
-      throw new Error('no rows matched')
-    }
   })
 }

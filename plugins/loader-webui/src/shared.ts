@@ -22,21 +22,6 @@ declare module '@cordisjs/plugin-loader' {
   }
 }
 
-declare module '@cordisjs/plugin-webui' {
-  interface Events {
-    'manager.config.list'(): EntryData[]
-    'manager.config.create'(options: Omit<EntryOptions, 'id'> & EntryLocation): Promise<string>
-    'manager.config.update'(options: Omit<EntryOptions, 'name'> & EntryLocation): void
-    'manager.config.remove'(options: { id: string }): void
-    'manager.config.eval'(options: { id: string; expr: string; schema: z }): Promise<EvalResult>
-    'manager.dependency.list'(): Promise<Dependency[]>
-    'manager.package.list'(): Promise<LocalObject[]>
-    'manager.package.runtime'(options: { name: string }): Promise<RuntimeData | null>
-    'manager.package.readme'(options: { name: string; locale: string }): Promise<string | null>
-    'manager.service.list'(): Promise<Dict<ServiceData>>
-  }
-}
-
 export interface LocalObject extends Pick<SearchObject, 'shortname' | 'workspace' | 'manifest'> {
   package: Pick<PackageJson, 'name' | 'version'>
   readme?: Dict<string | null>
@@ -79,6 +64,16 @@ export interface Data {
   packages: Dict<LocalObject>
   services: Dict<ServiceData>
   prefix: string
+  listConfig(): EntryData[]
+  createConfig(options: Omit<EntryOptions, 'id'> & EntryLocation): Promise<string>
+  updateConfig(options: Omit<EntryOptions, 'name'> & EntryLocation): Promise<void>
+  removeConfig(options: { id: string }): Promise<void>
+  evalConfig(options: { id: string; expr: string; schema: z }): Promise<EvalResult>
+  listDependencies(): Promise<Dependency[]>
+  listPackages(): Promise<LocalObject[]>
+  getPackageRuntime(options: { name: string }): Promise<RuntimeData | null>
+  getPackageReadme(options: { name: string; locale: string }): Promise<string | null>
+  listServices(): Promise<Dict<ServiceData>>
 }
 
 export interface RuntimeData {
@@ -183,6 +178,67 @@ export abstract class Manager extends Service {
       packages: this.packages,
       services: this.getServices(),
       prefix: this.rootPrefix,
+      listConfig: () => this.getEntries(),
+      createConfig: async (options) => {
+        const { parent, position, ...rest } = options
+        return this.rootTree.create(rest, parent, position)
+      },
+      updateConfig: async (options) => {
+        const { id, parent, position, ...rest } = options
+        this.rootTree.update(id, rest, parent, position)
+      },
+      removeConfig: async (options) => {
+        this.rootTree.remove(options.id)
+      },
+      evalConfig: async ({ id, expr, schema }) => {
+        const entry = this.rootTree.resolve(id)
+        schema = z(schema)
+        let value: any
+        try {
+          value = entry.evaluate(expr)
+        } catch (error) {
+          if (error instanceof SyntaxError) return { error: 'syntax' }
+          return { error: 'evaluation' }
+        }
+        try {
+          value = schema(value)
+        } catch (error) {
+          return { error: 'validation' }
+        }
+        try {
+          JSON.stringify(value)
+        } catch (error) {
+          return { error: 'serialization' }
+        }
+        return { value }
+      },
+      listDependencies: () => this.getDependencies(),
+      listPackages: () => this.getPackages(),
+      getPackageRuntime: async ({ name }) => {
+        let runtime = this.packages[name]?.runtime
+        if (runtime !== undefined) return runtime
+        runtime = await this.parseExports(name)
+        if (this.packages[name]) {
+          this.packages[name].runtime = runtime
+          this.flushPackage(name)
+        }
+        return runtime
+      },
+      getPackageReadme: async ({ name, locale }) => {
+        const files = this.packages[name]?._readmeFiles
+        if (!files) return null
+        if (!files[locale]) return null
+        if (typeof files[locale] === 'string') {
+          files[locale] = readFile(files[locale], 'utf8')
+          files[locale].then((content) => {
+            if (this.packages[name]?._readmeFiles !== files) return
+            this.packages[name].readme![locale] = content
+            this.flushPackage(name)
+          })
+        }
+        return files[locale]
+      },
+      listServices: async () => this.getServices(),
     })
 
     // kick off package scan; results will arrive via flushPackage
@@ -212,85 +268,6 @@ export abstract class Manager extends Service {
 
     this.ctx.on('hmr/reload', (reloads) => {
       reloads.forEach((_, plugin) => this.updatePlugin(plugin))
-    })
-
-    this.ctx.webui.addListener('manager.config.list', () => {
-      return this.getEntries()
-    })
-
-    this.ctx.webui.addListener('manager.config.create', (options) => {
-      const { parent, position, ...rest } = options
-      return this.rootTree.create(rest, parent, position)
-    })
-
-    this.ctx.webui.addListener('manager.config.update', (options) => {
-      const { id, parent, position, ...rest } = options
-      return this.rootTree.update(id, rest, parent, position)
-    })
-
-    this.ctx.webui.addListener('manager.config.remove', (options) => {
-      return this.rootTree.remove(options.id)
-    })
-
-    this.ctx.webui.addListener('manager.config.eval', async ({ id, expr, schema }) => {
-      const entry = this.rootTree.resolve(id)
-      schema = z(schema)
-      let value: any
-      try {
-        value = entry.evaluate(expr)
-      } catch (error) {
-        if (error instanceof SyntaxError) return { error: 'syntax' }
-        return { error: 'evaluation' }
-      }
-      try {
-        value = schema(value)
-      } catch (error) {
-        return { error: 'validation' }
-      }
-      try {
-        JSON.stringify(value)
-      } catch (error) {
-        return { error: 'serialization' }
-      }
-      return { value }
-    })
-
-    this.ctx.webui.addListener('manager.dependency.list', async () => {
-      return await this.getDependencies()
-    })
-
-    this.ctx.webui.addListener('manager.package.list', async () => {
-      return await this.getPackages()
-    })
-
-    this.ctx.webui.addListener('manager.package.runtime', async ({ name }) => {
-      let runtime = this.packages[name]?.runtime
-      if (runtime !== undefined) return runtime
-      runtime = await this.parseExports(name)
-      if (this.packages[name]) {
-        this.packages[name].runtime = runtime
-        this.flushPackage(name)
-      }
-      return runtime
-    })
-
-    this.ctx.webui.addListener('manager.package.readme', async ({ name, locale }) => {
-      const files = this.packages[name]?._readmeFiles
-      if (!files) return null
-      if (!files[locale]) return null
-      if (typeof files[locale] === 'string') {
-        files[locale] = readFile(files[locale], 'utf8')
-        files[locale].then((content) => {
-          if (this.packages[name]?._readmeFiles !== files) return
-          this.packages[name].readme![locale] = content
-          this.flushPackage(name)
-        })
-      }
-      return files[locale]
-    })
-
-    this.ctx.webui.addListener('manager.service.list', async () => {
-      return this.getServices()
     })
   }
 

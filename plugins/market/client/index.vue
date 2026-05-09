@@ -84,7 +84,7 @@
 <script lang="ts" setup>
 
 import { computed, provide, ref, watch, nextTick } from 'vue'
-import { useRoute, useRouter, message, send, useRpc } from '@cordisjs/client'
+import { useRoute, useRouter, message, useRpc } from '@cordisjs/client'
 import { MarketSearch, MarketFilter, MarketList, getFiltered, hasFilter, kConfig } from '@cordisjs/market'
 import type { SearchObject } from '@cordisjs/registry'
 import type { Data } from '../src'
@@ -128,7 +128,7 @@ watch(prompt, (value) => {
 const pendingCount = computed(() => Object.keys(storage.value.override).length)
 
 function requestRefresh() {
-  send('market/refresh')
+  data.value?.refresh()
 }
 
 provide(kActivePackage, activePackage)
@@ -192,7 +192,7 @@ function refresh() {
   if (market.value?.loading) return
   userTriggered.value = true
   justRefreshed.value = false
-  send('market/refresh')
+  data.value?.refresh()
 }
 
 function setupFocusTracking() {

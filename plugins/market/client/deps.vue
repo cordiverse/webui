@@ -110,7 +110,7 @@
 <script lang="ts" setup>
 
 import { computed, provide, ref, watch } from 'vue'
-import { send, useRpc } from '@cordisjs/client'
+import { useRpc } from '@cordisjs/client'
 import type { Dict } from 'cosmokit'
 import type { Data, RemotePackage, DependencyMetaKey } from '../src'
 import { kActivePackage, kPackagesMap, kDependencies, kRefresh, kShowConfirm, kShowManual } from './context'
@@ -127,7 +127,7 @@ const refreshing = ref(false)
 const pendingCount = computed(() => Object.keys(storage.value.override).length)
 
 function requestRefresh() {
-  send('market/refresh')
+  data.value?.refresh()
 }
 
 provide(kActivePackage, activePackage)
@@ -144,7 +144,7 @@ async function ensureRegistry(names: string[]) {
   const missing = names.filter(n => !registryCache.value[n])
   if (!missing.length) return
   try {
-    const result = await send('market/registry', missing)
+    const result = await data.value!.registry(missing)
     registryCache.value = { ...registryCache.value, ...result }
   } catch {}
 }

@@ -66,11 +66,13 @@
 <script lang="ts" setup>
 
 import { computed, ref, watch } from 'vue'
-import { send } from '@cordisjs/client'
+import { useRpc } from '@cordisjs/client'
 import { deepEqual } from 'cosmokit'
 import FieldType from './field-type.vue'
-import type { FieldInfo } from '../src'
+import type { Data, FieldInfo } from '../src'
 import { invalidateTable } from './state'
+
+const data = useRpc<Data>()
 
 export interface EditContext {
   table: string
@@ -268,7 +270,7 @@ async function onConfirm() {
   saving.value = true
   error.value = ''
   try {
-    await send('database-webui.update', {
+    await data.value!.update({
       table: props.ctx.table,
       where,
       field: props.ctx.field.name,

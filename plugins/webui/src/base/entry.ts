@@ -21,6 +21,11 @@ export namespace Entry {
   }
 }
 
+export function extractMethods(data: any): string[] {
+  if (!data || typeof data !== 'object') return []
+  return Object.keys(data).filter(k => typeof data[k] === 'function')
+}
+
 export class Entry<T extends object = any> {
   public id = Math.random().toString(36).slice(2)
   public manifest?: Entry.Manifest
@@ -147,6 +152,7 @@ export class Entry<T extends object = any> {
         entryId: this.ctx.get('loader')?.locate(),
         data: this.data,
         cursor: this.state.snapshot(),
+        methods: extractMethods(this.data),
       }
     } catch (e) {
       this.ctx.logger.error(e)

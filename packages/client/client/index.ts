@@ -1,7 +1,7 @@
 import { Context, Service } from 'cordis'
 import {
   App, Component, createApp, customRef, defineComponent, DefineComponent, h, markRaw,
-  onErrorCaptured, provide, Ref, resolveComponent, watchEffect,
+  onErrorCaptured, provide, Ref, ref, resolveComponent, watchEffect,
 } from 'vue'
 import { locale } from '@cordisjs/components'
 import ActionService from './plugins/action'
@@ -9,9 +9,10 @@ import LoaderService from './plugins/loader'
 import RouterService from './plugins/router'
 import SettingService from './plugins/setting'
 import ThemeService from './plugins/theme'
+import RpcService from './plugins/rpc'
 import { kContext } from './context'
-import { useConfig } from './plugins/setting'
 import type { LoadState } from './plugins/loader'
+import type { WebSocket as AbstractWebSocket } from '@cordisjs/plugin-webui'
 import install from './components'
 
 declare module '@cordisjs/plugin-webui' {
@@ -34,6 +35,9 @@ export class ClientService extends Service {
   public router: RouterService
   public setting: SettingService
   public theme: ThemeService
+  public rpc: RpcService
+
+  public socket: Ref<AbstractWebSocket | undefined> = ref()
 
   private _store: Record<string | symbol, Ref<any>> = Object.create(null)
 
@@ -59,6 +63,7 @@ export class ClientService extends Service {
     this.router = new RouterService(ctx)
     this.setting = new SettingService(ctx)
     this.theme = new ThemeService(ctx)
+    this.rpc = new RpcService(ctx)
 
     // Vue reactivity tracking for services
     const store = this._store
@@ -74,9 +79,8 @@ export class ClientService extends Service {
       return ref.value, next()
     }, { prepend: true })
 
-    const config = useConfig()
     ctx.effect(() => watchEffect(() => {
-      locale.value = config.value.locale ?? 'en-US'
+      locale.value = this.setting.resolved.value.locale ?? 'en-US'
     }, { flush: 'post' }))
 
     this.loader.initTask.then(async () => {
@@ -131,8 +135,9 @@ export interface Config {
   locale?: string
 }
 
-export const root = new Context()
-
-root.client = new ClientService(root)
-
-root.on('activity', data => !data)
+export function createClient(): Context {
+  const root = new Context()
+  root.client = new ClientService(root)
+  root.on('activity', data => !data)
+  return root
+}

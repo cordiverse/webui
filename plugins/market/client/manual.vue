@@ -46,14 +46,15 @@
 <script lang="ts" setup>
 
 import { computed, inject, ref, watch, nextTick } from 'vue'
-import { send } from '@cordisjs/client'
+import { useRpc } from '@cordisjs/client'
 import { useDebounceFn } from '@vueuse/core'
 import { kShowManual } from './context'
 import { storage } from './store'
-import type { DescribeResult } from '../src'
+import type { Data, DescribeResult } from '../src'
 
 const show = inject(kShowManual)!
 const inputEl = ref<any>()
+const rpc = useRpc<Data>()
 
 const name = ref('')
 const info = ref<DescribeResult | null>(null)
@@ -64,7 +65,7 @@ const fetchRemote = useDebounceFn(async (value: string) => {
   if (value !== name.value.trim()) return
   loading.value = true
   try {
-    const data = await send('market/describe', value)
+    const data = await rpc.value!.describe(value)
     if (value === name.value.trim()) {
       info.value = data
     }

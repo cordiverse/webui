@@ -7,7 +7,7 @@
 <script lang="ts" setup>
 
 import { computed, provide } from 'vue'
-import { send, useRpc } from '@cordisjs/client'
+import { useRpc } from '@cordisjs/client'
 import type { Data } from '../src'
 import DetailDialog from './detail.vue'
 import ConfirmDialog from './confirm.vue'
@@ -22,7 +22,7 @@ const deps = computed(() => data.value?.dependencies ?? {})
 const packagesMap = computed(() => market.value?.data ?? {})
 
 function requestRefresh() {
-  send('market/refresh')
+  data.value?.refresh()
 }
 
 provide(kActivePackage, activePackage)

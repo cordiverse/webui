@@ -43,15 +43,16 @@ import { computed, ref, onActivated, nextTick, watch, VNodeRef } from 'vue'
 import type { ElScrollbar, ElTree } from 'element-plus'
 import type { FilterNodeMethodFunction, TreeOptionProps } from 'element-plus/es/components/tree/src/tree.type'
 import type TreeNode from 'element-plus/es/components/tree/src/model/node'
-import { send, useRoute, useRouter, useContext, useMenu, deepEqual } from '@cordisjs/client'
+import { useRoute, useRouter, useContext, useMenu, useRpc, deepEqual } from '@cordisjs/client'
 import { getStatusClass } from '../utils'
-import { EntryData } from '../../src'
+import { Data, EntryData } from '../../src'
 
 const ctx = useContext()
 const route = useRoute()
 const router = useRouter()
 const trigger = useMenu('config.tree')
 const plugins = computed(() => ctx.manager.plugins.value)
+const rpc = useRpc<Data>()
 
 const root = ref<InstanceType<typeof ElScrollbar>>()
 const tree = ref<InstanceType<typeof ElTree>>()
@@ -120,14 +121,14 @@ function handleClick(tree: EntryData, target: EntryNode, instance: any, event: M
 }
 
 function handleExpand(data: EntryData, target: EntryNode, instance: any) {
-  send('manager.config.update', {
+  rpc.value?.updateConfig({
     id: data.id,
     collapse: null,
   })
 }
 
 function handleCollapse(data: EntryData, target: EntryNode, instance: any) {
-  send('manager.config.update', {
+  rpc.value?.updateConfig({
     id: data.id,
     collapse: true,
   })
@@ -136,7 +137,7 @@ function handleCollapse(data: EntryData, target: EntryNode, instance: any) {
 function handleDrop(source: EntryNode, target: EntryNode, position: 'before' | 'after' | 'inner', event: DragEvent) {
   const parent = position === 'inner' ? target : target.parent
   const index = parent.childNodes.findIndex(node => node.data.id === source.data.id)
-  send('manager.config.update', {
+  rpc.value?.updateConfig({
     id: source.data.id,
     parent: parent.parent ? parent.data.id : null,
     position: index,

@@ -7,7 +7,7 @@
 <script lang="ts" setup>
 
 import { computed, ref, watch } from 'vue'
-import { useRouter, send, useContext, useRpc } from '@cordisjs/client'
+import { useRouter, useContext, useRpc } from '@cordisjs/client'
 import { Data } from '../../src'
 
 const ctx = useContext()
@@ -28,7 +28,7 @@ const content = computed(() => {
 watch(content, (value) => {
   // use `null` to trigger watcher
   if (value || value === undefined) return
-  send('manager.package.readme', {
+  data.value?.getPackageReadme({
     name: currentEntry.value.name,
     locale: locale.value,
   })

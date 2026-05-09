@@ -11,10 +11,11 @@
 
 <script lang="ts" setup>
 
-import { useContext, socket } from '@cordisjs/client'
+import { useContext } from '@cordisjs/client'
 import { computed } from 'vue'
 
 const ctx = useContext()
+const socket = ctx.client.socket
 
 const progress = computed(() => {
   const states = Object.values(ctx.client.loader.entries)

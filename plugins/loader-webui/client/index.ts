@@ -1,4 +1,4 @@
-import { clone, Context, Dict, Inject, message, remove, Schema, send, Service } from '@cordisjs/client'
+import { clone, Context, Dict, Inject, message, remove, Schema, Service } from '@cordisjs/client'
 import { capitalize } from 'cosmokit'
 import { computed, reactive, ref, Ref, watch } from 'vue'
 import type { Data, EntryData, Provider } from '../src'
@@ -392,7 +392,7 @@ export default class Manager extends Service {
     this.ctx.client.action.action('config.tree.clone', {
       hidden: ({ config }) => !config.tree || !!config.tree.isGroup,
       action: async ({ config }) => {
-        const id = await send('manager.config.create', {
+        const id = await this.data.value.createConfig({
           name: config.tree.name,
           config: config.tree.config,
           disabled: true,
@@ -450,7 +450,7 @@ export default class Manager extends Service {
     })
 
     const execute = async (data: EntryData, disabled: true | null) => {
-      await send('manager.config.update', {
+      await this.data.value.updateConfig({
         id: data.id,
         disabled,
         config: this.changes[data.id].config,
@@ -515,7 +515,7 @@ export default class Manager extends Service {
   async ensure(name: string, passive?: boolean) {
     const forks = this.plugins.value.forks[name]
     if (!forks?.length) {
-      const id = await send('manager.config.create', { name, disabled: true })
+      const id = await this.data.value.createConfig({ name, disabled: true })
       if (!passive) this.ctx.client.router.router.push('/plugins/' + id)
     } else if (forks.length === 1) {
       if (!passive) this.ctx.client.router.router.push('/plugins/' + forks[0])
@@ -529,11 +529,11 @@ export default class Manager extends Service {
       const forks = this.plugins.value.forks[options]
       for (const id of forks) {
         const options = this.plugins.value.entries[id]
-        await send('manager.config.remove', { id: options.id })
+        await this.data.value.removeConfig({ id: options.id })
       }
     } else {
       await this.ctx.client.router.router.replace('/plugins/' + (options.parent ?? ''))
-      await send('manager.config.remove', { id: options.id })
+      await this.data.value.removeConfig({ id: options.id })
     }
   }
 

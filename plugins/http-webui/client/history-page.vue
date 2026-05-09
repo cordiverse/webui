@@ -16,14 +16,15 @@
 
 <script lang="ts" setup>
 
-import { useContext, send, useRouter } from '@cordisjs/client'
+import { useContext, useRouter, useRpc } from '@cordisjs/client'
 import History from './history.vue'
 import { emptyKvRow, type TabState } from './types'
 import { pendingTab } from './state'
-import type { HistoryEntry } from '../src'
+import type { Data, HistoryEntry } from '../src'
 
 const ctx = useContext()
 const router = useRouter()
+const data = useRpc<Data>()
 
 function stateFromHistory(entry: HistoryEntry): TabState {
   let url = entry.url
@@ -77,7 +78,7 @@ ctx.client.action.action('httpHistory.save', {
 })
 
 function clearHistory() {
-  send('http-webui.clear')
+  data.value?.clear()
 }
 
 </script>

@@ -17,8 +17,9 @@
 <script setup lang="ts">
 
 import { ref, computed, watch } from 'vue'
-import { send, useContext, useRouter } from '@cordisjs/client'
+import { useContext, useRouter, useRpc } from '@cordisjs/client'
 import { useAutoFocus } from '../utils'
+import type { Data } from '../../src'
 
 const input = ref('')
 const inputEl = ref()
@@ -26,6 +27,7 @@ const inputEl = ref()
 const show = ref(false)
 const ctx = useContext()
 const router = useRouter()
+const rpc = useRpc<Data>()
 
 const handleOpen = useAutoFocus(inputEl)
 
@@ -37,7 +39,7 @@ watch(createGroup, (value) => {
 })
 
 async function action() {
-  const id = await send('manager.config.create', {
+  const id = await rpc.value!.createConfig({
     name: '@cordisjs/plugin-group',
     parent: createGroup.value,
     label: input.value || undefined,

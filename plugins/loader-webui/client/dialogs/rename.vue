@@ -17,13 +17,15 @@
 <script setup lang="ts">
 
 import { ref, computed, watch } from 'vue'
-import { send, useContext } from '@cordisjs/client'
+import { useContext, useRpc } from '@cordisjs/client'
 import { useAutoFocus } from '../utils'
+import type { Data } from '../../src'
 
 const input = ref('')
 const inputEl = ref()
 const show = ref(false)
 const ctx = useContext()
+const rpc = useRpc<Data>()
 
 const handleOpen = useAutoFocus(inputEl)
 
@@ -44,7 +46,7 @@ async function renameItem() {
   show.value = false
   const label = !input.value || input.value === getDefault() ? null : input.value
   ctx.manager.dialogRename!.label = label
-  await send('manager.config.update', {
+  await rpc.value!.updateConfig({
     id: ctx.manager.dialogRename!.id,
     label,
   })

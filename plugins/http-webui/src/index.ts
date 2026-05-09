@@ -6,12 +6,6 @@ import type {} from '@cordisjs/plugin-server-proxy'
 import type { WebSocket as UndiciWebSocket } from 'undici'
 import z from 'schemastery'
 
-declare module '@cordisjs/plugin-webui' {
-  interface Events {
-    'http-webui.clear'(): void
-  }
-}
-
 export interface HistoryEntry {
   id: number
   kind: 'http' | 'ws'
@@ -34,6 +28,7 @@ export interface Data {
   history: HistoryEntry[]
   limit: number
   proxyBaseUrl: string
+  clear(): Promise<void>
 }
 
 export const name = 'http-webui'
@@ -94,6 +89,11 @@ export function apply(ctx: Context, config: Config) {
     history: [],
     limit: config.historyLimit,
     proxyBaseUrl: ctx.get('server.proxy')!.baseUrl,
+    async clear() {
+      entry.mutate((d) => {
+        d.history.length = 0
+      })
+    },
   })
 
   function pushRecord(record: HistoryEntry) {
@@ -252,10 +252,4 @@ export function apply(ctx: Context, config: Config) {
 
     return socket
   }, { global: true })
-
-  ctx.webui.addListener('http-webui.clear', () => {
-    entry.mutate((d) => {
-      d.history.length = 0
-    })
-  })
 }

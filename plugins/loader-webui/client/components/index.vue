@@ -60,8 +60,9 @@
 <script setup lang="ts">
 
 import { computed, ref, watch } from 'vue'
-import { useRouter, useContext, send } from '@cordisjs/client'
+import { useRouter, useContext, useRpc } from '@cordisjs/client'
 import TreeView from './tree.vue'
+import type { Data } from '../../src'
 
 interface TabOption {
   id: string
@@ -70,6 +71,7 @@ interface TabOption {
 
 const ctx = useContext()
 const router = useRouter()
+const rpc = useRpc<Data>()
 
 const currentEntry = computed(() => ctx.manager.currentEntry)
 const currentRoute = computed(() => ctx.manager.currentRoute)
@@ -89,7 +91,7 @@ ctx.client.action.define('config.tree', currentEntry)
 
 watch(local, (value) => {
   if (!value || value.runtime) return
-  send('manager.package.runtime', { name: value.package.name })
+  rpc.value?.getPackageRuntime({ name: value.package.name })
 }, { immediate: true })
 
 function gotoPath(path: string) {

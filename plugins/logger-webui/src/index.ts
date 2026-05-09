@@ -9,12 +9,6 @@ import type {} from '@cordisjs/plugin-webui'
 import type {} from '@cordisjs/plugin-timer'
 import z from 'schemastery'
 
-declare module '@cordisjs/plugin-webui' {
-  interface Events {
-    'log.read'(options: { before?: number; limit?: number }): Promise<Message[]>
-  }
-}
-
 declare module 'reggol' {
   interface Message {
     entryId?: string
@@ -45,6 +39,7 @@ export const inject = ['webui', 'timer', 'logger']
 export interface Data {
   messages: Message[]
   entryIds: string[]
+  read(options: { before?: number; limit?: number }): Promise<Message[]>
 }
 
 interface Row {
@@ -120,13 +115,15 @@ export async function* apply(ctx: Context, config: Config) {
     base: import.meta.url,
     dev: '../client/index.ts',
     prod: '../dist/manifest.json',
-  }, { messages: initialMessages, entryIds: [...entryIds] })
-
-  ctx.webui.addListener('log.read', async (options) => {
-    const limit = Math.min(options.limit ?? 500, 2000)
-    const before = options.before ?? Number.MAX_SAFE_INTEGER
-    const rows = selectOlderStmt.all(before, limit) as unknown as Row[]
-    return rows.reverse().map(rowToMessage)
+  }, {
+    messages: initialMessages,
+    entryIds: [...entryIds],
+    async read(options) {
+      const limit = Math.min(options.limit ?? 500, 2000)
+      const before = options.before ?? Number.MAX_SAFE_INTEGER
+      const rows = selectOlderStmt.all(before, limit) as unknown as Row[]
+      return rows.reverse().map(rowToMessage)
+    },
   })
 
   let pending: Message[] = []

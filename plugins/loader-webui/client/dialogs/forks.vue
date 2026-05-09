@@ -42,12 +42,13 @@
 <script setup lang="ts">
 
 import { computed } from 'vue'
-import { send, useContext, useRouter } from '@cordisjs/client'
+import { useContext, useRouter, useRpc } from '@cordisjs/client'
 import { getStatusClass } from '../utils'
-import { EntryData } from '../../src'
+import { Data, EntryData } from '../../src'
 
 const ctx = useContext()
 const router = useRouter()
+const rpc = useRpc<Data>()
 const plugins = computed(() => ctx.manager.plugins.value)
 
 const local = computed(() => ctx.manager.data.value.packages[ctx.manager.dialogFork!])
@@ -67,7 +68,7 @@ function getFullPath(data: EntryData) {
 
 async function configure(id?: string) {
   if (!id) {
-    id = await send('manager.config.create', {
+    id = await rpc.value!.createConfig({
       name: ctx.manager.dialogFork!,
       disabled: true,
     })

@@ -4,12 +4,6 @@ import type {} from '@cordisjs/plugin-timer'
 import type {} from '@cordisjs/plugin-webui'
 import z from 'schemastery'
 
-declare module '@cordisjs/plugin-webui' {
-  interface Events {
-    'server-webui.clear'(): void
-  }
-}
-
 export interface ServerRoute {
   id: string
   method: string
@@ -44,6 +38,7 @@ export interface Data {
   routes: Record<string, ServerRoute>
   requests: ServerRequest[]
   requestLimit: number
+  clear(): Promise<void>
 }
 
 export const name = 'server-webui'
@@ -129,6 +124,19 @@ export function apply(ctx: Context, config: Config) {
     routes: collectRoutes({}),
     requests: [],
     requestLimit: config.requestLimit,
+    async clear() {
+      entry.mutate((d) => {
+        d.requests.length = 0
+        for (const key in d.routes) {
+          const r = d.routes[key]
+          if (r.requests === 0 && r.totalLatency === 0 && r.avgLatency === 0 && r.lastStatus === undefined) continue
+          r.requests = 0
+          r.totalLatency = 0
+          r.avgLatency = 0
+          r.lastStatus = undefined
+        }
+      })
+    },
   })
 
   function refreshNetwork() {
@@ -328,20 +336,6 @@ export function apply(ctx: Context, config: Config) {
       if (matched?.key) bumpRouteAggregates(reqEntry, matched.key)
       throw error
     }
-  })
-
-  ctx.webui.addListener('server-webui.clear', () => {
-    entry.mutate((d) => {
-      d.requests.length = 0
-      for (const key in d.routes) {
-        const r = d.routes[key]
-        if (r.requests === 0 && r.totalLatency === 0 && r.avgLatency === 0 && r.lastStatus === undefined) continue
-        r.requests = 0
-        r.totalLatency = 0
-        r.avgLatency = 0
-        r.lastStatus = undefined
-      }
-    })
   })
 
   // Kick off an initial network-info sync in case server.host/port became

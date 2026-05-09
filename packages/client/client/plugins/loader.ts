@@ -60,12 +60,38 @@ export interface LoadState {
   state: DeltaState
 }
 
+// Install RPC closures for each top-level method on `target`. Idempotent —
+// safe to call after every `entry:init` and after any root-replace mutation
+// that rebuilds the data object. Defines non-enumerable so muon delta `apply`
+// never tries to read or replace these keys (server side never serializes
+// them in the first place).
+function injectMethods(
+  ctx: Context,
+  entryRandomId: string,
+  target: any,
+  methods: string[] | undefined,
+) {
+  if (!target || typeof target !== 'object' || !methods?.length) return
+  for (const name of methods) {
+    Object.defineProperty(target, name, {
+      value: (...args: any[]) => ctx.client.rpc.call(entryRandomId, name, args),
+      enumerable: false,
+      configurable: true,
+      writable: false,
+    })
+  }
+}
+
 export default class LoaderService {
   public version?: string
 
   public entries = shallowReactive<Dict<LoadState>>({})
 
   public initTask: Promise<void>
+
+  // Map of webui Entry.id → method names (kept so we can re-inject after a
+  // root replace mutation rebuilds entry.data.value).
+  private _methods: Dict<string[]> = Object.create(null)
 
   constructor(public ctx: Context) {
     defineProperty(this, Service.tracker, {
@@ -76,7 +102,12 @@ export default class LoaderService {
       const entry = this.entries[id]
       if (!entry) return
       const mutation = entry.state.load(delta)
-      apply(entry.data.value, mutation)
+      const next = apply(entry.data.value, mutation)
+      // Root replace: muon returns the new root value; rebind and re-inject methods.
+      if (mutation.path.length === 0 && mutation.kind.type === 'replace') {
+        entry.data.value = next
+        injectMethods(this.ctx, id, entry.data.value, this._methods[id])
+      }
     })
 
     this.initTask = new Promise((resolve) => {
@@ -94,11 +125,12 @@ export default class LoaderService {
                 fiber.dispose()
               }
               delete this.entries[key]
+              delete this._methods[key]
             }
             return
           }
 
-          const { files, entryId, data, cursor } = body
+          const { files, entryId, data, cursor, methods } = body
           const state = new DeltaState()
           if (cursor) state.restore(cursor)
 
@@ -122,6 +154,9 @@ export default class LoaderService {
               state,
             }
           }
+
+          this._methods[key] = methods ?? []
+          injectMethods(this.ctx, key, $entry.data.value, methods)
 
           const ctx = this.ctx.extend({ $entry })
           const pending = files.filter((url) => !$entry!.fibers[url])

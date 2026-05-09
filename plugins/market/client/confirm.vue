@@ -59,15 +59,17 @@
 <script lang="ts" setup>
 
 import { computed, inject, ref, watch } from 'vue'
-import { message, send, useInject } from '@cordisjs/client'
+import { message, useInject, useRpc } from '@cordisjs/client'
 import type { Dict } from 'cosmokit'
 import { kDependencies, kRefresh, kShowConfirm } from './context'
 import { storage } from './store'
+import type { Data } from '../src'
 
 const show = inject(kShowConfirm)!
 const deps = inject(kDependencies)!
 const requestRefresh = inject(kRefresh)!
 const manager = useInject('manager')
+const rpc = useRpc<Data>()
 
 const busy = ref(false)
 
@@ -100,7 +102,7 @@ async function apply() {
     }
   }
   try {
-    const code = await send('market/install', payload)
+    const code = await rpc.value!.install(payload)
     if (code) {
       message({ message: '安装失败, 请查看控制台日志', type: 'error' })
       return

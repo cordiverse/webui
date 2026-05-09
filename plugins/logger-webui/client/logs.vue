@@ -34,7 +34,7 @@
 <script lang="ts" setup>
 
 import { computed, ref } from 'vue'
-import { Time, VirtualList, useContext, useRpc, send } from '@cordisjs/client'
+import { Time, VirtualList, useContext, useRpc } from '@cordisjs/client'
 import type {} from '@cordisjs/plugin-loader-webui/client'
 import { AnsiUp } from 'ansi_up'
 import { Logger, Message } from 'reggol'
@@ -87,7 +87,7 @@ async function onTop() {
   if (!props.showHistory || exhausted.value) return
   const cursor = (history.value[0] ?? data.value?.messages?.[0])?.id
   if (!cursor) return
-  const page = await send('log.read', { before: cursor, limit: 500 })
+  const page = await data.value!.read({ before: cursor, limit: 500 })
   if (!page.length) {
     exhausted.value = true
     return

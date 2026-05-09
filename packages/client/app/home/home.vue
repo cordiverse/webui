@@ -20,7 +20,10 @@
 
 <script lang="ts" setup>
 
-import { socket } from '@cordisjs/client'
+import { useContext } from '@cordisjs/client'
+
+const ctx = useContext()
+const socket = ctx.client.socket
 
 </script>
 

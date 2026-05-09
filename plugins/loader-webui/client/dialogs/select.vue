@@ -31,13 +31,15 @@
 
 <script lang="ts" setup>
 
-import { send, useContext, useI18nText, useRouter } from '@cordisjs/client'
+import { useContext, useI18nText, useRouter, useRpc } from '@cordisjs/client'
 import { computed, ref } from 'vue'
 import { useAutoFocus } from '../utils'
+import type { Data } from '../../src'
 
 const ctx = useContext()
 const router = useRouter()
 const tt = useI18nText()
+const rpc = useRpc<Data>()
 
 const keyword = ref('')
 const inputEl = ref()
@@ -57,7 +59,7 @@ async function configure(name: string) {
   const parent = ctx.manager.dialogSelect
   ctx.manager.dialogSelect = undefined
   keyword.value = ''
-  const id = await send('manager.config.create', {
+  const id = await rpc.value!.createConfig({
     name,
     parent,
     disabled: true,

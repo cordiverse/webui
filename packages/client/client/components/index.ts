@@ -27,7 +27,6 @@ export { icons }
 export default function (app: App) {
   app.use(Element)
   app.component('k-markdown', Markdown)
-
   app.use(common)
   app.use(components)
   app.use(icons)

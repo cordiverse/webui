@@ -1,4 +1,4 @@
-import { connect, global, root } from '@cordisjs/client'
+import { connect, createClient, global } from '@cordisjs/client'
 import home from './home'
 import layout from './layout'
 import settings from './settings'
@@ -8,6 +8,8 @@ import theme from './theme'
 
 import 'virtual:uno.css'
 import './index.scss'
+
+const root = createClient()
 
 root.plugin(home)
 root.plugin(layout)

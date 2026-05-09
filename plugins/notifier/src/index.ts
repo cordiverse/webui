@@ -9,12 +9,6 @@ declare module 'cordis' {
   }
 }
 
-declare module '@cordisjs/plugin-webui' {
-  interface Events {
-    'notifier/button'(id: string): void
-  }
-}
-
 export class Notifier {
   public options: Notifier.Config
   public dispose: () => void
@@ -103,15 +97,17 @@ class NotifierService extends Service {
   constructor(ctx: Context, public config: NotifierService.Config) {
     super(ctx, 'notifier')
 
+    const self = this
     ctx.inject(['webui'], (ctx) => {
-      this.entry = ctx.webui.addEntry({
+      this.entry = ctx.webui.addEntry<NotifierService.Data>({
         base: import.meta.url,
         dev: '../client/index.ts',
         prod: '../dist/manifest.json',
-      }, { notifiers: [] as Notifier.Data[] })
-
-      ctx.webui.addListener('notifier/button', (id: string) => {
-        return this.actions[id]()
+      }, {
+        notifiers: [],
+        async button(id) {
+          return self.actions[id]?.()
+        },
       })
     })
   }
@@ -138,6 +134,7 @@ class NotifierService extends Service {
 namespace NotifierService {
   export interface Data {
     notifiers: Notifier.Data[]
+    button(id: string): Promise<any>
   }
 
   export interface Config {}

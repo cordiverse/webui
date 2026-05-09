@@ -121,20 +121,6 @@ class NodeWebUI extends WebUI {
     this.ctx.logger.info('webui is available at %c', target)
   }
 
-  addListener<K extends keyof Events>(event: K, callback: Events[K]) {
-    this.ctx.server.post(`${this.config.apiPath}/${event}`, async (req, res, next) => {
-      const args = await req.json() as any[]
-      try {
-        res.body = JSON.stringify(await (callback as any)(...args) ?? {})
-        res.headers.set('content-type', 'application/json; charset=utf-8')
-        res.status = 200
-      } catch (error) {
-        this.ctx.logger.warn(error)
-        res.status = 500
-      }
-    })
-  }
-
   getEntryFiles(entry: Entry) {
     if (this.config.devMode && entry.files.dev) {
       const filename = fileURLToPath(new URL(entry.files.dev, entry.files.base))

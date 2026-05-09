@@ -3,6 +3,7 @@ import { Dict } from 'cosmokit'
 import { Client } from './client.ts'
 import { Entry } from './entry.ts'
 import { WebSocket } from './types.ts'
+import type { RpcRequest } from '../../shared/index.d.ts'
 
 export * from './client.ts'
 export * from './entry.ts'
@@ -33,6 +34,21 @@ export abstract class WebUI extends Service {
     this.listeners.ping = function () {
       this.send({ type: 'pong' })
     }
+    this.listeners['rpc:request'] = async function (this: Client, body: RpcRequest) {
+      const { sn, entryId, method, args } = body
+      const entry = this.ctx.webui.entries[entryId]
+      const fn = entry?.data?.[method]
+      if (typeof fn !== 'function') {
+        this.send({ type: 'rpc:response', body: { sn, ok: false, message: `no such method: ${entryId}.${method}` } })
+        return
+      }
+      try {
+        const value = await Reflect.apply(fn, entry, args)
+        this.send({ type: 'rpc:response', body: { sn, ok: true, value } })
+      } catch (e: any) {
+        this.send({ type: 'rpc:response', body: { sn, ok: false, message: e?.message ?? String(e) } })
+      }
+    }
   }
 
   protected accept(socket: WebSocket) {
@@ -47,7 +63,6 @@ export abstract class WebUI extends Service {
 
   abstract getEntryFiles(entry: Entry): string[]
   abstract resolveManifestUrl(files: Entry.Files): string | undefined
-  abstract addListener<K extends keyof Events>(event: K, callback: Events[K]): void
 
   addEntry<T extends object = never>(files: Entry.Files, data?: T) {
     return new Entry<T>(this.ctx, files, data as T)

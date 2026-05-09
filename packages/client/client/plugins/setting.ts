@@ -3,8 +3,9 @@ import { RemovableRef, useLocalStorage } from '@vueuse/core'
 import { Context, Service } from 'cordis'
 import { insert, Ordered } from '../utils'
 import { defineProperty, Dict, remove } from 'cosmokit'
-import { Component, computed, markRaw, reactive, ref, watch } from 'vue'
+import { Component, computed, inject, markRaw, reactive, Ref, ref, watch } from 'vue'
 import { Config } from '..'
+import { kContext } from '../context'
 
 // declare module '@cordisjs/schema' {
 //   interface SchemaService {
@@ -34,26 +35,33 @@ export function provideStorage(factory: typeof useStorage) {
   useStorage = factory
 }
 
-export const original = useStorage<Config>('config', undefined, () => ({
-  theme: {
-    mode: 'auto',
-    dark: 'default-dark',
-    light: 'default-light',
-  },
-  locale: 'zh-CN',
-}))
-
-export const resolved = ref({} as Config)
-
-export const useConfig = (useOriginal = false) => useOriginal ? original : resolved
+// Vue setup-only. For non-setup callers (cordis plugin functions, service
+// constructors), read `ctx.client.setting.{original,resolved}` directly.
+export const useConfig = (useOriginal = false): Ref<Config> => {
+  const ctx = inject(kContext)
+  if (!ctx) throw new Error('useConfig() requires a Vue setup context with kContext provided (use ctx.client.setting.{original,resolved} outside setup)')
+  return useOriginal ? ctx.client.setting.original : ctx.client.setting.resolved
+}
 
 export default class SettingService {
   _settings: Dict<SettingOptions[]> = reactive({})
+
+  public original: RemovableRef<Config>
+  public resolved: Ref<Config> = ref({} as Config)
 
   constructor(public ctx: Context) {
     defineProperty(this, Service.tracker, {
       property: 'ctx',
     })
+
+    this.original = useStorage<Config>('config', undefined, () => ({
+      theme: {
+        mode: 'auto',
+        dark: 'default-dark',
+        light: 'default-light',
+      },
+      locale: 'zh-CN',
+    }))
 
     this.settings({
       id: '',
@@ -76,9 +84,9 @@ export default class SettingService {
       return Schema.intersect(list)
     })
 
-    const doWatch = () => watch(resolved, (value) => {
+    const doWatch = () => watch(this.resolved, (value) => {
       console.debug('config', value)
-      original.value = schema.value.simplify(value)
+      this.original.value = schema.value.simplify(value)
     }, { deep: true })
 
     let stop = doWatch()
@@ -86,7 +94,7 @@ export default class SettingService {
     const update = () => {
       stop?.()
       try {
-        resolved.value = schema.value(original.value)
+        this.resolved.value = schema.value(this.original.value)
       } catch (error) {
         console.error(error)
       }
@@ -95,7 +103,7 @@ export default class SettingService {
 
     ctx.effect(() => () => stop?.())
 
-    ctx.effect(() => watch(original, update, { deep: true }))
+    ctx.effect(() => watch(this.original, update, { deep: true }))
     ctx.effect(() => watch(schema, update))
   }
 

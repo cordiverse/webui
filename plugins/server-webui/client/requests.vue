@@ -97,7 +97,7 @@
 <script lang="ts" setup>
 
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { send, useRpc } from '@cordisjs/client'
+import { useRpc } from '@cordisjs/client'
 import SizePair from './size-pair.vue'
 import type { Data, ServerRequest } from '../src'
 import { formatDuration, formatTime, methodClass, statusClass } from './utils'
@@ -147,7 +147,7 @@ function displayDuration(req: ServerRequest) {
 }
 
 function clearRequests() {
-  send('server-webui.clear')
+  data.value?.clear()
 }
 
 </script>

@@ -74,12 +74,14 @@
 <script lang="ts" setup>
 
 import { computed, ref, watch } from 'vue'
-import { send } from '@cordisjs/client'
+import { useRpc } from '@cordisjs/client'
 import FieldType from './field-type.vue'
 import EditDialog, { type EditContext } from './edit-dialog.vue'
-import type { FieldInfo, TableInfo, QueryResult } from '../src'
+import type { Data, FieldInfo, TableInfo, QueryResult } from '../src'
 import type { TableTab } from './state'
 import { cacheKey, rowCache } from './state'
+
+const data = useRpc<Data>()
 
 const props = defineProps<{
   tab: TableTab
@@ -110,7 +112,7 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const result: QueryResult = await send('database-webui.query', {
+    const result: QueryResult = await data.value!.query({
       table: props.tab.table,
       limit: props.tab.pageSize,
       offset: (props.tab.page - 1) * props.tab.pageSize,

@@ -29,7 +29,7 @@
     "@vue/test-utils": "^2.4.6",
     "esbuild": "^0.28.0",
     "eslint": "^8.57.1",
-    "happy-dom": "^15.11.6",
+    "happy-dom": "^20.9.0",
     "shx": "^0.4.0",
     "tsx": "npm:@cordiverse/tsx@4.19.3-fix.3",
     "typescript": "^5.9.3",

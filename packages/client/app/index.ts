@@ -22,3 +22,5 @@ if (!global.static) {
   const endpoint = new URL(global.endpoint, location.origin).toString()
   connect(root, () => new WebSocket(endpoint.replace(/^http/, 'ws')))
 }
+
+root.client.mount('#app')

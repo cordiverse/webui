@@ -2,6 +2,7 @@
   "extends": "./tsconfig.base",
   "compilerOptions": {
     "paths": {
+      "@cordisjs/client": ["./packages/client/client/index.ts"],
       "@cordisjs/client/yakumo": ["./packages/client/src/yakumo"],
       "@cordisjs/plugin-*": ["./plugins/*/src"],
       "@cordisjs/*": ["./packages/*/src"],

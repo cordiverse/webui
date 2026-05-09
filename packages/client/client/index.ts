@@ -37,6 +37,8 @@ export class ClientService extends Service {
   public theme: ThemeService
   public rpc: RpcService
 
+  public ready: Promise<void>
+
   public socket: Ref<AbstractWebSocket | undefined> = ref()
 
   private _store: Record<string | symbol, Ref<any>> = Object.create(null)
@@ -83,11 +85,15 @@ export class ClientService extends Service {
       locale.value = this.setting.resolved.value.locale ?? 'en-US'
     }, { flush: 'post' }))
 
-    this.loader.initTask.then(async () => {
+    this.ready = this.loader.initTask.then(async () => {
       this.router.router.install(this.app)
       await this.router.router.ready()
-      this.app.mount('#app')
     })
+  }
+
+  async mount(selector: string | Element = '#app'): Promise<void> {
+    await this.ready
+    this.app.mount(selector as any)
   }
 
   addEventListener<K extends keyof WindowEventMap>(

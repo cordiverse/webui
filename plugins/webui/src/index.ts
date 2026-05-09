@@ -100,7 +100,7 @@ class NodeWebUI extends WebUI {
 
   async [Service.init]() {
     if (this.config.devMode) {
-      this.version = '__DEV__'
+      this.version = '__dev__'
       await this.createVite()
     } else {
       await this.loadManifest()

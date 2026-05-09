@@ -52,6 +52,40 @@ async function openClient(serverPort: number) {
   return { ws, messages }
 }
 
+let _sn = 0
+
+// Resolve a market-style entry id from entry:init messages by matching a
+// predicate against entry data. RPC needs the random Entry.id, not a name.
+function findEntryId(messages: any[], predicate: (data: any) => boolean): string | undefined {
+  for (const m of messages) {
+    if (m.type !== 'entry:init') continue
+    for (const id in m.body?.entries ?? {}) {
+      if (predicate(m.body.entries[id]?.data)) return id
+    }
+  }
+}
+
+async function rpcCall(ws: WebSocket, messages: any[], entryId: string, method: string, args: any[]): Promise<any> {
+  const sn = ++_sn
+  ws.send(JSON.stringify({ type: 'rpc:request', body: { sn, entryId, method, args } }))
+  return new Promise((resolve, reject) => {
+    const t0 = Date.now()
+    const iv = setInterval(() => {
+      const r = messages.find((m) => m.type === 'rpc:response' && m.body?.sn === sn)
+      if (r) {
+        clearInterval(iv)
+        if (r.body.ok) resolve(r.body.value)
+        else reject(new Error(r.body.message))
+        return
+      }
+      if (Date.now() - t0 > 60_000) {
+        clearInterval(iv)
+        reject(new Error(`rpc ${method} timed out`))
+      }
+    }, 50)
+  })
+}
+
 describe('@cordisjs/plugin-market E2E', () => {
   let mock: MockServer
 
@@ -86,12 +120,12 @@ describe('@cordisjs/plugin-market E2E', () => {
       const { ws, messages } = await openClient(serverPort)
       await waitFor(() => messages.some((m) => m.type === 'entry:init'), 10_000)
 
-      const res = await fetch(`http://127.0.0.1:${serverPort}/api/market/install`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify([{ '@cordisjs/plugin-server-echo': '^1.0.0' }]),
-      })
-      expect(res.status).to.equal(200)
+      const marketEntryId = findEntryId(messages, (data) => !!data?.market || !!data?.installed)
+      expect(marketEntryId, 'market entry not found in entry:init').to.be.a('string')
+
+      await rpcCall(ws, messages, marketEntryId!, 'install', [
+        { '@cordisjs/plugin-server-echo': '^1.0.0' },
+      ])
 
       await waitFor(
         () => messages.some((m) => JSON.stringify(m).includes('@cordisjs/plugin-server-echo')),
@@ -106,28 +140,18 @@ describe('@cordisjs/plugin-market E2E', () => {
       const { ws, messages } = await openClient(serverPort)
       await waitFor(() => messages.some((m) => m.type === 'entry:init'), 10_000)
 
-      // Identify loader-webui's entry id: it's the unique one whose data
-      // payload carries a `packages` dict.
-      let loaderEntryId: string | undefined
-      for (const m of messages) {
-        if (m.type !== 'entry:init') continue
-        for (const id in m.body?.entries ?? {}) {
-          if (m.body.entries[id]?.data?.packages) loaderEntryId = id
-        }
-      }
+      const loaderEntryId = findEntryId(messages, (data) => !!data?.packages)
       expect(loaderEntryId, 'loader-webui entry not found in entry:init').to.be.a('string')
+
+      const marketEntryId = findEntryId(messages, (data) => !!data?.market || !!data?.installed)
+      expect(marketEntryId, 'market entry not found in entry:init').to.be.a('string')
 
       const baseline = messages.length
 
-      const res = await fetch(`http://127.0.0.1:${serverPort}/api/market/install`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify([{ '@cordisjs/plugin-server-echo': '^1.0.0' }]),
-      })
-      expect(res.status).to.equal(200)
+      await rpcCall(ws, messages, marketEntryId!, 'install', [
+        { '@cordisjs/plugin-server-echo': '^1.0.0' },
+      ])
 
-      // After install, expect an entry:delta from loader-webui's entry
-      // whose payload references the newly installed plugin.
       await waitFor(() => messages.slice(baseline).some((m) =>
         m.type === 'entry:delta'
         && m.body?.id === loaderEntryId

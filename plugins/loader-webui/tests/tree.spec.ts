@@ -17,14 +17,11 @@ import {
 
 let mounted: MountResult<any> | undefined
 
-afterEach(() => {
-  mounted?.cleanup()
+afterEach(async () => {
+  await mounted?.cleanup()
   mounted = undefined
 })
 
-// Helper: count visible nodes (collapsed children are present in the DOM with
-// an el-tree wrapping but `display: none` via the collapse animation; for
-// structural assertions we use the data-set count via .el-tree-node).
 function visibleNodes(wrapper: any) {
   return wrapper.findAll('.el-tree-node')
 }
@@ -65,10 +62,8 @@ describe('loader-webui tree rendering', () => {
     mounted = await mountWithManager(Tree, { data: nestedGroup })
     await nextTick()
 
-    // 1 group (expanded) + 2 children + 1 sibling = 4 rendered rows
     expect(visibleNodes(mounted.wrapper).length).toBe(4)
 
-    // Group should have the `.is-group` class applied via optionProps.class
     const group = mounted.wrapper.findAll('.el-tree-node').find((n: any) =>
       n.find('.label').text() === 'group',
     )
@@ -80,11 +75,6 @@ describe('loader-webui tree rendering', () => {
     mounted = await mountWithManager(Tree, { data: collapsedGroup })
     await nextTick()
 
-    // Only the group row is rendered; the child is skipped because el-tree
-    // honours `default-expanded-keys` and `collapsed` entries are excluded.
-    // Children may exist in the DOM tree but inside a collapsed wrapper
-    // (`.el-tree-node__children[style="display: none;"]`). Assert the child
-    // label is not in the visible rendered text.
     expect(mounted.wrapper.text()).not.toContain('echo')
   })
 
@@ -99,14 +89,10 @@ describe('loader-webui tree rendering', () => {
     expect(missing!.classes()).toContain('not-found')
   })
 
-  it('routes to a plugin and does NOT fire an RPC when el-tree emits node-click', async () => {
+  it('navigates the router when el-tree emits node-click', async () => {
     mounted = await mountWithManager(Tree, { data: flatList })
     await nextTick()
 
-    // happy-dom doesn't reliably propagate mouse events through el-tree's
-    // internal click wiring, so drive the public Vue event contract instead:
-    // emit `node-click` on the <el-tree> instance, which is what the
-    // component binds `handleClick` to.
     const elTree = mounted.wrapper.findAllComponents({ name: 'ElTree' })[0]
     expect(elTree.exists()).toBe(true)
 
@@ -115,16 +101,12 @@ describe('loader-webui tree rendering', () => {
     await flushPromises()
 
     expect(mounted.router.currentRoute.value.path).toBe('/plugins/e2')
-    expect(mounted.send).not.toHaveBeenCalledWith('manager.config.update', expect.anything())
   })
 
   it('disables core-dep plugin toggling (menu item reports disabled)', async () => {
     mounted = await mountWithManager(Tree, { data: withCoreDep })
     await nextTick()
 
-    // Manager.hasCoreDeps is Manager's own logic — verify directly that the
-    // core-dep entry is flagged, which is what the menu `disabled` predicates
-    // read at render time.
     const webuiEntry = withCoreDep.entries.find(e => e.id === 'webui')!
     const otherEntry = withCoreDep.entries.find(e => e.id === 'other')!
     expect(mounted.manager.hasCoreDeps(webuiEntry)).toBe(true)

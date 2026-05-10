@@ -240,8 +240,14 @@ export class Activity {
       const { meta, fullPath } = router.router.currentRoute.value
       this._disposables.forEach(dispose => dispose())
       if (meta?.activity === this) {
+        // Don't change the URL when an activity goes away — replace to the
+        // same path so currentRoute re-resolves against the now-shrunk
+        // route table (matched=[] now), and let the theme view render
+        // 404 / loading per its state machine. Track redirectTo so a
+        // re-registration (e.g. HMR) can bring the user back here via
+        // `handleUpdate`.
         router.redirectTo.value = fullPath
-        router.router.replace(router.cache['home'] || '/')
+        router.router.replace(fullPath)
       }
     }
   }
@@ -311,16 +317,14 @@ export default class RouterService {
         return
       }
 
-      if (from === INITIAL) {
-        await ctx.client.loader.initTask
-        const resolved = this.router.resolve(to.fullPath)
-        if (resolved.matched.length) return resolved.fullPath
-      }
-
+      // Track redirectTo so a late-registered activity (HMR / plugin load) can
+      // bring the user back to the route they originally asked for. We
+      // intentionally do NOT await any "modules-loaded" signal here: this
+      // guard runs inside `router.ready()`, which gates `ctx.client.mount()`
+      // (i.e. first paint). Letting the unmatched nav fall through keeps
+      // first paint fast; the theme view defers its 404 decision until
+      // `loader.ready` flips, so there's no flash.
       this.redirectTo.value = to.fullPath
-      const result = this.cache['home'] || '/'
-      if (result === to.fullPath) return
-      return result
     }))
   }
 

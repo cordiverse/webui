@@ -87,16 +87,66 @@ export default class LoaderService {
 
   public entries = shallowReactive<Dict<LoadState>>({})
 
+  /**
+   * Resolves after the first `entry:init` registers all entry data + methods.
+   * Gates `ctx.client.mount()` (i.e. first paint).
+   */
   public initTask: Promise<void>
+
+  /**
+   * Reactive flag: are all known entries' modules imported and applied?
+   *
+   * Driven by:
+   * - `_initFired` (one-shot, flips on first `entry:init`)
+   * - `_pending` (counter of in-flight module-import tasks)
+   *
+   * `ready = _initFired && _pending === 0`. Used by the route view as the
+   * sole signal between "loading" (still importing modules — could be
+   * initial boot or a runtime-added entry) and "404" (everything we know
+   * about is loaded but the URL still doesn't match anything).
+   *
+   * Intentionally separate from `initTask`: `initTask` resolves after the
+   * first batch of entry data lands so first paint isn't gated on module
+   * latency, while `ready` keeps tracking module loads even after first
+   * paint and after first paint and across runtime entry changes.
+   */
+  public ready = ref(false)
+
+  /**
+   * HTTP status code of the document navigation request (read once at
+   * construct time). The server returns 404 for SPA paths that no entry's
+   * `routes` covers — when we see that here, we can render NotFound
+   * immediately even if `ready` is still false because some sibling entry's
+   * module is in-flight or stuck. Pure optimisation; subsequent SPA-internal
+   * navigation doesn't refresh this value.
+   */
+  public initialStatus: number | undefined
 
   // Map of webui Entry.id → method names (kept so we can re-inject after a
   // root replace mutation rebuilds entry.data.value).
   private _methods: Dict<string[]> = Object.create(null)
+  private _pending = 0
+  private _initFired = false
+
+  private _bumpPending(delta: number) {
+    this._pending += delta
+    this.ready.value = this._initFired && this._pending === 0
+  }
 
   constructor(public ctx: Context) {
     defineProperty(this, Service.tracker, {
       property: 'ctx',
     })
+
+    // Read once: PerformanceNavigationTiming.responseStatus (Chrome 102+,
+    // Firefox 110+, Safari 16.4+). Best-effort — stays `undefined` in
+    // happy-dom / node and the theme view falls back to the slower
+    // ready-based decision.
+    if (typeof performance !== 'undefined' && typeof performance.getEntriesByType === 'function') {
+      const nav = performance.getEntriesByType('navigation')[0] as
+        (PerformanceNavigationTiming & { responseStatus?: number }) | undefined
+      this.initialStatus = nav?.responseStatus
+    }
 
     ctx.on('entry:delta', ({ id, ...delta }) => {
       const entry = this.entries[id]
@@ -120,12 +170,13 @@ export default class LoaderService {
 
         await Promise.all(Object.entries(entries).map(async ([key, body]) => {
           if (!body) {
-            if (this.entries[key]) {
-              for (const fiber of Object.values(this.entries[key].fibers)) {
-                fiber.dispose()
-              }
+            const $entry = this.entries[key]
+            if ($entry) {
               delete this.entries[key]
               delete this._methods[key]
+              for (const fiber of Object.values($entry.fibers)) {
+                fiber.dispose()
+              }
             }
             return
           }
@@ -172,10 +223,27 @@ export default class LoaderService {
             }
             console.error(`No loader found for ${url}`)
           }))
-          task.then(() => $entry!.done.value = true)
+          this._bumpPending(+1)
+          // Decrement BEFORE touching $entry.done.value so that a downstream
+          // Vue update triggered by `ready` flipping (or by `done` itself)
+          // can't strand the counter. `finally` not `then`: defensive
+          // against the inner try/catch above ever being removed —
+          // otherwise a task rejection would leak the counter.
+          task.finally(() => {
+            this._bumpPending(-1)
+            $entry!.done.value = true
+          })
         }))
 
-        if (version) resolve()
+        if (version) {
+          resolve()
+          this._initFired = true
+          // No-op delta to recompute `ready` now that the gate is open. If
+          // every entry's modules are already cached/no-op, this flips
+          // `ready` to true immediately; otherwise pending tasks will flip
+          // it later via their `finally` hooks.
+          this._bumpPending(0)
+        }
       })
     })
   }

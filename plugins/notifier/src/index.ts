@@ -100,9 +100,9 @@ class NotifierService extends Service {
     const self = this
     ctx.inject(['webui'], (ctx) => {
       this.entry = ctx.webui.addEntry<NotifierService.Data>({
-        base: import.meta.url,
-        dev: '../client/index.ts',
-        prod: '../dist/manifest.json',
+        baseUrl: import.meta.url,
+        source: '../client/index.ts',
+        manifest: '../dist/manifest.json',
       }, {
         notifiers: [],
         async button(id) {

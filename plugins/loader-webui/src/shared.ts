@@ -170,9 +170,10 @@ export abstract class Manager extends Service {
   @Inject('webui')
   injectWebUI() {
     this.entry = this.ctx.webui.addEntry({
-      base: import.meta.url,
-      dev: '../client/index.ts',
-      prod: '../dist/manifest.json',
+      baseUrl: import.meta.url,
+      source: '../client/index.ts',
+      manifest: '../dist/manifest.json',
+      routes: ['/plugins/:id*'],
     }, {
       entries: this.getEntries(),
       packages: this.packages,

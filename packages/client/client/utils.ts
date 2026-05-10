@@ -13,3 +13,4 @@ export function insert<T extends Ordered>(list: T[], item: T) {
     list.push(item)
   }
 }
+

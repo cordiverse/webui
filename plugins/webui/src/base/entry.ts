@@ -8,10 +8,27 @@ import { EntryData } from '../../shared'
 
 export namespace Entry {
   export interface Files {
-    path?: string
-    base: string
-    dev?: string
-    prod: string
+    /**
+     * Path under which the entry's chunks are served (URL segment after
+     * `/-/v1/modules/`). Auto-derived from the package name + relative
+     * location of the prod manifest if omitted.
+     */
+    modulePath?: string
+    /** Base URL for resolving relative `source`/`manifest` URLs. Conventionally `import.meta.url`. */
+    baseUrl: string
+    /** Dev-mode entry source URL (a `.ts` file), relative to `baseUrl`. */
+    source?: string
+    /** Prod-mode `manifest.json` URL, relative to `baseUrl`. */
+    manifest: string
+    /**
+     * Client-side route patterns this entry registers (e.g. `/plugins/:id*`).
+     * The server uses these to decide the SPA fallback's status code: paths
+     * that don't match any registered pattern get HTTP 404 (the html shell is
+     * still served, so the client can render its own 404 view). The client
+     * uses them too: while modules are still importing, a path covered by
+     * any entry's `routes` shows a loading view instead of 404.
+     */
+    routes?: string[]
   }
 
   export interface Manifest {
@@ -110,12 +127,12 @@ export class Entry<T extends object = any> {
   }
 
   private async _resolvePath() {
-    if (this.files.path) {
-      this.manifest!.path = this.files.path
+    if (this.files.modulePath) {
+      this.manifest!.path = this.files.modulePath
       return
     }
-    const baseDir = dirname(fileURLToPath(this.files.base))
-    const prodDir = dirname(fileURLToPath(new URL(this.files.prod, this.files.base)))
+    const baseDir = dirname(fileURLToPath(this.files.baseUrl))
+    const prodDir = dirname(fileURLToPath(new URL(this.files.manifest, this.files.baseUrl)))
     let dir = baseDir
     while (true) {
       try {
@@ -129,7 +146,7 @@ export class Entry<T extends object = any> {
       } catch {}
       const parent = dirname(dir)
       if (parent === dir) {
-        throw new Error(`cannot resolve path from ${this.files.base}`)
+        throw new Error(`cannot resolve path from ${this.files.baseUrl}`)
       }
       dir = parent
     }

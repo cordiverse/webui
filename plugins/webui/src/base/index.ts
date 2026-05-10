@@ -2,11 +2,13 @@ import { Context, Inject, Service } from 'cordis'
 import { Dict } from 'cosmokit'
 import { Client } from './client.ts'
 import { Entry } from './entry.ts'
+import { compilePath } from './path.ts'
 import { WebSocket } from './types.ts'
 import type { RpcRequest } from '../../shared/index.d.ts'
 
 export * from './client.ts'
 export * from './entry.ts'
+export * from './path.ts'
 export * from './types.ts'
 
 declare module 'cordis' {
@@ -66,6 +68,24 @@ export abstract class WebUI extends Service {
 
   addEntry<T extends object = never>(files: Entry.Files, data?: T) {
     return new Entry<T>(this.ctx, files, data as T)
+  }
+
+  /**
+   * Routes baked into the html shell (`@cordisjs/client`'s built-in pages).
+   * Override in subclasses if a deployment ships a different shell.
+   */
+  protected shellPaths: string[] = ['/', '/settings/:name*']
+
+  matchPath(routePath: string): boolean {
+    for (const p of this.shellPaths) {
+      if (compilePath(p).test(routePath)) return true
+    }
+    for (const entry of Object.values(this.entries)) {
+      for (const p of entry.files.routes ?? []) {
+        if (compilePath(p).test(routePath)) return true
+      }
+    }
+    return false
   }
 
   broadcast(type: string, body: any) {

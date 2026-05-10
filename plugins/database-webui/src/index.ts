@@ -90,9 +90,10 @@ export function apply(ctx: Context, config: Config) {
   }
 
   const entry = ctx.webui.addEntry<Data>({
-    base: import.meta.url,
-    dev: '../client/index.ts',
-    prod: '../dist/manifest.json',
+    baseUrl: import.meta.url,
+    source: '../client/index.ts',
+    manifest: '../dist/manifest.json',
+    routes: ['/database'],
   }, {
     tables: buildTables(),
     async query({ table, limit, offset, sort }) {

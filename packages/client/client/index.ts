@@ -37,8 +37,6 @@ export class ClientService extends Service {
   public theme: ThemeService
   public rpc: RpcService
 
-  public ready: Promise<void>
-
   public socket: Ref<AbstractWebSocket | undefined> = ref()
 
   private _store: Record<string | symbol, Ref<any>> = Object.create(null)
@@ -85,14 +83,19 @@ export class ClientService extends Service {
       locale.value = this.setting.resolved.value.locale ?? 'en-US'
     }, { flush: 'post' }))
 
-    this.ready = this.loader.initTask.then(async () => {
-      this.router.router.install(this.app)
-      await this.router.router.ready()
+    // Wire the router into the app + kick off the initial navigation. Both
+    // run synchronously / fire-and-forget so `mount()` can paint the shell
+    // immediately — the theme view's state machine renders Loading while
+    // currentRoute is still INITIAL, then re-renders once router.ready
+    // resolves and currentRoute matches (or stays Loading until
+    // `loader.ready` flips and the view switches to 404).
+    this.router.router.install(this.app)
+    this.router.router.ready().catch(e => {
+      console.warn('[client] initial navigation failed:', e)
     })
   }
 
-  async mount(selector: string | Element = '#app'): Promise<void> {
-    await this.ready
+  mount(selector: string | Element = '#app'): void {
     this.app.mount(selector as any)
   }
 

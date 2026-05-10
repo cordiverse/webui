@@ -122,12 +122,12 @@ class NodeWebUI extends WebUI {
   }
 
   getEntryFiles(entry: Entry) {
-    if (this.config.devMode && entry.files.dev) {
-      const filename = fileURLToPath(new URL(entry.files.dev, entry.files.base))
+    if (this.config.devMode && entry.files.source) {
+      const filename = fileURLToPath(new URL(entry.files.source, entry.files.baseUrl))
       if (existsSync(filename)) return [`/vite/@fs/${filename}`]
     }
     if (!entry.manifest) return []
-    const filename = fileURLToPath(new URL(entry.files.prod, entry.files.base))
+    const filename = fileURLToPath(new URL(entry.files.manifest, entry.files.baseUrl))
     return Object.values(entry.manifest.chunks)
       .filter((chunk) => chunk.isEntry || !chunk.file.endsWith('.js'))
       .map((chunk) => {
@@ -140,11 +140,11 @@ class NodeWebUI extends WebUI {
   }
 
   resolveManifestUrl(files: Entry.Files): string | undefined {
-    if (this.config.devMode && files.dev) {
-      const devFile = fileURLToPath(new URL(files.dev, files.base))
+    if (this.config.devMode && files.source) {
+      const devFile = fileURLToPath(new URL(files.source, files.baseUrl))
       if (existsSync(devFile)) return undefined
     }
-    return new URL(files.prod, files.base).href
+    return new URL(files.manifest, files.baseUrl).href
   }
 
   private serveAssets() {
@@ -175,7 +175,7 @@ class NodeWebUI extends WebUI {
           const chunkNames = Object.values(entry.manifest.chunks).map(chunk => chunk.file)
           if (!chunkNames.includes(file)) continue
 
-          const prodBase = fileURLToPath(new URL(entry.files.prod, entry.files.base))
+          const prodBase = fileURLToPath(new URL(entry.files.manifest, entry.files.baseUrl))
           const filename = resolve(prodBase, '..', file)
           if (!['.js', '.mjs'].includes(extname(file))) {
             const response = await fetchFile(pathToFileURL(filename), {}, {
@@ -231,7 +231,13 @@ class NodeWebUI extends WebUI {
         return
       }
       const template = await readFile(resolve(this.root, 'index.html'), 'utf-8')
-      res.status = 200
+      const { uiPath } = this.config
+      let routePath = '/' + name
+      if (uiPath) {
+        if (routePath === uiPath) routePath = '/'
+        else if (routePath.startsWith(uiPath + '/')) routePath = routePath.slice(uiPath.length)
+      }
+      res.status = this.matchPath(routePath) ? 200 : 404
       res.headers.set('content-type', 'text/html; charset=utf-8')
       res.body = await this.transformHtml(template)
     })
@@ -348,8 +354,8 @@ class NodeWebUI extends WebUI {
         name: 'cordis-hmr',
         transform: (code, id, options) => {
           for (const [key, entry] of Object.entries(this.entries)) {
-            if (!entry.files.dev) continue
-            const filename = fileURLToPath(new URL(entry.files.dev, entry.files.base))
+            if (!entry.files.source) continue
+            const filename = fileURLToPath(new URL(entry.files.source, entry.files.baseUrl))
             if (id !== filename) continue
             code += [
               'if (import.meta.hot) {',

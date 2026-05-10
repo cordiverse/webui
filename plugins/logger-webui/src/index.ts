@@ -112,9 +112,10 @@ export async function* apply(ctx: Context, config: Config) {
   const entryIds = new Set<string>(distinctRows.map(row => row.entry_id))
 
   const entry = ctx.webui.addEntry<Data>({
-    base: import.meta.url,
-    dev: '../client/index.ts',
-    prod: '../dist/manifest.json',
+    baseUrl: import.meta.url,
+    source: '../client/index.ts',
+    manifest: '../dist/manifest.json',
+    routes: ['/logs'],
   }, {
     messages: initialMessages,
     entryIds: [...entryIds],

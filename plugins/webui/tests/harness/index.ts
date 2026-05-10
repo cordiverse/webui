@@ -50,13 +50,10 @@ export async function createHarness(opts: HarnessOptions = {}): Promise<Harness>
   bridge.client.__open()
   await openP
   // Mount onto the per-harness container so concurrent instances don't fight
-  // for #app. router.ready() can throw under happy-dom when global.uiPath is
-  // unset; treat that as non-fatal — the app still mounts.
-  try {
-    await ctx.client.mount(container)
-  } catch (e) {
-    try { ctx.client.app.mount(container) } catch {}
-  }
+  // for #app. mount is sync now — router.ready runs fire-and-forget in the
+  // ClientService constructor; if it errors under happy-dom (e.g. unset
+  // global.uiPath), the warning lands in console but doesn't block paint.
+  ctx.client.mount(container)
 
   return {
     ctx,

@@ -82,9 +82,10 @@ export function apply(ctx: Context, config: Config) {
   let nextId = 0
 
   const entry = ctx.webui.addEntry<Data>({
-    base: import.meta.url,
-    dev: '../client/index.ts',
-    prod: '../dist/manifest.json',
+    baseUrl: import.meta.url,
+    source: '../client/index.ts',
+    manifest: '../dist/manifest.json',
+    routes: ['/http/compose', '/http/history'],
   }, {
     history: [],
     limit: config.historyLimit,

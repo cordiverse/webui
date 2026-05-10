@@ -13,14 +13,14 @@ describe('entry data sync via muon delta', () => {
   afterEach(async () => { await harness.cleanup() })
 
   it('initial data is observable on the client', async () => {
-    const entry = harness.ctx.webui.addEntry({ base: '', prod: '' } as any, { count: 7 })
+    const entry = harness.ctx.webui.addEntry({ baseUrl: '', manifest: '' } as any, { count: 7 })
     await flush()
     const $entry = harness.ctx.client.loader.entries[entry.id]
     expect($entry.data.value.count).toBe(7)
   })
 
   it('mutate() pushes a delta that updates the client value', async () => {
-    const entry = harness.ctx.webui.addEntry({ base: '', prod: '' } as any, { x: 1 })
+    const entry = harness.ctx.webui.addEntry({ baseUrl: '', manifest: '' } as any, { x: 1 })
     await flush()
     const $entry = harness.ctx.client.loader.entries[entry.id]
     expect($entry.data.value.x).toBe(1)
@@ -31,7 +31,7 @@ describe('entry data sync via muon delta', () => {
   })
 
   it('preserves injected methods after a root-level value update', async () => {
-    const entry = harness.ctx.webui.addEntry({ base: '', prod: '' } as any, {
+    const entry = harness.ctx.webui.addEntry({ baseUrl: '', manifest: '' } as any, {
       n: 0,
       async ping() { return 'pong' },
     })

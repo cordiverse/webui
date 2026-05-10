@@ -18,7 +18,7 @@ describe('entry-method RPC end-to-end', () => {
   })
 
   async function addEntryAndWait<T extends object>(data: T) {
-    const entry = harness.ctx.webui.addEntry({ base: '', prod: '' } as any, data)
+    const entry = harness.ctx.webui.addEntry({ baseUrl: '', manifest: '' } as any, data)
     await flush()
     const $entry = harness.ctx.client.loader.entries[entry.id]
     if (!$entry) throw new Error(`entry ${entry.id} not synced to client after flush`)

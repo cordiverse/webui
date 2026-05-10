@@ -137,10 +137,11 @@ export async function createServer(config: InlineConfig) {
       }),
     ],
     resolve: {
-      dedupe: ['vue', 'vue-demi', 'element-plus', '@vueuse/core', '@popperjs/core', 'marked', 'xss'],
+      dedupe: ['path-to-regexp', 'vue', 'vue-demi', 'element-plus', '@vueuse/core', '@popperjs/core', 'marked', 'xss'],
     },
     optimizeDeps: {
       include: [
+        'path-to-regexp',
         'vue',
         'vue-demi',
         'element-plus',

@@ -40,6 +40,17 @@ function mountStateView(harness: Harness): VueWrapper<any> {
   })
 }
 
+// Test-only escape hatch for setting `currentRoute` to an unmatched URL.
+// `router.push` / `router.replace` strictly throw on unmatched targets in
+// production code, so simulating "user landed on a bad URL" requires a
+// direct shallowRef assignment that bypasses validation, history ops, and
+// afterEach guards. This mirrors what the popstate / `router.ready()`
+// internal callers do via `_navigate`, but condensed.
+function gotoUnmatched(harness: Harness, path: string) {
+  const r = harness.ctx.client.router.router
+  r.currentRoute.value = r.resolve(path)
+}
+
 describe('route view state machine', () => {
   let harness: Harness
   let view: VueWrapper<any>
@@ -59,34 +70,31 @@ describe('route view state machine', () => {
     expect(view.attributes('data-state')).toBe('matched')
   })
 
-  it('module loads (page registered) → currentRoute matches → component', async () => {
-    await harness.ctx.client.router.router.push('/plugins/abc')
+  it('module loads (page registered) → addRoute reactively swaps → matched', async () => {
+    // Simulate user landing on a route whose entry hasn't loaded yet.
+    gotoUnmatched(harness, '/plugins/abc')
+
     view = mountStateView(harness)
     expect(view.attributes('data-state')).not.toBe('matched')
 
+    // Registering the route reactively re-resolves currentRoute through
+    // the addRoute add-time hook — no `redirectTo` machinery needed.
     const Stub = defineComponent({ template: '<div>x</div>' })
-    harness.ctx.client.router.page({ path: '/plugins/:id*', name: 'plugins', component: Stub })
-    // page() registers the route and Activity.handleUpdate replaces via
-    // redirectTo; flush microtasks for currentRoute to update.
-    await flush()
+    harness.ctx.client.router.page({ path: '/plugins{/*id}', name: 'plugins', component: Stub })
     await nextTick()
     expect(view.attributes('data-state')).toBe('matched')
   })
 
   it('no entry covers path + ready=false → loading', async () => {
-    // The harness flips `ready` to true as soon as entry:init is processed
-    // (since there are no real module imports in tests). Reset it to
-    // simulate the early-boot window where entries are still arriving.
     harness.ctx.client.loader.ready.value = false
-    await harness.ctx.client.router.router.push('/totally-unknown')
+    gotoUnmatched(harness, '/totally-unknown')
     view = mountStateView(harness)
     expect(view.attributes('data-state')).toBe('loading')
   })
 
   it('no entry covers path + ready=true → 404', async () => {
-    await harness.ctx.client.router.router.push('/totally-unknown')
-    harness.ctx.client.loader.ready.value = true
-
+    gotoUnmatched(harness, '/totally-unknown')
+    expect(harness.ctx.client.loader.ready.value).toBe(true)
     view = mountStateView(harness)
     expect(view.attributes('data-state')).toBe('not-found')
   })
@@ -94,7 +102,7 @@ describe('route view state machine', () => {
   it('entry dispose makes URL render 404 without changing url', async () => {
     const Stub = defineComponent({ template: '<div>x</div>' })
     const dispose = harness.ctx.client.router.page({
-      path: '/plugins/:id*', name: 'plugins', component: Stub,
+      path: '/plugins{/*id}', name: 'plugins', component: Stub,
     })
     await harness.ctx.client.router.router.push('/plugins/x')
 
@@ -103,16 +111,24 @@ describe('route view state machine', () => {
     const urlBefore = window.location.pathname
     expect(urlBefore).toBe('/plugins/x')
 
-    // Dispose the route (Activity dispose normally takes care of this) and
-    // re-resolve currentRoute against the now-empty record table. URL must
-    // stay put.
+    // Dispose the route. The addRoute teardown re-resolves currentRoute
+    // against the now-shrunk record table (matched=[] now); URL stays put
+    // because we don't run history operations on internal re-resolves.
     dispose()
-    await harness.ctx.client.router.router.replace(window.location.pathname)
-    harness.ctx.client.loader.ready.value = true
     await nextTick()
 
     expect(view.attributes('data-state')).toBe('not-found')
     expect(window.location.pathname).toBe(urlBefore)
+  })
+
+  it('push to unmatched URL throws', async () => {
+    expect(() => harness.ctx.client.router.router.push('/typo'))
+      .toThrow(/no route matches/)
+  })
+
+  it('replace to unmatched URL throws', async () => {
+    expect(() => harness.ctx.client.router.router.replace('/typo'))
+      .toThrow(/no route matches/)
   })
 })
 
@@ -190,7 +206,7 @@ describe('stuck entry does not block first-paint decisions', () => {
     ;(harness.ctx.client.loader as any)._bumpPending(+1)
     expect(harness.ctx.client.loader.ready.value).toBe(false)
 
-    await harness.ctx.client.router.router.push('/unknown')
+    gotoUnmatched(harness, '/unknown')
     view = mountStateView(harness)
     expect(view.attributes('data-state')).toBe('not-found')
   })
@@ -202,7 +218,7 @@ describe('stuck entry does not block first-paint decisions', () => {
     ;(harness.ctx.client.loader as any)._bumpPending(+1)
     expect(harness.ctx.client.loader.initialStatus).toBeUndefined()
 
-    await harness.ctx.client.router.router.push('/unknown')
+    gotoUnmatched(harness, '/unknown')
     view = mountStateView(harness)
     expect(view.attributes('data-state')).toBe('loading')
   })
@@ -233,7 +249,7 @@ describe('initial 404 fast path', () => {
 
   it('renders 404 immediately for an unmatched URL when initialStatus is 404', async () => {
     harness = await createHarness()
-    await harness.ctx.client.router.router.push('/never-registered')
+    gotoUnmatched(harness, '/never-registered')
 
     view = mountStateView(harness)
     expect(view.attributes('data-state')).toBe('not-found')

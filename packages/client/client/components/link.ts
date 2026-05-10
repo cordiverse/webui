@@ -12,7 +12,12 @@ const KActivityLink = defineComponent({
     const ctx = useContext()
     return () => {
       const activity = ctx.client.router.pages[props.id]
-      const target = ctx.client.router.cache[activity?.id] || activity?.path.replace(/:.+/, '')
+      // Default target = strip every `{...}` optional group from the
+      // pattern (e.g. `/plugins{/*id}` → `/plugins`). path-to-regexp v8
+      // wraps every wildcard / optional segment in braces, so this rule
+      // covers all our route patterns. Cached path (last-visited sub-route
+      // for this activity) wins when present.
+      const target = ctx.client.router.cache[activity?.id] || activity?.path.replace(/\{[^}]*\}/g, '')
       return h('a', {
         href: target,
         onClick: (e: MouseEvent) => {

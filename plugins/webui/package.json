@@ -76,6 +76,7 @@
     "cosmokit": "^1.8.1",
     "es-module-lexer": "^2.0.0",
     "open": "^11.0.0",
+    "path-to-regexp": "^8.3.0",
     "schemastery": "^3.18.0"
   }
 }

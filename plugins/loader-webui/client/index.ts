@@ -246,7 +246,7 @@ export default class Manager extends Service {
 
     this.ctx.client.router.page({
       id: 'plugins',
-      path: '/plugins/:id*',
+      path: '/plugins{/*id}',
       name: '插件管理',
       icon: IconLoader,
       order: 800,

@@ -172,6 +172,7 @@ __metadata:
     cosmokit: "npm:^1.8.1"
     es-module-lexer: "npm:^2.0.0"
     open: "npm:^11.0.0"
+    path-to-regexp: "npm:^8.3.0"
     schemastery: "npm:^3.18.0"
   peerDependencies:
     "@cordisjs/client": 0.7.0

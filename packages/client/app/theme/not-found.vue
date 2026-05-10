@@ -4,7 +4,7 @@
       <span class="crumb">页面不存在</span>
     </template>
     <div class="not-found">
-      <h1 class="code op-60 mb-4">404</h1>
+      <h1 class="code op-60 mb-4 mt-0">404</h1>
       <div class="message">访问的页面不存在</div>
     </div>
   </k-layout>

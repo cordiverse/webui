@@ -173,7 +173,7 @@ export abstract class Manager extends Service {
       baseUrl: import.meta.url,
       source: '../client/index.ts',
       manifest: '../dist/manifest.json',
-      routes: ['/plugins/:id*'],
+      routes: ['/plugins{/*id}'],
     }, {
       entries: this.getEntries(),
       packages: this.packages,

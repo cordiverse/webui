@@ -1,5 +1,6 @@
-import { Context, Disposable, Service } from 'cordis'
-import { App, Component, inject, InjectionKey, isRef, markRaw, MaybeRefOrGetter, reactive, ref, Ref, shallowRef, toValue } from 'vue'
+import { Context, Service } from 'cordis'
+import { App, Component, inject, InjectionKey, isRef, markRaw, MaybeRefOrGetter, reactive, ref, Ref, shallowRef, toValue, watch } from 'vue'
+import { pathToRegexp } from 'path-to-regexp'
 import { global } from '../data'
 import { defineProperty, Dict, omit, remove } from 'cosmokit'
 import { insert } from '../utils'
@@ -53,20 +54,6 @@ export const INITIAL: RouteLocation = {
 
 export const kRoute = Symbol('cordis.client.route') as InjectionKey<Ref<RouteLocation>>
 export const kRouter = Symbol('cordis.client.router') as InjectionKey<Router>
-
-function compilePath(path: string): { regex: RegExp; keys: string[] } {
-  const keys: string[] = []
-  // Wildcard `:name*` consumes the preceding `/` and matches 0+ segments (incl '/').
-  // Plain `:name` matches one segment (no '/').
-  const pattern = path.replace(/\/:(\w+)\*/g, (_, name) => {
-    keys.push(name)
-    return '(?:/(.*))?'
-  }).replace(/:(\w+)/g, (_, name) => {
-    keys.push(name)
-    return '([^/]+)'
-  })
-  return { regex: new RegExp('^' + pattern + '/?$'), keys }
-}
 
 function parseUrl(input: string): { path: string; query: Dict<string> } {
   const i = input.indexOf('?')
@@ -125,10 +112,33 @@ export class Router {
   }
 
   addRoute(record: Omit<RouteRecord, 'regex' | 'keys'>): () => void {
-    const { regex, keys } = compilePath(record.path)
-    const full: RouteRecord = { ...record, regex, keys }
+    // Pattern syntax (path-to-regexp v8): `:name` single segment,
+    // `*name` zero+ segments wildcard (use `{/*name}` for an optional
+    // wildcard segment, `{/:name}` for an optional single segment).
+    const { regexp: regex, keys } = pathToRegexp(record.path)
+    const full: RouteRecord = { ...record, regex, keys: keys.map((k) => k.name) }
     this.records.push(full)
-    return () => remove(this.records, full)
+    // If currentRoute is unmatched and the new record would cover it,
+    // swap it in. Symmetric with the remove path below: every record
+    // change re-evaluates currentRoute against the live record table.
+    // Internal swap — bypasses history ops + before/after guards; the
+    // title-update / cache-fill side effects are driven off a `watch` on
+    // currentRoute (in RouterService) so they fire either way.
+    const cur = this.currentRoute.value
+    if (cur !== INITIAL && !cur.matched.length) {
+      const resolved = this.resolve(cur.fullPath)
+      if (resolved.matched.length) {
+        this.currentRoute.value = resolved
+      }
+    }
+    return () => {
+      remove(this.records, full)
+      // Mirror the add path: if currentRoute was matched against this
+      // record, re-resolve so matched[] reflects the now-shrunk table.
+      if (this.currentRoute.value.matched[0] === full) {
+        this.currentRoute.value = this.resolve(this.currentRoute.value.fullPath)
+      }
+    }
   }
 
   beforeEach(guard: BeforeGuard): () => void {
@@ -142,11 +152,19 @@ export class Router {
   }
 
   push(target: NavigationTarget): Promise<void> {
-    return this._navigate(this.resolve(target).fullPath, false)
+    const resolved = this.resolve(target)
+    if (!resolved.matched.length) {
+      throw new Error(`router.push: no route matches "${resolved.fullPath}"`)
+    }
+    return this._navigate(resolved.fullPath, false)
   }
 
   replace(target: NavigationTarget): Promise<void> {
-    return this._navigate(this.resolve(target).fullPath, true)
+    const resolved = this.resolve(target)
+    if (!resolved.matched.length) {
+      throw new Error(`router.replace: no route matches "${resolved.fullPath}"`)
+    }
+    return this._navigate(resolved.fullPath, true)
   }
 
   private async _navigate(fullPath: string, replace: boolean): Promise<void> {
@@ -219,7 +237,6 @@ function getActivityId(path: string) {
 
 export class Activity {
   id!: string
-  _disposables: Disposable[] = []
 
   constructor(public ctx: Context, public options: Activity.Options) {
     options.order ??= 0
@@ -234,33 +251,6 @@ export class Activity {
     this.authority ??= 0
     this.ctx.client.router.pages[this.id] = this
     yield () => delete this.ctx.client.router.pages[this.id]
-    this.handleUpdate()
-    yield () => {
-      const router = this.ctx.client.router
-      const { meta, fullPath } = router.router.currentRoute.value
-      this._disposables.forEach(dispose => dispose())
-      if (meta?.activity === this) {
-        // Don't change the URL when an activity goes away — replace to the
-        // same path so currentRoute re-resolves against the now-shrunk
-        // route table (matched=[] now), and let the theme view render
-        // 404 / loading per its state machine. Track redirectTo so a
-        // re-registration (e.g. HMR) can bring the user back here via
-        // `handleUpdate`.
-        router.redirectTo.value = fullPath
-        router.router.replace(fullPath)
-      }
-    }
-  }
-
-  handleUpdate() {
-    const router = this.ctx.client.router
-    if (router.redirectTo.value) {
-      const location = router.router.resolve(router.redirectTo.value)
-      if (location.matched.length) {
-        router.redirectTo.value = undefined
-        router.router.replace(location.fullPath)
-      }
-    }
   }
 
   get icon() {
@@ -286,46 +276,31 @@ export default class RouterService {
   public cache = reactive<Record<keyof any, string>>({})
   public pages = reactive<Dict<Activity>>({})
   public router = new Router(global.uiPath)
-  public redirectTo = ref<string>()
 
   constructor(public ctx: Context) {
     defineProperty(this, Service.tracker, {
       property: 'ctx',
     })
 
+    // Drive title + cache off currentRoute (not afterEach) so internal
+    // re-resolves from `addRoute` add/remove also update them. afterEach
+    // only fires from `_navigate` (push/replace/popstate); reactive
+    // record-table swaps would otherwise leak stale titles.
     ctx.effect(() => {
       const initialTitle = document.title
-      const dispose = this.router.afterEach((route) => {
-        const { name, fullPath } = this.router.currentRoute.value
+      const stop = watch(this.router.currentRoute, (route) => {
+        const { name, fullPath } = route
         if (name) this.cache[name] = fullPath
         if (route.meta.activity) {
           document.title = `${route.meta.activity.name}`
           if (initialTitle) document.title += ` | ${initialTitle}`
         }
-      })
+      }, { immediate: true })
       return () => {
         document.title = initialTitle
-        dispose()
+        stop()
       }
     })
-
-    ctx.effect(() => this.router.beforeEach(async (to, from) => {
-      if (to.matched.length) {
-        if (to.matched[0].path !== '/') {
-          this.redirectTo.value = undefined
-        }
-        return
-      }
-
-      // Track redirectTo so a late-registered activity (HMR / plugin load) can
-      // bring the user back to the route they originally asked for. We
-      // intentionally do NOT await any "modules-loaded" signal here: this
-      // guard runs inside `router.ready()`, which gates `ctx.client.mount()`
-      // (i.e. first paint). Letting the unmatched nav fall through keeps
-      // first paint fast; the theme view defers its 404 decision until
-      // `loader.ready` flips, so there's no flash.
-      this.redirectTo.value = to.fullPath
-    }))
   }
 
   slot(options: SlotOptions) {

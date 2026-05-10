@@ -4,7 +4,7 @@ import Theme from './theme.vue'
 
 export default function (ctx: Context) {
   ctx.client.router.page({
-    path: '/settings/:name*',
+    path: '/settings{/*name}',
     name: '用户设置',
     icon: 'activity:settings',
     position: 'bottom',

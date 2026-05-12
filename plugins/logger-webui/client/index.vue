@@ -40,7 +40,7 @@
 <script lang="ts" setup>
 
 import { ref } from 'vue'
-import { Message } from 'reggol'
+import type { Message } from 'cordis'
 import Logs from './logs.vue'
 
 const input = ref('')

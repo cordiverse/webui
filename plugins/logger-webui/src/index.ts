@@ -1,5 +1,4 @@
-import { Context } from 'cordis'
-import { Exporter, Message } from '@cordisjs/plugin-logger'
+import { Context, Exporter, Logger, Message } from 'cordis'
 import { Time } from 'cosmokit'
 import { mkdir } from 'node:fs/promises'
 import { dirname } from 'node:path'
@@ -9,10 +8,11 @@ import type {} from '@cordisjs/plugin-webui'
 import type {} from '@cordisjs/plugin-timer'
 import z from 'schemastery'
 
-declare module 'reggol' {
+declare module 'cordis' {
   interface Message {
     entryId?: string
     id?: number
+    body?: string
   }
 }
 
@@ -34,7 +34,7 @@ export const Config: z<Config> = z.object({
     .description('客户端连接时预加载的最新日志条数。'),
 })
 
-export const inject = ['webui', 'timer', 'logger']
+export const inject = ['webui', 'timer']
 
 export interface Data {
   messages: Message[]
@@ -61,6 +61,7 @@ function rowToMessage(row: Row): Message {
     level: row.level as any,
     name: row.name,
     body: row.body,
+    args: [],
   }
   msg.id = row.id
   if (row.entry_id) msg.entryId = row.entry_id
@@ -146,16 +147,18 @@ export async function* apply(ctx: Context, config: Config) {
       const entryId = fiber ? ctx.get('loader')?.locate(fiber) : undefined
       if (entryId) message.entryId = entryId
 
+      const body = Logger.format(exporter, message)
       const result = insertStmt.run(
         message.sn,
         message.ts,
         message.type,
         message.level,
         message.name,
-        message.body,
+        body,
         entryId ?? null,
       )
       message.id = Number(result.lastInsertRowid)
+      message.body = body
 
       pending.push(message)
       flushThrottled()

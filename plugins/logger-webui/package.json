@@ -1,7 +1,7 @@
 {
   "name": "@cordisjs/plugin-logger-webui",
   "description": "WebUI for @cordisjs/plugin-logger",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "type": "module",
   "exports": {
     ".": {
@@ -50,18 +50,18 @@
     }
   },
   "peerDependencies": {
-    "@cordisjs/plugin-timer": "^1.1.1",
-    "@cordisjs/plugin-webui": "^0.8.0",
-    "cordis": "^4.0.0-rc.4"
+    "@cordisjs/plugin-timer": "^1.1.2",
+    "@cordisjs/plugin-webui": "^0.8.1",
+    "cordis": "^4.0.0-rc.5"
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.8.0",
-    "@cordisjs/plugin-loader-webui": "^0.10.0",
-    "@cordisjs/plugin-logger": "^1.0.2",
-    "@cordisjs/plugin-timer": "^1.1.1",
-    "@cordisjs/plugin-webui": "^0.8.0",
+    "@cordisjs/client": "^0.8.1",
+    "@cordisjs/plugin-loader-webui": "^0.10.1",
+    "@cordisjs/plugin-logger-console": "^1.0.0",
+    "@cordisjs/plugin-timer": "^1.1.2",
+    "@cordisjs/plugin-webui": "^0.8.1",
     "ansi_up": "^6.0.6",
-    "cordis": "^4.0.0-rc.4"
+    "cordis": "^4.0.0-rc.5"
   },
   "dependencies": {
     "cosmokit": "^1.8.1",

@@ -7,9 +7,7 @@ import LoaderIntercept from './loader-intercept.vue'
 import './index.scss'
 import './icons'
 
-export const inject = {
-  manager: false,
-}
+export const inject = ['manager']
 
 export function apply(ctx: Context, data: Ref<Data>) {
   ctx.client.router.page({

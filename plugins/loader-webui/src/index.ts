@@ -137,7 +137,7 @@ export default class NodeManager extends Manager {
         const meta = await this.loadMeta(join(locator.path, 'package.json'))
         this.candidates[name] = { ...locator, package: meta }
       } catch (error) {
-        this.ctx.logger.warn('failed to resolve %c', name)
+        this.ctx.logger.warn('failed to resolve %C', name)
         this.ctx.logger.debug(error)
       }
     }))
@@ -169,7 +169,7 @@ export default class NodeManager extends Manager {
           request: this.metaDeps[name],
         }
       } catch (error) {
-        this.ctx.logger.warn('failed to resolve %c', name)
+        this.ctx.logger.warn('failed to resolve %C', name)
         this.ctx.logger.debug(error)
       }
     }))
@@ -258,7 +258,7 @@ export default class NodeManager extends Manager {
       await this.onPackageReady(object)
       return object
     } catch (error) {
-      this.ctx.logger.warn('failed to resolve %c', name)
+      this.ctx.logger.warn('failed to resolve %C', name)
       this.ctx.logger.debug(error)
     }
   }
@@ -278,7 +278,7 @@ export default class NodeManager extends Manager {
         object.runtime = await this.parseExports(name)
       }
     } catch (error) {
-      this.ctx.logger.warn('failed to parse %c', name)
+      this.ctx.logger.warn('failed to parse %C', name)
       this.ctx.logger.debug(error)
       object.runtime = null
     }

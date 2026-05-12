@@ -22,8 +22,9 @@ declare module 'cordis' {
 
 export type SocketListener = (this: Client, ...args: any[]) => void
 
-@Inject('logger', true, { name: 'webui' })
 export abstract class WebUI extends Service {
+  static name = 'webui'
+
   public version!: string
 
   readonly entries: Dict<Entry> = Object.create(null)

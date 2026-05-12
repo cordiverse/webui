@@ -20,7 +20,7 @@ __metadata:
     "@cordisjs/plugin-include": "npm:^1.0.3"
     "@cordisjs/plugin-loader": "npm:^1.0.0-rc.3"
     "@cordisjs/plugin-loader-webui": "portal:../../../../loader-webui"
-    "@cordisjs/plugin-logger": "npm:^1.0.2"
+    "@cordisjs/plugin-logger-console": "portal:../../../../../../../external/cordis/packages/logger-console"
     "@cordisjs/plugin-market": "portal:../../.."
     "@cordisjs/plugin-server": "npm:^1.5.0"
     "@cordisjs/plugin-timer": "npm:^1.1.1"
@@ -88,10 +88,10 @@ __metadata:
     fast-glob: "npm:^3.3.3"
     schemastery: "npm:^3.18.0"
   peerDependencies:
-    "@cordisjs/plugin-loader": ^1.0.0-rc.3
-    "@cordisjs/plugin-timer": ^1.1.1
-    "@cordisjs/plugin-webui": ^0.8.0
-    cordis: ^4.0.0-rc.4
+    "@cordisjs/plugin-loader": ^1.0.0-rc.4
+    "@cordisjs/plugin-timer": ^1.1.2
+    "@cordisjs/plugin-webui": ^0.8.1
+    cordis: ^4.0.0-rc.5
   languageName: node
   linkType: soft
 
@@ -106,18 +106,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@cordisjs/plugin-logger@npm:^1.0.2":
-  version: 1.0.2
-  resolution: "@cordisjs/plugin-logger@npm:1.0.2"
+"@cordisjs/plugin-logger-console@portal:../../../../../../../external/cordis/packages/logger-console::locator=%40cordis-market-fixture%2Fapp%40workspace%3A.":
+  version: 0.0.0-use.local
+  resolution: "@cordisjs/plugin-logger-console@portal:../../../../../../../external/cordis/packages/logger-console::locator=%40cordis-market-fixture%2Fapp%40workspace%3A."
   dependencies:
     cosmokit: "npm:^1.8.1"
-    reggol: "npm:^2.1.0"
     schemastery: "npm:^3.18.0"
+    supports-color: "npm:^9.4.0"
   peerDependencies:
-    cordis: ^4.0.0-rc.1
-  checksum: 10c0/c89d502247151e8093e47cd470e43d0ac93f33615f2a30118af6e5c589a74ddb57957c18c3c0b9f67009ef57fdf9034d7adadb760a7e4597fd0039ec902a4166
+    cordis: ^4.0.0-rc.5
   languageName: node
-  linkType: hard
+  linkType: soft
 
 "@cordisjs/plugin-market@portal:../../..::locator=%40cordis-market-fixture%2Fapp%40workspace%3A.":
   version: 0.0.0-use.local
@@ -128,9 +127,9 @@ __metadata:
     semver: "npm:^7.6.3"
     which-pm-runs: "npm:^1.1.0"
   peerDependencies:
-    "@cordisjs/plugin-http": ^1.5.0
-    "@cordisjs/plugin-webui": ^0.8.0
-    cordis: ^4.0.0-rc.4
+    "@cordisjs/plugin-http": ^1.5.1
+    "@cordisjs/plugin-webui": ^0.8.1
+    cordis: ^4.0.0-rc.5
   languageName: node
   linkType: soft
 
@@ -175,8 +174,8 @@ __metadata:
     path-to-regexp: "npm:^8.3.0"
     schemastery: "npm:^3.18.0"
   peerDependencies:
-    "@cordisjs/client": 0.8.0
-    cordis: ^4.0.0-rc.4
+    "@cordisjs/client": 0.8.1
+    cordis: ^4.0.0-rc.5
   peerDependenciesMeta:
     "@cordisjs/client":
       optional: true
@@ -315,7 +314,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cosmokit@npm:^1.7.3, cosmokit@npm:^1.8.0, cosmokit@npm:^1.8.1":
+"cosmokit@npm:^1.8.0, cosmokit@npm:^1.8.1":
   version: 1.8.1
   resolution: "cosmokit@npm:1.8.1"
   checksum: 10c0/56b0294572efc7793d5854b0022243fab9899d0ab6ce7da873839572b4dc8c6d3ba8d6ff5b61231dca2e9d821af73a2be5d502d9ea52af2671374711a93620aa
@@ -548,13 +547,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"object-inspect@npm:^1.13.4":
-  version: 1.13.4
-  resolution: "object-inspect@npm:1.13.4"
-  checksum: 10c0/d7f8711e803b96ea3191c745d6f8056ce1f2496e530e6a19a0e92d89b0fa3c76d910c31f0aa270432db6bd3b2f85500a376a83aaba849a8d518c8845b3211692
-  languageName: node
-  linkType: hard
-
 "open@npm:^11.0.0":
   version: 11.0.0
   resolution: "open@npm:11.0.0"
@@ -603,17 +595,6 @@ __metadata:
   version: 1.2.3
   resolution: "queue-microtask@npm:1.2.3"
   checksum: 10c0/900a93d3cdae3acd7d16f642c29a642aea32c2026446151f0778c62ac089d4b8e6c986811076e1ae180a694cedf077d453a11b58ff0a865629a4f82ab558e102
-  languageName: node
-  linkType: hard
-
-"reggol@npm:^2.1.0":
-  version: 2.1.0
-  resolution: "reggol@npm:2.1.0"
-  dependencies:
-    cosmokit: "npm:^1.7.3"
-    object-inspect: "npm:^1.13.4"
-    supports-color: "npm:^10.0.0"
-  checksum: 10c0/708441e574d9abbf9d9c6991ceeed4f15e89427d814c7e2449d7bf514525c2bc49537270225cfa66325cb38c460187b21a6e29b746610fc3b030c30179729e7b
   languageName: node
   linkType: hard
 
@@ -668,10 +649,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"supports-color@npm:^10.0.0":
-  version: 10.2.2
-  resolution: "supports-color@npm:10.2.2"
-  checksum: 10c0/fb28dd7e0cdf80afb3f2a41df5e068d60c8b4f97f7140de2eaed5b42e075d82a0e980b20a2c0efd2b6d73cfacb55555285d8cc719fa0472220715aefeaa1da7c
+"supports-color@npm:^9.4.0":
+  version: 9.4.0
+  resolution: "supports-color@npm:9.4.0"
+  checksum: 10c0/6c24e6b2b64c6a60e5248490cfa50de5924da32cf09ae357ad8ebbf305cc5d2717ba705a9d4cb397d80bbf39417e8fdc8d7a0ce18bd0041bf7b5b456229164e4
   languageName: node
   linkType: hard
 

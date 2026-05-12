@@ -28,7 +28,7 @@ export interface Data {
 }
 
 export const name = 'market'
-export const inject = ['http', 'logger', 'webui']
+export const inject = ['http', 'webui']
 
 export interface Config {
   endpoint: string
@@ -105,7 +105,7 @@ export function apply(ctx: Context, config: Config) {
             versions: Object.keys(registry.versions ?? {}).reverse(),
           }
         } catch (error: any) {
-          ctx.logger.warn('describe %c: %s', name, error?.message ?? error)
+          ctx.logger.warn('describe %C: %s', name, error?.message ?? error)
           return null
         }
       },

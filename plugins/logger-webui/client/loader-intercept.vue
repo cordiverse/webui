@@ -12,7 +12,7 @@
 import { computed } from 'vue'
 import { useContext } from '@cordisjs/client'
 import type {} from '@cordisjs/plugin-loader-webui/client'
-import type { Message } from 'reggol'
+import type { Message } from 'cordis'
 import Logs from './logs.vue'
 
 const ctx = useContext()

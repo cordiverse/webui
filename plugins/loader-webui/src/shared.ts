@@ -4,7 +4,6 @@ import { Dict, pick } from 'cosmokit'
 import { Entry, EntryOptions, EntryTree } from '@cordisjs/plugin-loader'
 import { Entry as ClientEntry } from '@cordisjs/plugin-webui'
 import { PackageJson, SearchObject } from './types.ts'
-import type {} from '@cordisjs/plugin-logger'
 import type {} from '@cordisjs/plugin-timer'
 import type {} from '@cordisjs/plugin-hmr'
 import z from 'schemastery'
@@ -79,7 +78,7 @@ export interface Data {
 export interface RuntimeData {
   schema?: z
   usage?: string
-  inject?: Dict<Inject.Meta | undefined>
+  inject?: Dict<any>
 }
 
 export interface EntryLocation {
@@ -89,8 +88,9 @@ export interface EntryLocation {
 
 @Inject('loader')
 @Inject('timer')
-@Inject('logger', false, { name: 'manager' })
 export abstract class Manager extends Service {
+  static name = 'manager'
+
   public entry?: ClientEntry<Data>
 
   protected packages: Dict<LocalObject> = Object.create(null)
@@ -321,7 +321,7 @@ export abstract class Manager extends Service {
       JSON.stringify(result)
       return result
     } catch (error) {
-      this.ctx.logger.warn('failed to load %c', name)
+      this.ctx.logger.warn('failed to load %C', name)
       this.ctx.logger.warn(error)
       return null
     }

@@ -78,8 +78,7 @@ export function apply(ctx: Context) {
       for (const fiber of runtime.fibers) {
         addNode(fiber)
         addEdge('solid', fiber.parent.fiber.uid!, fiber.uid!)
-        for (const [name, meta] of Object.entries(fiber.inject)) {
-          if (!meta!.required) continue
+        for (const name of Object.keys(fiber.inject)) {
           const key = ctx[Context.isolate][name]
           const impl = ctx.reflect.store[key]
           if (!impl?.fiber.uid) continue

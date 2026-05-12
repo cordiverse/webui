@@ -1,7 +1,7 @@
 {
   "name": "@cordisjs/plugin-market",
   "description": "Plugin market for Cordis",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "type": "module",
   "exports": {
     ".": {
@@ -54,24 +54,24 @@
     }
   },
   "peerDependencies": {
-    "@cordisjs/plugin-http": "^1.5.0",
-    "@cordisjs/plugin-webui": "^0.8.0",
-    "cordis": "^4.0.0-rc.4"
+    "@cordisjs/plugin-http": "^1.5.1",
+    "@cordisjs/plugin-webui": "^0.8.1",
+    "cordis": "^4.0.0-rc.5"
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.8.0",
-    "@cordisjs/market": "^4.6.0",
-    "@cordisjs/plugin-http": "^1.5.0",
-    "@cordisjs/plugin-include": "^1.0.3",
-    "@cordisjs/plugin-loader": "^1.0.0-rc.3",
-    "@cordisjs/plugin-logger": "^1.0.2",
-    "@cordisjs/plugin-server": "^1.6.1",
-    "@cordisjs/plugin-timer": "^1.1.1",
-    "@cordisjs/plugin-webui": "^0.8.0",
+    "@cordisjs/client": "^0.8.1",
+    "@cordisjs/market": "^4.6.1",
+    "@cordisjs/plugin-http": "^1.5.1",
+    "@cordisjs/plugin-include": "^1.0.4",
+    "@cordisjs/plugin-loader": "^1.0.0-rc.4",
+    "@cordisjs/plugin-logger-console": "^1.0.0",
+    "@cordisjs/plugin-server": "^1.6.2",
+    "@cordisjs/plugin-timer": "^1.1.2",
+    "@cordisjs/plugin-webui": "^0.8.1",
     "@types/semver": "^7.5.8",
     "@types/which-pm-runs": "^1.0.2",
     "@types/ws": "^8.18.1",
-    "cordis": "^4.0.0-rc.4",
+    "cordis": "^4.0.0-rc.5",
     "ws": "^8.18.0"
   },
   "dependencies": {

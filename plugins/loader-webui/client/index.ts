@@ -51,8 +51,9 @@ export interface Node extends EntryData {
   children?: Node[]
 }
 
-interface DepInfo extends Partial<Inject.Meta> {
+interface DepInfo {
   provider?: Provider
+  config?: any
 }
 
 export interface EnvInfo {
@@ -195,7 +196,7 @@ export default class Manager extends Service {
       if (name in this.data.value.services || {}) {
         if (env.impl.includes(name)) return 'warning'
       } else {
-        if (env.using[name].required) return 'warning'
+        return 'warning'
       }
     }
   })
@@ -554,7 +555,7 @@ export default class Manager extends Service {
     }
 
     // check services
-    const setService = (name: string, meta?: Inject.Meta) => {
+    const setService = (name: string, config?: any) => {
       let provider = this.data.value.services[name]?.root
       let node = entry
       while (node) {
@@ -569,7 +570,7 @@ export default class Manager extends Service {
         }
         break
       }
-      result.using[name] = { ...meta, provider }
+      result.using[name] = { config, provider }
     }
 
     for (const [name, info] of Object.entries(Inject.resolve(local.runtime.inject))) {

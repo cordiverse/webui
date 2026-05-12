@@ -67,8 +67,9 @@ function getVersions(versions: RemotePackage[]) {
     .sort(([a], [b]) => compare(b, a)))
 }
 
-@Inject('logger', true, { name: 'installer' })
 class Installer extends Service {
+  static name = 'installer'
+
   public manifestPath!: string
   public endpoint!: string
 
@@ -108,7 +109,7 @@ class Installer extends Service {
       const filtered = Object.values(registry.versions).filter(remote => !remote.deprecated)
       return getVersions(filtered.length ? filtered : Object.values(registry.versions))
     } catch (e: any) {
-      this.ctx.logger.warn('failed to fetch registry for %c: %s', name, e?.message ?? e)
+      this.ctx.logger.warn('failed to fetch registry for %C: %s', name, e?.message ?? e)
     }
   }
 

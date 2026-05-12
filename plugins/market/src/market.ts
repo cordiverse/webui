@@ -1,7 +1,6 @@
 import { Context, Inject, Service } from 'cordis'
 import { Dict, Time } from 'cosmokit'
 import type {} from '@cordisjs/plugin-http'
-import type {} from '@cordisjs/plugin-logger'
 import type {} from '@cordisjs/plugin-webui'
 import type { SearchObject, SearchResult } from './types.ts'
 import z from 'schemastery'
@@ -21,8 +20,9 @@ export interface MarketData {
   error?: string
 }
 
-@Inject('logger', true, { name: 'market' })
 class Market extends Service {
+  static name = 'market'
+
   public data: Dict<SearchObject> = {}
   public total = 0
   public time = ''

@@ -1,15 +1,15 @@
 <template>
   <k-content v-if="currentEntry && info">
     <k-comment
-      :type="info.provider ? 'success' : info.required ? 'warning' : 'primary'">
+      :type="info.provider ? 'success' : 'warning'">
       <p>
-        <span>{{ info.required ? '必需' : '可选' }}服务 {{ name }} {{ info.provider ? '已加载' : '未加载' }}</span>
+        <span>服务 {{ name }} {{ info.provider ? '已加载' : '未加载' }}</span>
         <span v-if="info.provider && canGoto(info.provider.location)"> (<span class="k-link" @click="goProvider(info.provider.location)">前往来源</span>)</span>
         <span>。</span>
       </p>
     </k-comment>
     <k-form
-      v-if="info.provider?.schema && info.required !== undefined"
+      v-if="info.provider?.schema"
       v-bind="formProps"
       :schema="info.provider?.schema"
       :initial="info.config"

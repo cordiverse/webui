@@ -1,6 +1,5 @@
 import { Context, Inject, Service } from 'cordis'
 import { Dict, Time } from 'cosmokit'
-import type {} from '@cordisjs/plugin-logger'
 import type {} from '@cordisjs/plugin-server'
 import type {} from '@cordisjs/plugin-hmr'
 import type { EntryOptions } from '@cordisjs/plugin-loader'
@@ -78,7 +77,7 @@ class NodeWebUI extends WebUI {
       for (const entry of Object.values(this.entries)) {
         if (entry.manifest?.url !== url) continue
         const path = relative(ctx.get('hmr')!.baseDir, fileURLToPath(url))
-        ctx.logger('hmr').info('reload webui entry manifest at %c', path)
+        ctx.logger('hmr').info('reload webui entry manifest at %C', path)
         entry.refreshManifest()
       }
     })
@@ -118,7 +117,7 @@ class NodeWebUI extends WebUI {
     if (this.config.open && !loader?.envData.clientCount && !process.env.CORDIS_AGENT) {
       open(target)
     }
-    this.ctx.logger.info('webui is available at %c', target)
+    this.ctx.logger.info('webui is available at %C', target)
   }
 
   getEntryFiles(entry: Entry) {
@@ -263,7 +262,7 @@ class NodeWebUI extends WebUI {
         this._warnedAliases.add(key)
         const baseDir = fileURLToPath(this.ctx.baseUrl!)
         const path = relative(baseDir, filename)
-        this.ctx.logger.warn(`dependency '%s' is deprecated, use '%s' instead (in %c)`, n, target, path)
+        this.ctx.logger.warn(`dependency '%s' is deprecated, use '%s' instead (in %C)`, n, target, path)
       }
       const resolved = `${this.config.uiPath}/-/vendors/${target}`
       output += source.slice(lastIndex, s) + (t === 2 ? JSON.stringify(resolved) : resolved)
@@ -380,7 +379,7 @@ class NodeWebUI extends WebUI {
             self._warnedAliases.add(key)
             if (importer) {
               const path = relative(baseDir, importer)
-              self.ctx.logger.warn(`dependency '%s' is deprecated, use '%s' instead (in %c)`, id, target, path)
+              self.ctx.logger.warn(`dependency '%s' is deprecated, use '%s' instead (in %C)`, id, target, path)
             }
           }
           return this.resolve(target, importer, { skipSelf: true, ...options })

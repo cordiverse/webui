@@ -1,7 +1,7 @@
 import { Context } from 'cordis'
 import { mount, VueWrapper } from '@vue/test-utils'
-import LoggerService from '@cordisjs/plugin-logger'
-import { createSocketBridge, SocketBridge } from './bridge.ts'
+import LoggerConsole from '@cordisjs/plugin-logger-console'
+import { createSocketBridge, SocketBridge } from '../../src/bridge.ts'
 import { TestWebUI } from './test-webui.ts'
 import type { Component } from 'vue'
 
@@ -39,7 +39,6 @@ export async function createHarness(opts: HarnessOptions = {}): Promise<Harness>
   const ctx = createClient()
   const bridge = createSocketBridge()
 
-  await ctx.plugin(LoggerService, { console: { enabled: false } })
   await ctx.plugin(TestWebUI, { socket: bridge.server })
 
   for (const [plugin, config] of opts.plugins ?? []) {

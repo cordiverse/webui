@@ -1,0 +1,75 @@
+{
+  "name": "@cordisjs/online",
+  "description": "Cordis Online — run the cordis stack in a single browser tab",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./transform": "./src/transform.ts",
+    "./resolve": "./src/resolve.ts",
+    "./client/*": "./client/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "dist",
+    "client"
+  ],
+  "scripts": {
+    "dev": "tsx src/dev.ts",
+    "serve": "tsx src/serve.ts"
+  },
+  "yakumo": {
+    "client": "./src/build.ts"
+  },
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cordiverse/webui.git",
+    "directory": "packages/online"
+  },
+  "keywords": [
+    "cordis",
+    "online",
+    "browser",
+    "webui",
+    "playground"
+  ],
+  "peerDependencies": {
+    "@cordisjs/client": "0.8.2",
+    "@cordisjs/plugin-include": "1.0.4",
+    "@cordisjs/plugin-loader": "^1.0.0-rc.4",
+    "@cordisjs/plugin-webui": "0.8.2",
+    "cordis": "^4.0.0-rc.6"
+  },
+  "dependencies": {
+    "@cordisjs/fs": "^1.3.7",
+    "@cordisjs/os": "^1.0.2",
+    "@cordisjs/path": "^1.0.0",
+    "@cordisjs/sqlite": "^0.1.0",
+    "@cordisjs/url": "^1.0.3",
+    "buffer": "^6.0.3",
+    "cosmokit": "^1.8.1",
+    "es-module-lexer": "^2.0.0",
+    "events": "^3.3.0",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@cordisjs/client": "0.8.2",
+    "@cordisjs/components": "0.4.0",
+    "@cordisjs/plugin-include": "1.0.4",
+    "@cordisjs/plugin-loader": "^1.0.0-rc.4",
+    "@cordisjs/plugin-logger-console": "^1.0.0",
+    "@cordisjs/plugin-webui": "0.8.2",
+    "@types/js-yaml": "^4.0.9",
+    "@vitejs/plugin-vue": "^6.0.6",
+    "@vueuse/core": "^14.3.0",
+    "cordis": "^4.0.0-rc.6",
+    "schemastery": "^3.18.0",
+    "unocss": "^66.6.8",
+    "vite": "^7.3.2",
+    "vue": "^3.5.33"
+  }
+}

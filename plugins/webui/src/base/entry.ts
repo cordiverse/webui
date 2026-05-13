@@ -115,7 +115,10 @@ export class Entry<T extends object = any> {
       try {
         do {
           this._dirty = false
-          const content = await readFile(fileURLToPath(this.manifest!.url), 'utf-8')
+          const url = this.manifest!.url
+          const content = url.startsWith('file:')
+            ? await readFile(fileURLToPath(url), 'utf-8')
+            : await fetch(url).then(r => r.text())
           if (this._disposed) return
           this.manifest!.chunks = JSON.parse(content)
         } while (this._dirty)
@@ -127,9 +130,17 @@ export class Entry<T extends object = any> {
   }
 
   private async _resolvePath() {
-    if (this.files.modulePath) {
+    // `modulePath: ''` is a valid value — it means "I've already decided
+    // (or don't need) the path field; skip the fs walk". Use a presence
+    // check rather than truthiness so that callers can opt out of the walk
+    // even when they have no meaningful path to provide (e.g. browser-side
+    // `OnlineWebUI` derives chunk URLs from `manifest.url` directly).
+    if (this.files.modulePath !== undefined) {
       this.manifest!.path = this.files.modulePath
       return
+    }
+    if (!this.files.baseUrl.startsWith('file:')) {
+      throw new Error(`Entry.files.modulePath is required for non-file baseUrl: ${this.files.baseUrl}`)
     }
     const baseDir = dirname(fileURLToPath(this.files.baseUrl))
     const prodDir = dirname(fileURLToPath(new URL(this.files.manifest, this.files.baseUrl)))

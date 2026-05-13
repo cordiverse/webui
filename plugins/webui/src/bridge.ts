@@ -1,4 +1,4 @@
-import { WebSocket as AbstractWebSocket } from '@cordisjs/plugin-webui'
+import { WebSocket as AbstractWebSocket } from './base/types.ts'
 
 const { CONNECTING, OPEN, CLOSED } = AbstractWebSocket
 
@@ -13,9 +13,8 @@ class BridgeSocketImpl implements AbstractWebSocket {
 
   // Frames sent before either side is OPEN are buffered here and flushed
   // when __open() is called. Mirrors the spirit of real WebSocket buffering
-  // without throwing on early sends — useful because TestWebUI's [Service.init]
-  // calls accept(socket) → Client constructor → socket.send(entry:init) before
-  // the harness has a chance to call __open().
+  // without throwing on early sends — WebUI.accept(socket) sends `entry:init`
+  // immediately, before the bridge consumer has a chance to call __open().
   private outbox: string[] = []
 
   private listeners: {

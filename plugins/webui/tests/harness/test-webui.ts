@@ -1,6 +1,6 @@
 import { Context, Service } from 'cordis'
 import { Entry, WebUI } from '@cordisjs/plugin-webui'
-import { BridgeSocket } from './bridge.ts'
+import { BridgeSocket } from '../../src/bridge.ts'
 
 export interface TestWebUIConfig {
   socket: BridgeSocket

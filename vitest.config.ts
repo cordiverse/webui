@@ -17,7 +17,7 @@ export default defineConfig({
     setupFiles: [setupClient],
     server: {
       deps: {
-        inline: ['element-plus', '@cordisjs/components', '@cordisjs/client'],
+        inline: ['element-plus', '@cordisjs/components', '@cordisjs/client', '@cordisjs/online'],
       },
     },
   },

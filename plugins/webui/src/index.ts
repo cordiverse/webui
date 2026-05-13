@@ -21,6 +21,7 @@ declare module 'cordis' {
 }
 
 export * from './base'
+export * from './bridge.ts'
 
 function escapeHTML(source: string, inline = false) {
   const result = (source ?? '')
@@ -39,6 +40,10 @@ export interface ClientConfig {
   static?: boolean
   heartbeat?: HeartbeatConfig
   plugins?: EntryOptions[]
+  online?: {
+    enabled: boolean
+    version: string
+  }
 }
 
 interface HeartbeatConfig {
@@ -59,6 +64,8 @@ const DEPRECATED_ALIASES: Record<string, string> = {
 
 @Inject('server')
 class NodeWebUI extends WebUI {
+  static name = 'webui'
+
   public vite?: ViteDevServer
   public root: string
   private _manifest?: Manifest

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect } from 'vitest'
-import { createSocketBridge } from './harness/bridge.ts'
+import { createSocketBridge } from '../src/bridge.ts'
 
 describe('socket bridge', () => {
   it('relays messages bidirectionally after open', async () => {

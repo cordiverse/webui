@@ -1,4 +1,4 @@
-import { Context, Service } from 'cordis'
+import { Context, Service, symbols } from 'cordis'
 import {
   App, Component, createApp, customRef, defineComponent, DefineComponent, h, markRaw,
   onErrorCaptured, provide, Ref, ref, resolveComponent, watchEffect,
@@ -14,12 +14,6 @@ import { kContext } from './context'
 import type { LoadState } from './plugins/loader'
 import type { WebSocket as AbstractWebSocket } from '@cordisjs/plugin-webui'
 import install from './components'
-
-declare module '@cordisjs/plugin-webui' {
-  export interface ClientConfig {
-    unsupported?: string[]
-  }
-}
 
 declare module 'cordis' {
   interface Context {
@@ -115,10 +109,14 @@ export class ClientService extends Service {
   wrapComponent(component: Component) {
     if (!component) return undefined
     if (!this.ctx.$entry) return component
+    let ctx = this.ctx as Context
+    if (ctx[symbols.shadow]) {
+      ctx = Object.getPrototypeOf(ctx)
+    }
     return markRaw(defineComponent((props, { slots }) => {
-      provide(kContext, this.ctx as Context)
+      provide(kContext, ctx)
       onErrorCaptured(() => {
-        return this.ctx.fiber.uid !== null
+        return ctx.fiber.uid !== null
       })
       return () => h(component, props, slots)
     }))

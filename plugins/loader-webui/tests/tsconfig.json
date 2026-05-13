@@ -5,6 +5,5 @@
     "noEmit": true,
     "types": ["vitest/globals", "node"]
   },
-  "include": ["."],
   "exclude": ["fixtures/.tmp"]
 }

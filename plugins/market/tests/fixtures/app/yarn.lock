@@ -20,7 +20,7 @@ __metadata:
     "@cordisjs/plugin-include": "npm:^1.0.3"
     "@cordisjs/plugin-loader": "npm:^1.0.0-rc.3"
     "@cordisjs/plugin-loader-webui": "portal:../../../../loader-webui"
-    "@cordisjs/plugin-logger-console": "portal:../../../../../../../external/cordis/packages/logger-console"
+    "@cordisjs/plugin-logger-console": "npm:^1.0.0"
     "@cordisjs/plugin-market": "portal:../../.."
     "@cordisjs/plugin-server": "npm:^1.5.0"
     "@cordisjs/plugin-timer": "npm:^1.1.1"
@@ -106,17 +106,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@cordisjs/plugin-logger-console@portal:../../../../../../../external/cordis/packages/logger-console::locator=%40cordis-market-fixture%2Fapp%40workspace%3A.":
-  version: 0.0.0-use.local
-  resolution: "@cordisjs/plugin-logger-console@portal:../../../../../../../external/cordis/packages/logger-console::locator=%40cordis-market-fixture%2Fapp%40workspace%3A."
+"@cordisjs/plugin-logger-console@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "@cordisjs/plugin-logger-console@npm:1.0.0"
   dependencies:
     cosmokit: "npm:^1.8.1"
     schemastery: "npm:^3.18.0"
     supports-color: "npm:^9.4.0"
   peerDependencies:
-    cordis: ^4.0.0-rc.6
+    cordis: ^4.0.0-rc.4
+  checksum: 10c0/fa9c47b1aeb6ea8223dcf3cc502b85edb580f379f48b081c78a2935988b5d1c6d23b75a29dea939b2af5b700ee399f51adc5f339677d107c4dd5805a11808d69
   languageName: node
-  linkType: soft
+  linkType: hard
 
 "@cordisjs/plugin-market@portal:../../..::locator=%40cordis-market-fixture%2Fapp%40workspace%3A.":
   version: 0.0.0-use.local

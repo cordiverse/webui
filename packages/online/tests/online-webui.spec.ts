@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { Context, Service } from 'cordis'
 import LoggerConsole from '@cordisjs/plugin-logger-console'
 import { Entry } from '@cordisjs/plugin-webui'
-import { OnlineWebUI } from '../client/online-webui.ts'
+import { OnlineWebUI } from '../client/worker/online-webui.ts'
 import { createSocketBridge, SocketBridge } from '@cordisjs/plugin-webui'
 
 /**

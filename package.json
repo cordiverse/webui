@@ -15,7 +15,7 @@
   "scripts": {
     "build": "yakumo --import tsx build",
     "lint": "eslint --cache",
-    "dev": "node --import tsx packages/online/src/dev",
+    "dev": "yarn workspace @cordisjs/online dev",
     "serve": "node --import tsx packages/online/src/serve",
     "test": "yakumo vitest --import tsx",
     "test:text": "shx rm -rf coverage && yarn test --coverage --coverage.reporter text",

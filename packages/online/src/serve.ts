@@ -59,10 +59,6 @@ const server = createServer(async (req, res) => {
     return
   }
   res.setHeader('content-type', MIME[extname(filename)] ?? 'application/octet-stream')
-  // Cross-origin isolation — see dev.ts for rationale (enables SharedArrayBuffer
-  // for @cordisjs/sqlite). Every same-origin response carries the pair.
-  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin')
-  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp')
   // Don't cache the entry HTML or the SW — they need to update on deploy.
   if (filename.endsWith('index.html') || filename.endsWith('sw.js')) {
     res.setHeader('cache-control', 'no-cache')

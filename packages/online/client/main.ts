@@ -1,12 +1,13 @@
-// Polyfills MUST be imported first — third-party CDN modules read
-// `globalThis.process` at top-level evaluation time.
+/**
+ * Main-thread entry. Registers the service worker (prod only — dev
+ * relies on Vite's `module-prefix` middleware), then hands off to
+ * `bootstrapMain` which builds the Vue app and spawns the cordis-runtime
+ * Worker.
+ */
+
 import './polyfills.ts'
+import { bootstrapMain } from './bootstrap-main.ts'
 
-import { bootstrap } from './bootstrap.ts'
-
-// Service worker — production only. Dev relies on Vite for bare-specifier
-// resolution. Registered before bootstrap() so subsequent dynamic imports of
-// CDN URLs go through the SW.
 async function registerServiceWorker(): Promise<void> {
   if (import.meta.env.DEV) return
   if (!('serviceWorker' in navigator)) {
@@ -22,4 +23,4 @@ async function registerServiceWorker(): Promise<void> {
 }
 
 await registerServiceWorker()
-await bootstrap()
+await bootstrapMain()

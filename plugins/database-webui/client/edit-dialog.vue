@@ -203,7 +203,9 @@ function parseValue(): ParseResult {
     }
     case 'bigint': {
       try {
-        return { ok: true, value: BigInt(raw) as any }
+        const value = raw.trim()
+        BigInt(value)
+        return { ok: true, value }
       } catch {
         return { ok: false, error: '不是合法整数' }
       }

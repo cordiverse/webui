@@ -53,6 +53,18 @@ export const Config: z<Config> = z.object({
   pageSize: z.natural().default(50).description('每页默认行数(客户端可改)。'),
 })
 
+function serializeValue(value: unknown): unknown {
+  if (typeof value === 'bigint') return value.toString()
+  if (Array.isArray(value)) return value.map(serializeValue)
+  if (value instanceof Date) return value
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, serializeValue(item)]),
+    )
+  }
+  return value
+}
+
 function describeFields(model: any): FieldInfo[] {
   const primary = new Set<string>(([] as string[]).concat(model.primary ?? []))
   const uniqueKeys = new Set<string>()
@@ -111,7 +123,7 @@ export function apply(ctx: Context, config: Config) {
       const rows = await (model.get as any)(table, {}, cursor)
       const stats = await model.stats().catch(() => ({ tables: {} as Record<string, { count: number; size: number }> }))
       const total = stats.tables?.[table]?.count ?? rows.length
-      return { rows, total }
+      return { rows: rows.map(serializeValue), total }
     },
     async update({ table, where, field, value }) {
       const model = ctx.model

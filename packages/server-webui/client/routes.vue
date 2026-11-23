@@ -29,24 +29,27 @@
 
       <div class="k-table-head">
         <table class="route-table">
-          <colgroup><col v-for="col of columns" :key="col.label" :width="col.width"/></colgroup>
+          <k-colgroup :columns="columns"/>
           <thead>
             <tr>
-              <th v-for="col of columns" :key="col.label" :class="col.class">{{ col.label }}</th>
+              <th class="k-table-filler"></th>
+              <th v-for="col of columns" :key="col.label" :class="'text-' + col.align">{{ col.label }}</th>
+              <th class="k-table-filler"></th>
             </tr>
           </thead>
         </table>
       </div>
-      <div v-if="routes.length" class="k-table-body">
+      <el-scrollbar v-if="routes.length" class="k-table-body">
         <table class="route-table">
-          <colgroup><col v-for="col of columns" :key="col.label" :width="col.width"/></colgroup>
+          <k-colgroup :columns="columns"/>
           <tbody>
             <tr v-for="route of routes" :key="route.id">
-              <td>
+              <td class="k-table-filler"></td>
+              <td class="text-center">
                 <span class="method-badge" :class="methodClass(route.method)">{{ route.method }}</span>
               </td>
               <td class="cell-path text-left">{{ fullPath(route) }}</td>
-              <td class="cell-plugin text-left">{{ pluginLabel(route.plugin) }}</td>
+              <td class="cell-source text-right">{{ sourceLabel(route.plugin) }}</td>
               <td class="text-center">{{ route.requests || '—' }}</td>
               <td class="text-center">{{ route.requests ? formatDuration(route.avgLatency) : '—' }}</td>
               <td class="text-center">
@@ -55,10 +58,11 @@
                 </span>
                 <span v-else>—</span>
               </td>
+              <td class="k-table-filler"></td>
             </tr>
           </tbody>
         </table>
-      </div>
+      </el-scrollbar>
       <div v-else class="empty">暂无已注册的路由</div>
     </div>
   </k-layout>
@@ -67,7 +71,7 @@
 <script lang="ts" setup>
 
 import { computed, onUnmounted, ref } from 'vue'
-import { useContext, useRpc } from '@cordisjs/client'
+import { type TableColumn, useContext, useRpc } from '@cordisjs/client'
 import type {} from '@cordisjs/loader-webui/client'
 import type { Data, ServerRoute } from '../src'
 import { formatDuration, methodClass, statusClass } from './utils'
@@ -77,13 +81,13 @@ const data = useRpc<Data>()
 
 const routes = computed<ServerRoute[]>(() => Object.values(data.value?.routes ?? {}))
 
-const columns = [
-  { label: 'Method', width: 100 },
-  { label: 'Path', class: 'text-left' },
-  { label: 'Plugin', class: 'text-left', width: 160 },
-  { label: 'Requests', class: 'text-center', width: 100 },
-  { label: 'Avg Latency', class: 'text-center', width: 110 },
-  { label: 'Last Status', class: 'text-center', width: 110 },
+const columns: TableColumn[] = [
+  { label: 'Method', align: 'center', width: 100 },
+  { label: 'Path', align: 'left', maxWidth: 480 },
+  { label: 'Source', align: 'right', width: 160 },
+  { label: 'Requests', align: 'center', width: 100 },
+  { label: 'Avg Latency', align: 'center', width: 110 },
+  { label: 'Last Status', align: 'center', width: 110 },
 ]
 
 // Sliding-window stats are computed on the client from `requests`, driven by
@@ -116,7 +120,7 @@ function fullPath(route: ServerRoute) {
   return (route.interceptPath ?? '') + route.path
 }
 
-function pluginLabel(source?: string) {
+function sourceLabel(source?: string) {
   if (!source) return '—'
   const manager = ctx.get('manager')
   if (!manager) return source
@@ -169,10 +173,8 @@ function pluginLabel(source?: string) {
   font-size: 13px;
 
   th, td {
-    text-align: left;
     padding: 10px 16px;
     vertical-align: middle;
-    white-space: nowrap;
   }
 
   th {
@@ -180,16 +182,7 @@ function pluginLabel(source?: string) {
     font-weight: 500;
     font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
   }
-
-  .cell-path, .cell-plugin {
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .text-left { text-align: left; }
-  .text-center { text-align: center; }
 
   .cell-path {
     font-family: var(--font-mono);
@@ -197,7 +190,7 @@ function pluginLabel(source?: string) {
     color: var(--text-primary);
   }
 
-  .cell-plugin {
+  .cell-source {
     font-size: 12px;
     color: var(--text-tertiary);
   }

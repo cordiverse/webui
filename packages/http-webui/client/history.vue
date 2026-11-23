@@ -12,8 +12,8 @@
       </div>
 
       <select class="source-filter" v-model="activeSource">
-        <option value="">All Plugins</option>
-        <option v-for="src of sources" :key="src" :value="src">{{ pluginLabel(src) }}</option>
+        <option value="">All Sources</option>
+        <option v-for="src of sources" :key="src" :value="src">{{ sourceLabel(src) }}</option>
       </select>
 
       <select class="source-filter" v-model="activeStatus">
@@ -34,17 +34,19 @@
 
     <div class="k-table-head">
       <table class="hist-table">
-        <colgroup><col v-for="col of columns" :key="col.label" :width="col.width"/></colgroup>
+        <k-colgroup :columns="columns"/>
         <thead>
           <tr>
-            <th v-for="col of columns" :key="col.label" :class="col.class">{{ col.label }}</th>
+            <th class="k-table-filler"></th>
+            <th v-for="col of columns" :key="col.label" :class="'text-' + col.align">{{ col.label }}</th>
+            <th class="k-table-filler"></th>
           </tr>
         </thead>
       </table>
     </div>
-    <div v-if="filtered.length" class="k-table-body">
+    <el-scrollbar v-if="filtered.length" class="k-table-body">
       <table class="hist-table">
-        <colgroup><col v-for="col of columns" :key="col.label" :width="col.width"/></colgroup>
+        <k-colgroup :columns="columns"/>
         <tbody>
           <tr
             v-for="entry of filtered"
@@ -54,25 +56,27 @@
             @click="selected = entry"
             @contextmenu.stop="triggerHistoryMenu($event, entry)"
           >
-            <td>
+            <td class="k-table-filler"></td>
+            <td class="text-center">
               <span class="method-badge" :class="methodClass(entry.method)">{{ entry.method }}</span>
             </td>
-            <td>
+            <td class="text-center">
               <span v-if="entry.status" class="status-code" :class="statusClass(entry.status)">{{ entry.status }}</span>
               <span v-else-if="entry.endTime" class="status-code status-err">ERR</span>
               <span v-else class="pending-dot"></span>
             </td>
             <td class="hist-url text-left">{{ entry.url }}</td>
-            <td class="hist-source text-left">{{ pluginLabel(entry.source) }}</td>
+            <td class="hist-source text-right">{{ sourceLabel(entry.source) }}</td>
             <td class="text-center hist-latency">{{ displayDuration(entry) }}</td>
             <td class="text-center hist-size">
               <size-pair :bytes-in="entry.bytesIn || 0" :bytes-out="entry.bytesOut || 0"/>
             </td>
             <td class="text-center hist-time">{{ formatTime(entry.startTime) }}</td>
+            <td class="k-table-filler"></td>
           </tr>
         </tbody>
       </table>
-    </div>
+    </el-scrollbar>
     <div v-else class="hist-empty">
       <span v-if="history.length">没有匹配的请求</span>
       <span v-else>暂无请求记录</span>
@@ -83,7 +87,7 @@
 <script lang="ts" setup>
 
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { useContext, useMenu, useRpc } from '@cordisjs/client'
+import { type TableColumn, useContext, useMenu, useRpc } from '@cordisjs/client'
 import type {} from '@cordisjs/loader-webui/client'
 import SizePair from './size-pair.vue'
 import type { Data, HistoryEntry } from '../src'
@@ -103,14 +107,14 @@ onBeforeUnmount(() => {
   if (tickHandle) clearInterval(tickHandle)
 })
 
-const columns = [
-  { label: 'Method', width: 80 },
-  { label: 'Status', width: 80 },
-  { label: 'URL', class: 'text-left' },
-  { label: 'Plugin', class: 'text-left', width: 160 },
-  { label: 'Duration', class: 'text-center', width: 80 },
-  { label: 'Size', class: 'text-center', width: 140 },
-  { label: 'Time', class: 'text-center', width: 96 },
+const columns: TableColumn[] = [
+  { label: 'Method', align: 'center', width: 80 },
+  { label: 'Status', align: 'center', width: 80 },
+  { label: 'URL', align: 'left', maxWidth: 480 },
+  { label: 'Source', align: 'right', width: 160 },
+  { label: 'Duration', align: 'center', width: 100 },
+  { label: 'Size', align: 'center', width: 140 },
+  { label: 'Time', align: 'center', width: 96 },
 ]
 
 const methodOptions = [
@@ -136,7 +140,7 @@ const sources = computed(() => {
   return [...set].sort()
 })
 
-function pluginLabel(source?: string) {
+function sourceLabel(source?: string) {
   if (!source) return 'unknown'
   const manager = ctx.get('manager')
   if (!manager) return source
@@ -312,29 +316,16 @@ function formatTime(ts: number) {
 }
 
 .hist-table thead th {
-  text-align: center;
   padding: 8px 12px;
   font-size: 11px;
   font-weight: 500;
   color: var(--text-tertiary);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-
-  &.text-left { text-align: left; }
 }
 
 .hist-table tbody td {
   padding: 10px 12px;
   vertical-align: middle;
-  white-space: nowrap;
-}
-
-// only truncate for flexible text columns; fixed-width badges must not be clipped
-.hist-table tbody td.hist-url,
-.hist-table tbody td.hist-source {
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .hist-row {

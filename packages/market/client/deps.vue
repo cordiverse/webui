@@ -47,27 +47,30 @@
       <template v-if="rows.length">
         <div class="k-table-head">
           <table class="deps-table">
-            <colgroup><col v-for="col of columns" :key="col.label" :width="col.width"/></colgroup>
+            <k-colgroup :columns="columns"/>
             <thead>
               <tr>
-                <th v-for="col of columns" :key="col.label">{{ col.label }}</th>
+                <th class="k-table-filler"></th>
+                <th v-for="col of columns" :key="col.label" :class="'text-' + col.align">{{ col.label }}</th>
+                <th class="k-table-filler"></th>
               </tr>
             </thead>
           </table>
         </div>
-        <div class="k-table-body">
+        <el-scrollbar class="k-table-body">
           <table class="deps-table">
-            <colgroup><col v-for="col of columns" :key="col.label" :width="col.width"/></colgroup>
+            <k-colgroup :columns="columns"/>
             <tbody>
               <tr v-for="row in rows" :key="row.name">
-                <td class="name">
+                <td class="k-table-filler"></td>
+                <td class="text-left name">
                   <span class="pkg">{{ row.name }}</span>
                   <span v-if="row.workspace" class="badge workspace">工作区</span>
                   <span v-if="row.invalid" class="badge danger">无效</span>
                   <span v-if="row.missing" class="badge warning">未安装</span>
                 </td>
-                <td class="version">{{ row.resolved ?? '—' }}</td>
-                <td>
+                <td class="text-left version">{{ row.resolved ?? '—' }}</td>
+                <td class="text-left">
                   <el-select
                     v-if="!row.workspace && row.versionKeys.length"
                     size="small"
@@ -86,7 +89,7 @@
                   </el-select>
                   <span v-else class="version muted">{{ row.workspace ? '工作区' : '—' }}</span>
                 </td>
-                <td>
+                <td class="text-left">
                   <div class="actions">
                     <button class="action-btn primary" @click="openDetail(row.name)">详情</button>
                     <button
@@ -98,10 +101,11 @@
                     </button>
                   </div>
                 </td>
+                <td class="k-table-filler"></td>
               </tr>
             </tbody>
           </table>
-        </div>
+        </el-scrollbar>
       </template>
       <k-empty v-else>
         <p>未检测到任何依赖。</p>
@@ -113,7 +117,7 @@
 <script lang="ts" setup>
 
 import { computed, provide, ref, watch } from 'vue'
-import { useRpc } from '@cordisjs/client'
+import { type TableColumn, useRpc } from '@cordisjs/client'
 import type { Dict } from 'cosmokit'
 import type { Data, DependencyMetaKey, RemotePackage } from '../src'
 import { kActivePackage, kDependencies, kPackagesMap, kRefresh, kShowConfirm, kShowManual } from './context'
@@ -121,11 +125,11 @@ import { activePackage, showConfirm, showManual, storage } from './store'
 
 const data = useRpc<Data>()
 
-const columns = [
-  { label: '依赖' },
-  { label: '本地版本', width: 140 },
-  { label: '目标版本', width: 220 },
-  { label: '操作', width: 180 },
+const columns: TableColumn[] = [
+  { label: '依赖', align: 'left', maxWidth: 480 },
+  { label: '本地版本', align: 'center', width: 160 },
+  { label: '目标版本', align: 'center', width: 240 },
+  { label: '操作', align: 'center', width: 120 },
 ]
 
 const market = computed(() => data.value?.market)
@@ -282,7 +286,6 @@ async function refresh() {
   font-size: 13px;
 
   th, td {
-    text-align: left;
     padding: 10px 16px;
     vertical-align: middle;
   }

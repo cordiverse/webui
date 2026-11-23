@@ -2,44 +2,45 @@
   <div class="sse-events">
     <div class="k-table-head">
       <table class="sse-table">
-        <colgroup>
-          <col v-for="(col, i) of columns" :key="i" :width="col.width"/>
-        </colgroup>
+        <k-colgroup :columns="columns"/>
         <thead>
           <tr>
-            <th v-for="(col, i) of columns" :key="i" :class="col.class">{{ col.label }}</th>
+            <th class="k-table-filler"></th>
+            <th v-for="(col, i) of columns" :key="i" :class="'text-' + col.align">{{ col.label }}</th>
+            <th class="k-table-filler"></th>
           </tr>
         </thead>
       </table>
     </div>
-    <div class="k-table-body">
+    <el-scrollbar class="k-table-body">
       <table class="sse-table">
-        <colgroup>
-          <col v-for="(col, i) of columns" :key="i" :width="col.width"/>
-        </colgroup>
+        <k-colgroup :columns="columns"/>
         <tbody>
           <tr v-for="(ev, i) of events" :key="i">
+            <td class="k-table-filler"></td>
             <td class="text-left sse-event" :title="ev.event || 'message'">{{ ev.event || 'message' }}</td>
             <td v-if="hasId" class="text-left sse-id" :title="ev.id">{{ ev.id ?? '' }}</td>
             <td v-if="hasRetry" class="text-right sse-retry">{{ ev.retry ?? '' }}</td>
             <td class="text-left sse-data">{{ ev.data }}</td>
             <td class="text-left sse-time">{{ formatTime(ev.ts) }}</td>
-            <td v-if="removable" class="sse-remove-cell">
+            <td v-if="removable" class="text-center sse-remove-cell">
               <button class="sse-remove" title="删除" @click.stop="$emit('remove', i)">×</button>
             </td>
+            <td class="k-table-filler"></td>
           </tr>
           <tr v-if="!events.length" class="sse-empty">
             <td :colspan="colspan">暂无事件</td>
           </tr>
         </tbody>
       </table>
-    </div>
+    </el-scrollbar>
   </div>
 </template>
 
 <script lang="ts" setup>
 
 import { computed } from 'vue'
+import type { TableColumn } from '@cordisjs/client'
 import type { SseEvent } from './types'
 
 const props = defineProps<{
@@ -54,16 +55,17 @@ defineEmits<{
 const hasId = computed(() => props.events.some(ev => ev.id !== undefined && ev.id !== ''))
 const hasRetry = computed(() => props.events.some(ev => typeof ev.retry === 'number'))
 
-const columns = computed(() => [
-  { label: 'Event', class: 'text-left', width: 80 },
-  ...hasId.value ? [{ label: 'ID', class: 'text-left', width: 80 }] : [],
-  ...hasRetry.value ? [{ label: 'Retry', class: 'text-right', width: 64 }] : [],
-  { label: 'Data', class: 'text-left' },
-  { label: 'Time', class: 'text-left', width: 96 },
-  ...props.removable ? [{ label: '', width: 36 }] : [],
+const columns = computed<TableColumn[]>(() => [
+  { label: 'Event', align: 'left', width: 80 },
+  ...hasId.value ? [{ label: 'ID', align: 'left', width: 80 } as const] : [],
+  ...hasRetry.value ? [{ label: 'Retry', align: 'right', width: 64 } as const] : [],
+  { label: 'Data', align: 'left', maxWidth: 800 },
+  { label: 'Time', align: 'left', width: 96 },
+  ...props.removable ? [{ label: '', align: 'center', width: 36 } as const] : [],
 ])
 
-const colspan = computed(() => columns.value.length)
+// a filler column precedes and follows the declared columns
+const colspan = computed(() => columns.value.length + 2)
 
 function formatTime(ts: number) {
   if (!ts) return '—'
@@ -96,12 +98,6 @@ function formatTime(ts: number) {
   font-size: 10px;
   color: var(--text-tertiary);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-  text-align: center;
-
-  &.text-left { text-align: left; }
-  &.text-right { text-align: right; }
 }
 
 .sse-table tbody td {
@@ -109,16 +105,9 @@ function formatTime(ts: number) {
   vertical-align: top;
 }
 
-.sse-event,
-.sse-id {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .sse-event { color: var(--accent); }
 .sse-id    { color: var(--text-secondary); }
-.sse-retry { color: var(--text-secondary); font-size: 11px; white-space: nowrap; }
+.sse-retry { color: var(--text-secondary); font-size: 11px; }
 
 .sse-data {
   white-space: pre-wrap;
@@ -126,11 +115,10 @@ function formatTime(ts: number) {
   color: var(--text-primary);
 }
 
-.sse-time { font-size: 11px; color: var(--text-tertiary); white-space: nowrap; }
+.sse-time { font-size: 11px; color: var(--text-tertiary); }
 
 .sse-remove-cell {
   padding: 4px !important;
-  text-align: center;
 }
 
 .sse-remove {

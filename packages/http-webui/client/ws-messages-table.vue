@@ -2,23 +2,22 @@
   <div class="ws-messages">
     <div class="k-table-head">
       <table class="ws-table">
-        <colgroup>
-          <col v-for="(col, i) of columns" :key="i" :width="col.width"/>
-        </colgroup>
+        <k-colgroup :columns="columns"/>
         <thead>
           <tr>
-            <th v-for="(col, i) of columns" :key="i" :class="col.class">{{ col.label }}</th>
+            <th class="k-table-filler"></th>
+            <th v-for="(col, i) of columns" :key="i" :class="'text-' + col.align">{{ col.label }}</th>
+            <th class="k-table-filler"></th>
           </tr>
         </thead>
       </table>
     </div>
-    <div class="k-table-body">
+    <el-scrollbar class="k-table-body">
       <table class="ws-table">
-        <colgroup>
-          <col v-for="(col, i) of columns" :key="i" :width="col.width"/>
-        </colgroup>
+        <k-colgroup :columns="columns"/>
         <tbody>
           <tr v-for="(msg, i) of messages" :key="i">
+            <td class="k-table-filler"></td>
             <td class="text-center ws-dir" :class="msg.direction">
               <span :title="msg.direction === 'out' ? '发送' : '接收'">
                 {{ msg.direction === 'out' ? '↑' : '↓' }}
@@ -27,7 +26,7 @@
             <td class="text-left ws-data">{{ msg.data }}</td>
             <td class="text-right ws-size">{{ formatSize(msg.size) }}</td>
             <td class="text-left ws-time">{{ msg.ts ? formatTime(msg.ts) : '待发送' }}</td>
-            <td v-if="editable" class="ws-actions">
+            <td v-if="editable" class="text-center ws-actions">
               <template v-if="msg.direction === 'out'">
                 <button
                   class="ws-icon-btn persist-btn"
@@ -45,19 +44,21 @@
                 <button class="ws-icon-btn" title="删除" @click.stop="$emit('remove', i)">×</button>
               </template>
             </td>
+            <td class="k-table-filler"></td>
           </tr>
           <tr v-if="!messages.length" class="ws-empty">
             <td :colspan="colspan">暂无消息</td>
           </tr>
         </tbody>
       </table>
-    </div>
+    </el-scrollbar>
   </div>
 </template>
 
 <script lang="ts" setup>
 
 import { computed } from 'vue'
+import type { TableColumn } from '@cordisjs/client'
 import { formatSize } from './utils'
 import type { WsMessage } from './types'
 
@@ -71,15 +72,16 @@ defineEmits<{
   (e: 'toggle-persist', index: number): void
 }>()
 
-const columns = computed(() => [
-  { label: '', class: 'text-center', width: 40 },
-  { label: 'Data', class: 'text-left' },
-  { label: 'Size', class: 'text-right', width: 72 },
-  { label: 'Time', class: 'text-left', width: 110 },
-  ...props.editable ? [{ label: '', width: 68 }] : [],
+const columns = computed<TableColumn[]>(() => [
+  { label: '', align: 'center', width: 40 },
+  { label: 'Data', align: 'left', maxWidth: 800 },
+  { label: 'Size', align: 'right', width: 72 },
+  { label: 'Time', align: 'left', width: 110 },
+  ...props.editable ? [{ label: '', align: 'center', width: 68 } as const] : [],
 ])
 
-const colspan = computed(() => columns.value.length)
+// a filler column precedes and follows the declared columns
+const colspan = computed(() => columns.value.length + 2)
 
 function formatTime(ts: number) {
   const d = new Date(ts)
@@ -111,8 +113,6 @@ function formatTime(ts: number) {
   font-size: 10px;
   color: var(--text-tertiary);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
 }
 
 .ws-table tbody td {
@@ -136,19 +136,15 @@ function formatTime(ts: number) {
 .ws-size {
   font-size: 11px;
   color: var(--text-tertiary);
-  white-space: nowrap;
 }
 
 .ws-time {
   font-size: 11px;
   color: var(--text-tertiary);
-  white-space: nowrap;
 }
 
 .ws-actions {
   padding: 4px !important;
-  text-align: center;
-  white-space: nowrap;
 }
 
 .ws-icon-btn {

@@ -1,12 +1,16 @@
 import { App } from 'vue'
 import Card from './card.vue'
+import Colgroup from './colgroup.vue'
 import Content from './content.vue'
 import Empty from './empty.vue'
 import TabGroup from './tab-group.vue'
 import TabItem from './tab-item.vue'
 
+export * from './table'
+
 export default function (app: App) {
   app.component('k-card', Card)
+  app.component('k-colgroup', Colgroup)
   app.component('k-content', Content)
   app.component('k-empty', Empty)
   app.component('k-tab-group', TabGroup)

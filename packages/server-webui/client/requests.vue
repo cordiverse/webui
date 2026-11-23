@@ -48,23 +48,26 @@
 
       <div class="k-table-head">
         <table class="req-table">
-          <colgroup><col v-for="col of columns" :key="col.label" :width="col.width"/></colgroup>
+          <k-colgroup :columns="columns"/>
           <thead>
             <tr>
-              <th v-for="col of columns" :key="col.label" :class="col.class">{{ col.label }}</th>
+              <th class="k-table-filler"></th>
+              <th v-for="col of columns" :key="col.label" :class="'text-' + col.align">{{ col.label }}</th>
+              <th class="k-table-filler"></th>
             </tr>
           </thead>
         </table>
       </div>
-      <div v-if="filtered.length" class="k-table-body">
+      <el-scrollbar v-if="filtered.length" class="k-table-body">
         <table class="req-table">
-          <colgroup><col v-for="col of columns" :key="col.label" :width="col.width"/></colgroup>
+          <k-colgroup :columns="columns"/>
           <tbody>
             <tr v-for="req of filtered" :key="req.id" :class="{ pending: !req.endTime }">
-              <td>
+              <td class="k-table-filler"></td>
+              <td class="text-center">
                 <span class="method-badge" :class="methodClass(req.method)">{{ req.method }}</span>
               </td>
-              <td>
+              <td class="text-center">
                 <span v-if="!req.endTime && !req.status" class="pending-dot"></span>
                 <span v-else class="status-code" :class="statusClass(req.status)">{{ req.status || 'ERR' }}</span>
               </td>
@@ -75,10 +78,11 @@
                 <size-pair :bytes-in="req.bytesIn || 0" :bytes-out="req.bytesOut || 0"/>
               </td>
               <td class="text-center">{{ formatTime(req.startTime) }}</td>
+              <td class="k-table-filler"></td>
             </tr>
           </tbody>
         </table>
-      </div>
+      </el-scrollbar>
       <div v-else class="empty">
         <span v-if="requests.length">没有匹配的请求</span>
         <span v-else>暂无请求记录</span>
@@ -90,7 +94,7 @@
 <script lang="ts" setup>
 
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { useRpc } from '@cordisjs/client'
+import { type TableColumn, useRpc } from '@cordisjs/client'
 import SizePair from './size-pair.vue'
 import type { Data, ServerRequest } from '../src'
 import { formatDuration, formatTime, methodClass, statusClass } from './utils'
@@ -108,14 +112,14 @@ onBeforeUnmount(() => {
   if (tickHandle) clearInterval(tickHandle)
 })
 
-const columns = [
-  { label: 'Method', width: 100 },
-  { label: 'Status', width: 90 },
-  { label: 'Path', class: 'text-left' },
-  { label: 'Client', class: 'text-left', width: 140 },
-  { label: 'Duration', class: 'text-center', width: 100 },
-  { label: 'Size', class: 'text-center', width: 140 },
-  { label: 'Time', class: 'text-center', width: 96 },
+const columns: TableColumn[] = [
+  { label: 'Method', align: 'center', width: 100 },
+  { label: 'Status', align: 'center', width: 90 },
+  { label: 'Path', align: 'left', maxWidth: 480 },
+  { label: 'Client', align: 'left', width: 140 },
+  { label: 'Duration', align: 'center', width: 100 },
+  { label: 'Size', align: 'center', width: 140 },
+  { label: 'Time', align: 'center', width: 96 },
 ]
 
 const methodOptions = [
@@ -257,10 +261,8 @@ function clearRequests() {
   font-size: 13px;
 
   th, td {
-    text-align: left;
     padding: 10px 16px;
     vertical-align: middle;
-    white-space: nowrap;
   }
 
   th {
@@ -268,16 +270,7 @@ function clearRequests() {
     font-weight: 500;
     font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
   }
-
-  .cell-path, .cell-remote {
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .text-left { text-align: left; }
-  .text-center { text-align: center; }
 
   .cell-path {
     font-family: var(--font-mono);

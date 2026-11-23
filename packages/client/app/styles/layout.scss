@@ -401,12 +401,16 @@
 
 // A table whose header stays outside the scroll container. The header and the
 // body are separate tables that declare the same column widths in <colgroup>.
-// Both containers reserve the scrollbar gutter so that their columns align.
+// The body is an <el-scrollbar>, whose scrollbars overlay the content, so that
+// the columns of both tables have the same width. Both containers are query
+// containers, against which <k-colgroup> resolves the width of its flexible
+// column. Every cell declares its alignment through a `text-*` class, and its
+// text is truncated with an ellipsis when it overflows the column.
 .k-table-head,
 .k-table-body {
-  scrollbar-gutter: stable;
+  container-type: inline-size;
 
-  > table {
+  table {
     width: 100%;
     table-layout: fixed;
     border-collapse: collapse;
@@ -414,6 +418,20 @@
 
   tr, tr:last-child {
     border: none;
+  }
+
+  th, td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &.text-left { text-align: left; }
+    &.text-center { text-align: center; }
+    &.text-right { text-align: right; }
+  }
+
+  .k-table-filler {
+    padding: 0;
   }
 }
 
@@ -436,7 +454,7 @@
 .k-table-body {
   flex: 1 1 0;
   min-height: 0;
-  overflow: auto;
+  height: auto;
   margin: -1px 0;
 
   td {

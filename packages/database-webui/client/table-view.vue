@@ -31,7 +31,7 @@
               <th
                 v-for="field of info.fields"
                 :key="field.name"
-                :class="{ sortable: true, active: tab.sort?.field === field.name }"
+                :class="['text-left', 'sortable', { active: tab.sort?.field === field.name }]"
                 @click="onHeaderClick(field.name)"
               >
                 <field-type :type="field.type"/>
@@ -44,7 +44,7 @@
           </thead>
         </table>
       </div>
-      <div class="k-table-body" @scroll="onBodyScroll">
+      <el-scrollbar class="k-table-body" @scroll="onBodyScroll">
         <table class="data-grid" :style="gridStyle">
           <colgroup><col v-for="field of info.fields" :key="field.name" :width="columnWidth"/></colgroup>
           <tbody>
@@ -52,6 +52,7 @@
               <td
                 v-for="field of info.fields"
                 :key="field.name"
+                class="text-left"
                 :title="renderCell(row[field.name])"
                 @dblclick="onCellDblClick(row, field)"
               >
@@ -63,7 +64,7 @@
             </tr>
           </tbody>
         </table>
-      </div>
+      </el-scrollbar>
       <div v-if="loading" class="table-loading">加载中…</div>
     </div>
 
@@ -104,9 +105,9 @@ const gridStyle = computed(() => ({
 
 const headRef = ref<HTMLElement>()
 
-function onBodyScroll(event: Event) {
+function onBodyScroll({ scrollLeft }: { scrollLeft: number }) {
   if (!headRef.value) return
-  headRef.value.scrollLeft = (event.target as HTMLElement).scrollLeft
+  headRef.value.scrollLeft = scrollLeft
 }
 
 const loading = ref(false)
@@ -303,13 +304,9 @@ function onCellDblClick(row: any, field: FieldInfo) {
   font-size: 12px;
 
   thead th {
-    text-align: left;
     padding: 8px 12px;
     color: var(--text-secondary);
-    overflow: hidden;
-    text-overflow: ellipsis;
     user-select: none;
-    white-space: nowrap;
 
     > * + * { margin-left: 6px; }
 
@@ -335,9 +332,6 @@ function onCellDblClick(row: any, field: FieldInfo) {
 
   tbody td {
     padding: 6px 12px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     vertical-align: middle;
     cursor: pointer;
     user-select: none;

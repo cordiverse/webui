@@ -20,7 +20,7 @@ function entry(input: Partial<EntryData> & { id: string; name: string }): EntryD
 
 function pkg(name: string, extra: Partial<LocalObject> = {}): LocalObject {
   return {
-    shortname: name.includes('/plugin-') ? name.split('/plugin-')[1] : name,
+    shortname: name.replace(/^@cordisjs\//, ''),
     package: { name, version: '1.0.0' },
     manifest: {},
     runtime: { inject: {} },
@@ -71,9 +71,9 @@ describe('loader-webui overview — uninstalled plugin', () => {
 
   it('omits the uninstalled comment once the package becomes available', async () => {
     const data = makeData([
-      entry({ id: 'e1', name: '@cordisjs/plugin-echo' }),
+      entry({ id: 'e1', name: '@cordisjs/echo' }),
     ], {
-      '@cordisjs/plugin-echo': pkg('@cordisjs/plugin-echo'),
+      '@cordisjs/echo': pkg('@cordisjs/echo'),
     })
     mounted = await mountWithManager(Index, { data, initialRoute: '/plugins/e1' })
     await nextTick()
@@ -83,10 +83,10 @@ describe('loader-webui overview — uninstalled plugin', () => {
 
   it('isolates the uninstalled branch to the affected entry (sibling installed entry behaves normally)', async () => {
     const data = makeData([
-      entry({ id: 'ok', name: '@cordisjs/plugin-echo', position: 0 }),
+      entry({ id: 'ok', name: '@cordisjs/echo', position: 0 }),
       entry({ id: 'missing', name: '@scope/unknown-plugin', position: 1 }),
     ], {
-      '@cordisjs/plugin-echo': pkg('@cordisjs/plugin-echo'),
+      '@cordisjs/echo': pkg('@cordisjs/echo'),
     })
 
     mounted = await mountWithManager(Index, { data, initialRoute: '/plugins/missing' })

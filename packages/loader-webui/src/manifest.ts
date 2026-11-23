@@ -58,7 +58,7 @@ export namespace Ecosystem {
       const index = pattern.indexOf('*')
       return prefix + name.slice(index)
     }
-    if (ecosystem.property in meta) return meta.name
+    return meta.name
   }
 
   export function resolve(name: string, manifest: Manifest): Ecosystem {
@@ -74,7 +74,7 @@ export namespace Ecosystem {
 
   export const INIT = resolve('cordis', {
     ecosystem: {
-      pattern: ['cordis-plugin-*', '@cordisjs/plugin-*'],
+      pattern: ['cordis-plugin-*', '@cordisjs/plugin-*', '@cordisjs/*'],
     },
   })
 }

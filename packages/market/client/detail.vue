@@ -216,7 +216,7 @@ const pkg = computed(() => {
   if (!dep) return undefined
   return {
     package: { name: activeName.value, version: dep.resolved },
-    shortname: activeName.value.replace(/(cordis-|^@cordisjs\/)plugin-/, ''),
+    shortname: activeName.value.replace(/^@cordisjs\/(?:plugin-)?/, '').replace(/(^|\/)cordis-plugin-/, '$1'),
   } as any
 })
 const shortname = computed(() => pkg.value?.shortname ?? activeName.value)

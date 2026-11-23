@@ -20,7 +20,7 @@ function entry(input: Partial<EntryData> & { id: string; name: string }): EntryD
 
 function pkg(name: string, extra: Partial<LocalObject> = {}): LocalObject {
   return {
-    shortname: name.includes('/plugin-') ? name.split('/plugin-')[1] : name,
+    shortname: name.replace(/^@cordisjs\//, ''),
     package: { name, version: '1.0.0' },
     manifest: {},
     runtime: { inject: {} },
@@ -30,9 +30,9 @@ function pkg(name: string, extra: Partial<LocalObject> = {}): LocalObject {
 
 function makeData(local: Partial<LocalObject>, entryPatch: Partial<EntryData> = {}): Data {
   return {
-    entries: [entry({ id: 'e1', name: '@cordisjs/plugin-foo', ...entryPatch })],
+    entries: [entry({ id: 'e1', name: '@cordisjs/foo', ...entryPatch })],
     packages: {
-      '@cordisjs/plugin-foo': pkg('@cordisjs/plugin-foo', local),
+      '@cordisjs/foo': pkg('@cordisjs/foo', local),
     },
     services: {},
     prefix: '',

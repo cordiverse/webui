@@ -30,13 +30,16 @@ interface LocalPackage extends PackageJson {
   $workspace?: boolean
 }
 
-function isPluginName(name: string): boolean {
-  if (name.startsWith('@cordisjs/plugin-')) return true
-  if (/(^|\/)cordis-plugin-/.test(name)) return true
-  return false
+async function isComponent(dir: string): Promise<boolean> {
+  try {
+    const meta: PackageJson = JSON.parse(await readFile(join(dir, 'package.json'), 'utf-8'))
+    return !!meta.peerDependencies?.cordis
+  } catch {
+    return false
+  }
 }
 
-async function listPluginsIn(nm: string): Promise<string[]> {
+async function listComponentsIn(nm: string): Promise<string[]> {
   const out: string[] = []
   const entries = await readdir(nm, { withFileTypes: true }).catch(() => [])
   for (const entry of entries) {
@@ -45,9 +48,9 @@ async function listPluginsIn(nm: string): Promise<string[]> {
       const inner = await readdir(join(nm, entry.name), { withFileTypes: true }).catch(() => [])
       for (const sub of inner) {
         const full = `${entry.name}/${sub.name}`
-        if (isPluginName(full)) out.push(full)
+        if (await isComponent(join(nm, full))) out.push(full)
       }
-    } else if (isPluginName(entry.name)) {
+    } else if (!entry.name.startsWith('.') && await isComponent(join(nm, entry.name))) {
       out.push(entry.name)
     }
   }
@@ -92,13 +95,13 @@ class Installer extends Service {
   }
 
   resolveName(name: string): string[] {
-    if (name.startsWith('@cordisjs/plugin-')) return [name]
+    if (name.startsWith('@cordisjs/')) return [name]
     if (name.match(/(^|\/)cordis-plugin-/)) return [name]
     if (name[0] === '@') {
       const [left, right] = name.split('/')
       return [`${left}/cordis-plugin-${right}`]
     }
-    return [`@cordisjs/plugin-${name}`, `cordis-plugin-${name}`]
+    return [`@cordisjs/${name}`, `cordis-plugin-${name}`]
   }
 
   async getPackage(name: string): Promise<Dict<RemotePackage> | undefined> {
@@ -137,7 +140,7 @@ class Installer extends Service {
     const seen = new Set<string>(Object.keys(result))
     let dir = this.cwd
     while (true) {
-      const names = await listPluginsIn(join(dir, 'node_modules'))
+      const names = await listComponentsIn(join(dir, 'node_modules'))
       for (const name of names) {
         if (seen.has(name)) continue
         seen.add(name)

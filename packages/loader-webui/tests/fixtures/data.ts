@@ -11,7 +11,7 @@ function entry(input: EntryInput): EntryData {
 }
 
 function pkg(name: string, extra: Partial<LocalObject> = {}): LocalObject {
-  const shortname = name.includes('/plugin-') ? name.split('/plugin-')[1] : name
+  const shortname = name.replace(/^@cordisjs\//, '')
   return {
     shortname,
     package: { name, version: '1.0.0' },
@@ -35,10 +35,10 @@ export const emptyData: Data = base()
 export const singlePlugin: Data = {
   ...base(),
   entries: [
-    entry({ id: 'e1', name: '@cordisjs/plugin-echo', position: 0 }),
+    entry({ id: 'e1', name: '@cordisjs/echo', position: 0 }),
   ],
   packages: {
-    '@cordisjs/plugin-echo': pkg('@cordisjs/plugin-echo'),
+    '@cordisjs/echo': pkg('@cordisjs/echo'),
   },
 }
 
@@ -46,14 +46,14 @@ export const singlePlugin: Data = {
 export const flatList: Data = {
   ...base(),
   entries: [
-    entry({ id: 'e1', name: '@cordisjs/plugin-echo', position: 0 }),
-    entry({ id: 'e2', name: '@cordisjs/plugin-server', position: 1 }),
-    entry({ id: 'e3', name: '@cordisjs/plugin-timer', position: 2, disabled: true }),
+    entry({ id: 'e1', name: '@cordisjs/echo', position: 0 }),
+    entry({ id: 'e2', name: '@cordisjs/server', position: 1 }),
+    entry({ id: 'e3', name: '@cordisjs/timer', position: 2, disabled: true }),
   ],
   packages: {
-    '@cordisjs/plugin-echo': pkg('@cordisjs/plugin-echo'),
-    '@cordisjs/plugin-server': pkg('@cordisjs/plugin-server'),
-    '@cordisjs/plugin-timer': pkg('@cordisjs/plugin-timer'),
+    '@cordisjs/echo': pkg('@cordisjs/echo'),
+    '@cordisjs/server': pkg('@cordisjs/server'),
+    '@cordisjs/timer': pkg('@cordisjs/timer'),
   },
 }
 
@@ -61,16 +61,16 @@ export const flatList: Data = {
 export const nestedGroup: Data = {
   ...base(),
   entries: [
-    entry({ id: 'g1', name: '@cordisjs/plugin-group', position: 0, isGroup: true, collapse: null }),
-    entry({ id: 'c1', name: '@cordisjs/plugin-echo', parent: 'g1', position: 0 }),
-    entry({ id: 'c2', name: '@cordisjs/plugin-timer', parent: 'g1', position: 1 }),
-    entry({ id: 'sib', name: '@cordisjs/plugin-server', position: 1 }),
+    entry({ id: 'g1', name: '@cordisjs/group', position: 0, isGroup: true, collapse: null }),
+    entry({ id: 'c1', name: '@cordisjs/echo', parent: 'g1', position: 0 }),
+    entry({ id: 'c2', name: '@cordisjs/timer', parent: 'g1', position: 1 }),
+    entry({ id: 'sib', name: '@cordisjs/server', position: 1 }),
   ],
   packages: {
-    '@cordisjs/plugin-group': pkg('@cordisjs/plugin-group'),
-    '@cordisjs/plugin-echo': pkg('@cordisjs/plugin-echo'),
-    '@cordisjs/plugin-timer': pkg('@cordisjs/plugin-timer'),
-    '@cordisjs/plugin-server': pkg('@cordisjs/plugin-server'),
+    '@cordisjs/group': pkg('@cordisjs/group'),
+    '@cordisjs/echo': pkg('@cordisjs/echo'),
+    '@cordisjs/timer': pkg('@cordisjs/timer'),
+    '@cordisjs/server': pkg('@cordisjs/server'),
   },
 }
 
@@ -79,11 +79,11 @@ export const nestedGroup: Data = {
 export const missingPackage: Data = {
   ...base(),
   entries: [
-    entry({ id: 'ok', name: '@cordisjs/plugin-echo', position: 0 }),
+    entry({ id: 'ok', name: '@cordisjs/echo', position: 0 }),
     entry({ id: 'missing', name: '@scope/unknown-plugin', position: 1 }),
   ],
   packages: {
-    '@cordisjs/plugin-echo': pkg('@cordisjs/plugin-echo'),
+    '@cordisjs/echo': pkg('@cordisjs/echo'),
   },
 }
 
@@ -93,11 +93,11 @@ export const withCoreDep: Data = {
   ...base(),
   entries: [
     entry({ id: 'webui', name: '@cordisjs/webui', position: 0 }),
-    entry({ id: 'other', name: '@cordisjs/plugin-echo', position: 1 }),
+    entry({ id: 'other', name: '@cordisjs/echo', position: 1 }),
   ],
   packages: {
     '@cordisjs/webui': pkg('@cordisjs/webui'),
-    '@cordisjs/plugin-echo': pkg('@cordisjs/plugin-echo'),
+    '@cordisjs/echo': pkg('@cordisjs/echo'),
   },
 }
 
@@ -105,11 +105,11 @@ export const withCoreDep: Data = {
 export const collapsedGroup: Data = {
   ...base(),
   entries: [
-    entry({ id: 'g1', name: '@cordisjs/plugin-group', position: 0, isGroup: true, collapse: true }),
-    entry({ id: 'c1', name: '@cordisjs/plugin-echo', parent: 'g1', position: 0 }),
+    entry({ id: 'g1', name: '@cordisjs/group', position: 0, isGroup: true, collapse: true }),
+    entry({ id: 'c1', name: '@cordisjs/echo', parent: 'g1', position: 0 }),
   ],
   packages: {
-    '@cordisjs/plugin-group': pkg('@cordisjs/plugin-group'),
-    '@cordisjs/plugin-echo': pkg('@cordisjs/plugin-echo'),
+    '@cordisjs/group': pkg('@cordisjs/group'),
+    '@cordisjs/echo': pkg('@cordisjs/echo'),
   },
 }

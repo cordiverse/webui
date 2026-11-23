@@ -162,8 +162,6 @@ watch(() => [props.modelValue, props.ctx], () => {
     boolValue.value = raw === null ? 'null' : raw ? 'true' : 'false'
   } else if (kind.value === 'json') {
     textValue.value = raw === null || raw === undefined ? '' : JSON.stringify(raw, null, 2)
-  } else if (raw instanceof Date) {
-    textValue.value = raw.toISOString()
   } else if (raw === null || raw === undefined) {
     textValue.value = ''
   } else {
@@ -201,17 +199,20 @@ function parseValue(): ParseResult {
       if (!Number.isFinite(n)) return { ok: false, error: '不是合法数字' }
       return { ok: true, value: n }
     }
+    // bigint and date values are transferred as decimal and ISO strings
     case 'bigint': {
-      try {
-        return { ok: true, value: BigInt(raw) as any }
-      } catch {
-        return { ok: false, error: '不是合法整数' }
+      const value = raw.trim()
+      if (value === '') {
+        if (props.ctx.field.nullable) return { ok: true, value: null }
+        return { ok: false, error: '不能为空' }
       }
+      if (!/^[+-]?\d+$/.test(value)) return { ok: false, error: '不是合法整数' }
+      return { ok: true, value: BigInt(value).toString() }
     }
     case 'date': {
       const d = new Date(raw)
       if (isNaN(d.getTime())) return { ok: false, error: '不是合法日期' }
-      return { ok: true, value: d }
+      return { ok: true, value: d.toISOString() }
     }
     case 'json': {
       if (raw.trim() === '') {
@@ -235,14 +236,8 @@ const dirty = computed(() => {
   if (!props.ctx) return false
   if (!parsed.value.ok) return false
   const original = props.ctx.row[props.ctx.field.name]
-  return !equalValue(original, parsed.value.value)
+  return !deepEqual(original, parsed.value.value)
 })
-
-function equalValue(a: any, b: any): boolean {
-  if (a instanceof Date && b instanceof Date) return a.getTime() === b.getTime()
-  if (a instanceof Date || b instanceof Date) return false
-  return deepEqual(a, b)
-}
 
 const confirmLabel = computed(() => {
   if (saving.value) return '保存中…'

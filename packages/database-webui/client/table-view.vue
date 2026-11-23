@@ -199,7 +199,6 @@ function rowKey(row: any, idx: number): string {
 function renderCell(value: any): string {
   if (value === null) return '∅'
   if (value === undefined) return ''
-  if (value instanceof Date) return value.toISOString()
   if (typeof value === 'object') return JSON.stringify(value)
   return String(value)
 }

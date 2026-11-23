@@ -2,6 +2,7 @@ import { Context } from 'cordis'
 import type {} from '@cordisjs/plugin-database'
 import type {} from '@cordisjs/webui'
 import z from 'schemastery'
+import { Codec } from './codec.ts'
 
 export interface FieldInfo {
   name: string
@@ -31,10 +32,15 @@ export interface QueryArgs {
 }
 
 export interface QueryResult {
-  rows: any[]
+  /** Rows keyed by field name, with values in the JSON representation of their field types. */
+  rows: Record<string, unknown>[]
   total: number
 }
 
+/**
+ * The primary keys in `where` and `value` use the JSON representation of their field types,
+ * as in {@link QueryResult}. Other conditions in `where` are passed to the database unchanged.
+ */
 export interface UpdateArgs {
   table: string
   where: Record<string, unknown>
@@ -74,6 +80,11 @@ function describeFields(model: any): FieldInfo[] {
   return out
 }
 
+function getPath(row: any, path: string) {
+  if (path in row) return row[path]
+  return path.split('.').reduce((value, key) => value?.[key], row)
+}
+
 export function apply(ctx: Context, config: Config) {
   function buildTables(): TableInfo[] {
     const model = ctx.model
@@ -111,7 +122,14 @@ export function apply(ctx: Context, config: Config) {
       const rows = await (model.get as any)(table, {}, cursor)
       const stats = await model.stats().catch(() => ({ tables: {} as Record<string, { count: number; size: number }> }))
       const total = stats.tables?.[table]?.count ?? rows.length
-      return { rows, total }
+      const codec = new Codec(model.types)
+      const fields = Object.entries<any>(model.tables[table].fields).filter(([, field]) => field && !field.relation)
+      return {
+        rows: rows.map((row: any) => Object.fromEntries(fields.map(([name, field]) => {
+          return [name, codec.encode(getPath(row, name), field.type)]
+        }))),
+        total,
+      }
     },
     async update({ table, where, field, value }) {
       const model = ctx.model
@@ -119,10 +137,14 @@ export function apply(ctx: Context, config: Config) {
       if (!m) throw new Error(`unknown table: ${table}`)
       const primary = ([] as string[]).concat(m.primary ?? [])
       if (!primary.length) throw new Error(`table "${table}" has no primary key, cannot update`)
+      // conditions other than the primary keys are passed to the database unchanged
+      const codec = new Codec(model.types)
+      const query: Record<string, unknown> = { ...where }
       for (const key of primary) {
         if (where[key] === undefined || where[key] === null) {
           throw new Error(`missing primary key: ${key}`)
         }
+        query[key] = codec.decode(where[key], m.fields[key]?.type, key)
       }
       const meta = m.fields?.[field]
       if (!meta) throw new Error(`unknown field: ${field}`)
@@ -131,7 +153,7 @@ export function apply(ctx: Context, config: Config) {
       if (String(meta.deftype ?? meta.type) === 'expr') {
         throw new Error(`cannot modify computed field: ${field}`)
       }
-      const result = await (model.set as any)(table, where, { [field]: value })
+      const result = await (model.set as any)(table, query, { [field]: codec.decode(value, meta.type, field) })
       if (!result || (result.matched ?? 0) === 0) {
         throw new Error('no rows matched')
       }

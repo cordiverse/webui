@@ -10,7 +10,7 @@
 <script lang="ts" setup>
 
 import { ref } from 'vue'
-import { useContext, ActiveMenu } from '@cordisjs/client'
+import { ActiveMenu, useContext } from '@cordisjs/client'
 import MenuItem from './menu-item.vue'
 
 const props = defineProps<ActiveMenu>()

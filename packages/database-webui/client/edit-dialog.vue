@@ -229,13 +229,7 @@ function parseValue(): ParseResult {
   }
 }
 
-const parsed = computed<ParseResult>(() => {
-  // depend on inputs to keep reactivity
-  void textValue.value
-  void boolValue.value
-  void isNull.value
-  return parseValue()
-})
+const parsed = computed<ParseResult>(() => parseValue())
 
 const dirty = computed(() => {
   if (!props.ctx) return false

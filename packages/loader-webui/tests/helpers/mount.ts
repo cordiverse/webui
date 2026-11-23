@@ -13,8 +13,8 @@ import { mount, type ComponentMountingOptions, type VueWrapper } from '@vue/test
 import { ref, type Component, type Ref } from 'vue'
 import { Context } from 'cordis'
 import { createHarness, type Harness } from '../../../webui/tests/harness/index.ts'
-import Manager from '../../client/index'
-import type { Data } from '../../src'
+import Manager from '../../client/index.ts'
+import type { Data } from '../../src/index.ts'
 
 export interface MountOptions {
   data: Data

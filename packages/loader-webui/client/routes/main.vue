@@ -74,7 +74,7 @@
 <script lang="ts" setup>
 
 import { computed } from 'vue'
-import { useRouter, FiberState, useContext, deepEqual, useI18nText } from '@cordisjs/client'
+import { deepEqual, FiberState, useContext, useI18nText, useRouter } from '@cordisjs/client'
 import { hasSchema } from '../utils'
 
 const ctx = useContext()

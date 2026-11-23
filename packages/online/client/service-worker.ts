@@ -8,10 +8,10 @@
  */
 
 /// <reference lib="WebWorker" />
-declare const self: ServiceWorkerGlobalScope
-
 import { MODULE_CACHE, MODULE_PREFIX } from '../src/constants.ts'
 import { handleModuleRequest } from './sw-runtime.ts'
+
+declare const self: ServiceWorkerGlobalScope
 
 self.addEventListener('install', (event) => {
   event.waitUntil(self.skipWaiting())

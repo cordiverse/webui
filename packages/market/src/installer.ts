@@ -1,4 +1,4 @@
-import { Context, Inject, Service } from 'cordis'
+import { Context, Service } from 'cordis'
 import { Dict, Time, valueMap } from 'cosmokit'
 import type {} from '@cordisjs/plugin-http'
 import type { PackageJson, Registry, RemotePackage } from './types.ts'

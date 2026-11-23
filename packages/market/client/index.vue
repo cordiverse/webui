@@ -83,13 +83,13 @@
 
 <script lang="ts" setup>
 
-import { computed, provide, ref, watch, nextTick } from 'vue'
-import { useRoute, useRouter, message, useRpc } from '@cordisjs/client'
-import { MarketSearch, MarketFilter, MarketList, getFiltered, hasFilter, kConfig } from '@cordisjs/ui-market'
+import { computed, nextTick, provide, ref, watch } from 'vue'
+import { message, useRoute, useRouter, useRpc } from '@cordisjs/client'
+import { getFiltered, hasFilter, kConfig, MarketFilter, MarketList, MarketSearch } from '@cordisjs/ui-market'
 import type { SearchObject } from '@cordisjs/registry'
 import type { Data } from '../src'
 import ActionButton from './action.vue'
-import { kActivePackage, kPackagesMap, kDependencies, kRefresh, kShowConfirm, kShowManual } from './context'
+import { kActivePackage, kDependencies, kPackagesMap, kRefresh, kShowConfirm, kShowManual } from './context'
 import { activePackage, showConfirm, showManual, storage } from './store'
 
 const data = useRpc<Data>()

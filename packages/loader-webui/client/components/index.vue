@@ -60,7 +60,7 @@
 <script setup lang="ts">
 
 import { computed, ref, watch } from 'vue'
-import { useRouter, useContext, useRpc } from '@cordisjs/client'
+import { useContext, useRouter, useRpc } from '@cordisjs/client'
 import TreeView from './tree.vue'
 import type { Data } from '../../src'
 

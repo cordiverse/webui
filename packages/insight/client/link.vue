@@ -33,7 +33,7 @@
 
 <script lang="ts" setup>
 
-import { Link, constants } from './utils'
+import { constants, Link } from './utils'
 import { computed } from 'vue'
 
 const props = defineProps<{

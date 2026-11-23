@@ -1,4 +1,4 @@
-import type { Data, EntryData, LocalObject } from '../../src'
+import type { Data, EntryData, LocalObject } from '../../src/index.ts'
 
 type EntryInput = Partial<EntryData> & { id: string; name: string }
 

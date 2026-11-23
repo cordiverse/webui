@@ -1,7 +1,7 @@
 import { Context } from 'cordis'
 import { WebSocket } from './types.ts'
 import { mapValues } from 'cosmokit'
-import { EntryInit } from '../../shared'
+import type { EntryInit } from '../../shared/index.d.ts'
 
 export class Client {
   readonly id = Math.random().toString(36).slice(2)

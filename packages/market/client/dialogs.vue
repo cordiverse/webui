@@ -12,7 +12,7 @@ import type { Data } from '../src'
 import DetailDialog from './detail.vue'
 import ConfirmDialog from './confirm.vue'
 import ManualDialog from './manual.vue'
-import { kActivePackage, kPackagesMap, kDependencies, kRefresh, kShowConfirm, kShowManual } from './context'
+import { kActivePackage, kDependencies, kPackagesMap, kRefresh, kShowConfirm, kShowManual } from './context'
 import { activePackage, showConfirm, showManual } from './store'
 
 const data = useRpc<Data>()

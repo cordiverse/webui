@@ -45,7 +45,7 @@
 
 <script lang="ts" setup>
 
-import { computed, inject, ref, watch, nextTick } from 'vue'
+import { computed, inject, nextTick, ref, watch } from 'vue'
 import { useRpc } from '@cordisjs/client'
 import { useDebounceFn } from '@vueuse/core'
 import { kShowManual } from './context'

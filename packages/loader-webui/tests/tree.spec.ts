@@ -5,7 +5,7 @@ import { nextTick } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 
 import Tree from '../client/components/tree.vue'
-import { mountWithManager, type MountResult } from './helpers/mount'
+import { mountWithManager, type MountResult } from './helpers/mount.ts'
 import {
   emptyData,
   flatList,
@@ -13,7 +13,7 @@ import {
   collapsedGroup,
   missingPackage,
   withCoreDep,
-} from './fixtures/data'
+} from './fixtures/data.ts'
 
 let mounted: MountResult<any> | undefined
 

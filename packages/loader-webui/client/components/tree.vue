@@ -39,11 +39,11 @@
 
 <script lang="ts" setup>
 
-import { computed, ref, onActivated, nextTick, watch, VNodeRef } from 'vue'
+import { computed, nextTick, onActivated, ref, VNodeRef, watch } from 'vue'
 import type { ElScrollbar, ElTree } from 'element-plus'
 import type { FilterNodeMethodFunction, TreeOptionProps } from 'element-plus/es/components/tree/src/tree.type'
 import type TreeNode from 'element-plus/es/components/tree/src/model/node'
-import { useRoute, useRouter, useContext, useMenu, useRpc, deepEqual } from '@cordisjs/client'
+import { deepEqual, useContext, useMenu, useRoute, useRouter, useRpc } from '@cordisjs/client'
 import { getStatusClass } from '../utils'
 import { Data, EntryData } from '../../src'
 

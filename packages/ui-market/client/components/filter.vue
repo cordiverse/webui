@@ -40,7 +40,7 @@
 <script lang="ts" setup>
 
 import { computed, inject, ref, watch } from 'vue'
-import { Badge, badges, kConfig, getFiltered, comparators, useI18n } from '../utils'
+import { Badge, badges, comparators, getFiltered, kConfig, useI18n } from '../utils'
 import { SearchObject } from '@cordisjs/registry'
 import MarketIcon from '../icons'
 

@@ -1,7 +1,7 @@
-import { SearchResult } from './types'
-import { Manager } from './shared'
+import { SearchResult } from './types.ts'
+import { Manager } from './shared.ts'
 
-export * from './shared'
+export * from './shared.ts'
 
 declare module '@cordisjs/plugin-loader' {
   interface Loader {

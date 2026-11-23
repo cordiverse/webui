@@ -121,7 +121,6 @@ function joinSubpath(entry: string, sub: string): string {
   // When `exports` is a single string (or root-conditional), and the caller
   // asked for a subpath, the package didn't declare it — fall back to
   // returning the subpath literally (the CDN will 404 if it's invalid).
-  void entry
   return sub
 }
 

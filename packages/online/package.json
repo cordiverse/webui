@@ -58,10 +58,10 @@
   },
   "devDependencies": {
     "@cordisjs/client": "0.8.2",
-    "@cordisjs/ui-components": "0.4.0",
     "@cordisjs/plugin-include": "1.0.4",
     "@cordisjs/plugin-loader": "^1.0.0-rc.4",
     "@cordisjs/plugin-logger-console": "^1.0.0",
+    "@cordisjs/ui-components": "0.4.0",
     "@cordisjs/webui": "0.8.2",
     "@types/js-yaml": "^4.0.9",
     "@vitejs/plugin-vue": "^6.0.6",

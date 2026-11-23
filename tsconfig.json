@@ -3,8 +3,9 @@
   "compilerOptions": {
     "paths": {
       "@cordisjs/client": ["./packages/client/client/index.ts"],
-      "@cordisjs/client/yakumo": ["./packages/client/src/yakumo"],
-      "@cordisjs/*": ["./packages/*/src"],
+      "@cordisjs/client/yakumo": ["./packages/client/src/yakumo.ts"],
+      "@cordisjs/online": ["./packages/online/src/index.ts"],
+      "@cordisjs/*": ["./packages/*/src/index.ts"],
     },
   },
   "files": [],

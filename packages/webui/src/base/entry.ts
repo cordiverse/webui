@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { readFile } from 'node:fs/promises'
 import { dirname, relative, resolve } from 'node:path'
 import { DeltaState, observe } from '@cordisjs/muon'
-import { EntryData } from '../../shared'
+import type { EntryData } from '../../shared/index.d.ts'
 
 export namespace Entry {
   export interface Files {

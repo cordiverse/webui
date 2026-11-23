@@ -67,8 +67,7 @@
 import { computed, inject } from 'vue'
 import { SearchObject } from '@cordisjs/registry'
 import { useI18nText } from '@cordisjs/ui-components'
-import { badges, getUsers, useI18n, validate } from '../utils'
-import { kConfig } from '../utils'
+import { badges, getUsers, kConfig, useI18n, validate } from '../utils'
 import MarketIcon from '../icons'
 import * as md5 from 'spark-md5'
 

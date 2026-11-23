@@ -172,8 +172,8 @@ import { useI18nText } from '@cordisjs/ui-components'
 import { parse, satisfies } from 'semver'
 import type { Dict } from 'cosmokit'
 import type {} from '@cordisjs/loader-webui/client'
-import type { Data, RemotePackage, DependencyMetaKey } from '../src'
-import { kActivePackage, kPackagesMap, kDependencies, kRefresh } from './context'
+import type { Data, DependencyMetaKey, RemotePackage } from '../src'
+import { kActivePackage, kDependencies, kPackagesMap, kRefresh } from './context'
 import { storage } from './store'
 
 const active = inject(kActivePackage)!
@@ -223,10 +223,10 @@ const shortname = computed(() => pkg.value?.shortname ?? activeName.value)
 const current = computed(() => deps.value[activeName.value]?.resolved)
 const isInstalled = computed(() => !!deps.value[activeName.value])
 const isWorkspace = computed(() => !!deps.value[activeName.value]?.workspace)
-const links = computed<Array<{ label: string; href: string }>>(() => {
+const links = computed<{ label: string; href: string }[]>(() => {
   const list = pkg.value?.package.links
   if (!list) return []
-  const out: Array<{ label: string; href: string }> = []
+  const out: { label: string; href: string }[] = []
   if (list.homepage) out.push({ label: '主页', href: list.homepage })
   if (list.npm && current.value && !isWorkspace.value) {
     out.push({ label: `npm @ ${current.value}`, href: `${list.npm}/v/${current.value}` })

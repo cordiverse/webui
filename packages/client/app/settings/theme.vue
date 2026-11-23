@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 
-import { PropType, computed } from 'vue'
+import { computed, PropType } from 'vue'
 import { useContext, useI18nText } from '@cordisjs/client'
 import { Schema, SchemaBase } from '@cordisjs/ui-components'
 

@@ -4,8 +4,8 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { Schema } from '@cordisjs/client'
 
 import Tree from '../client/components/tree.vue'
-import { mountWithManager, type MountResult } from './helpers/mount'
-import type { Data, EntryData, LocalObject } from '../src'
+import { mountWithManager, type MountResult } from './helpers/mount.ts'
+import type { Data, EntryData, LocalObject } from '../src/index.ts'
 
 let mounted: MountResult<any> | undefined
 

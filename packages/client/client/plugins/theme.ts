@@ -1,7 +1,7 @@
 import { defineProperty, Dict } from 'cosmokit'
 import { Schema } from '@cordisjs/ui-components'
 import { Context, Service } from 'cordis'
-import { Component, ComputedRef, computed, inject, markRaw, reactive, watchEffect } from 'vue'
+import { Component, computed, ComputedRef, inject, markRaw, reactive, watchEffect } from 'vue'
 import { usePreferredDark } from '@vueuse/core'
 import { kContext } from '../context'
 

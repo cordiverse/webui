@@ -18,7 +18,7 @@
 
 <script lang="ts" setup generic="T">
 
-import { ref, computed, watch, nextTick, onActivated, onMounted, onUpdated, PropType } from 'vue'
+import { computed, nextTick, onActivated, onMounted, onUpdated, PropType, ref, watch } from 'vue'
 import type { ElScrollbar } from 'element-plus'
 import Virtual from './virtual'
 import VirtualItem from './item'

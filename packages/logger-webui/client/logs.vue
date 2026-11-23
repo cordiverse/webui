@@ -34,7 +34,7 @@
 <script lang="ts" setup>
 
 import { computed, ref } from 'vue'
-import { Time, VirtualList, useContext, useRpc } from '@cordisjs/client'
+import { Time, useContext, useRpc, VirtualList } from '@cordisjs/client'
 import type {} from '@cordisjs/loader-webui/client'
 import { AnsiUp } from 'ansi_up'
 import type { Message } from 'cordis'

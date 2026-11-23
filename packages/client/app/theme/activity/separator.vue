@@ -11,7 +11,7 @@
 
 <script lang="ts" setup>
 
-import { ComputedRef, ref, inject } from 'vue'
+import { ComputedRef, inject, ref } from 'vue'
 import { Activity, useConfig, useContext } from '@cordisjs/client'
 
 type Position = 'top' | 'bottom'

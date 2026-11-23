@@ -48,12 +48,12 @@ import TableView from './table-view.vue'
 import type { Data, TableInfo } from '../src'
 import {
   activeId,
-  closeTab as closeTabState,
   cloneTab,
+  closeTab as closeTabState,
   openTable as openTableState,
   switchTab,
-  tabs,
   type TableTab,
+  tabs,
 } from './state'
 
 declare module '@cordisjs/client' {

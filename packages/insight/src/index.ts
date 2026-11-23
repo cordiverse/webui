@@ -3,7 +3,7 @@ import { camelize, capitalize } from 'cosmokit'
 import type {} from '@cordisjs/plugin-timer'
 import type {} from '@cordisjs/webui'
 import type {} from '@cordisjs/plugin-loader'
-import type { Node, Link } from '../shared'
+import type { Link, Node } from '../shared/index.d.ts'
 import z from 'schemastery'
 import assert from 'node:assert'
 

@@ -1,4 +1,4 @@
-import { Context, Inject, Service } from 'cordis'
+import { Context, Service } from 'cordis'
 import { Dict } from 'cosmokit'
 import { pathToRegexp } from 'path-to-regexp'
 import { Client } from './client.ts'

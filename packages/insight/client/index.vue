@@ -46,12 +46,12 @@
 
 <script lang="ts" setup>
 
-import { onMounted, ref, computed, watch, reactive } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRpc } from '@cordisjs/client'
 import type { Data } from '../shared'
-import { useTooltip, getEventPoint } from './tooltip'
+import { getEventPoint, useTooltip } from './tooltip'
 import { useElementSize, useEventListener, watchThrottled } from '@vueuse/core'
-import { Node, Link } from './utils'
+import { Link, Node } from './utils'
 import * as d3 from 'd3-force'
 import LinkView from './link.vue'
 import NodeView from './node.vue'

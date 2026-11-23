@@ -10,7 +10,7 @@ import { Element } from '@cordisjs/element'
 import type {} from '@cordisjs/loader-webui/client'
 import { useContext, useRpc } from '@cordisjs/client'
 import type NotifierService from '../src'
-import { h, computed, resolveComponent, FunctionalComponent } from 'vue'
+import { computed, FunctionalComponent, h, resolveComponent } from 'vue'
 
 const data = useRpc<NotifierService.Data>()
 const ctx = useContext()

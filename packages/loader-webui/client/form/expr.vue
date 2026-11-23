@@ -31,7 +31,7 @@
 
 <script lang="ts" setup>
 
-import { PropType, ref, computed } from 'vue'
+import { computed, PropType, ref } from 'vue'
 import { Schema, SchemaBase, useContext, useRpc } from '@cordisjs/client'
 import { watchDebounced } from '@vueuse/core'
 import type { Data, EvalResult } from '../../src'

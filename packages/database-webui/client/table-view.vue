@@ -77,7 +77,7 @@ import { computed, ref, watch } from 'vue'
 import { useRpc } from '@cordisjs/client'
 import FieldType from './field-type.vue'
 import EditDialog, { type EditContext } from './edit-dialog.vue'
-import type { Data, FieldInfo, TableInfo, QueryResult } from '../src'
+import type { Data, FieldInfo, QueryResult, TableInfo } from '../src'
 import type { TableTab } from './state'
 import { cacheKey, rowCache } from './state'
 

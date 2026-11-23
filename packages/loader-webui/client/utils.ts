@@ -1,4 +1,4 @@
-import { Schema, FiberState } from '@cordisjs/client'
+import { FiberState, Schema } from '@cordisjs/client'
 import { nextTick, Ref } from 'vue'
 import { EntryData } from '../src'
 

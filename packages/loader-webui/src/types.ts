@@ -1,5 +1,5 @@
 import { Dict } from 'cosmokit'
-import type { Contact, PackageJSON, PackumentVersion } from '@npm/types'
+import type { PackageJSON, PackumentVersion } from '@npm/types'
 import { Manifest } from './manifest.ts'
 
 export interface PackageJson extends PackageJSON {

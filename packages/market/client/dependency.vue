@@ -33,7 +33,7 @@
 <script lang="ts" setup>
 
 import { computed } from 'vue'
-import { useRouter, useContext, useRpc } from '@cordisjs/client'
+import { useContext, useRouter, useRpc } from '@cordisjs/client'
 import type { Data, SearchObject } from '../src'
 import { activePackage } from './store'
 
@@ -58,7 +58,7 @@ function candidates(serviceName: string): string[] {
     }
   }
   // local (workspace) packages
-  for (const [name, local] of Object.entries(localPackages.value) as Array<[string, any]>) {
+  for (const [name, local] of Object.entries(localPackages.value) as [string, any][]) {
     if (local.manifest?.service?.implements?.includes(serviceName)) {
       seen.add(name)
     }

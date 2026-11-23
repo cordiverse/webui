@@ -112,8 +112,8 @@
 import { computed, provide, ref, watch } from 'vue'
 import { useRpc } from '@cordisjs/client'
 import type { Dict } from 'cosmokit'
-import type { Data, RemotePackage, DependencyMetaKey } from '../src'
-import { kActivePackage, kPackagesMap, kDependencies, kRefresh, kShowConfirm, kShowManual } from './context'
+import type { Data, DependencyMetaKey, RemotePackage } from '../src'
+import { kActivePackage, kDependencies, kPackagesMap, kRefresh, kShowConfirm, kShowManual } from './context'
 import { activePackage, showConfirm, showManual, storage } from './store'
 
 const data = useRpc<Data>()

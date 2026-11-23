@@ -50,14 +50,6 @@ async function loadPackageManifest(pkg: string, version: string): Promise<Packag
   return pending
 }
 
-/** Build the SW URL for a (pkg, version, sub-path) triple, applying
- *  conditional-exports resolution. */
-async function resolveModuleFile(pkg: string, version: string, sub: string): Promise<string> {
-  const manifest = await loadPackageManifest(pkg, version)
-  const file = resolveEntry(manifest, sub)
-  return file
-}
-
 /**
  * Top-level fetch handler. Routes:
  *

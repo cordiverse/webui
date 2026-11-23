@@ -11,7 +11,7 @@
 <script lang="ts" setup>
 
 import { computed, ref, watch } from 'vue'
-import { SchemaBase, Schema, IconCode } from '@cordisjs/client'
+import { IconCode, Schema, SchemaBase } from '@cordisjs/client'
 
 defineOptions({
   inheritAttrs: false,

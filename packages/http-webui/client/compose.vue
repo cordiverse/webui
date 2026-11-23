@@ -78,24 +78,24 @@ import Tab from './tab.vue'
 import type { HistoryEntry } from '../src'
 import {
   cloneTabState,
+  newId,
   type OpenTab,
   type SavedRequest,
-  newId,
 } from './types'
 import {
-  saved,
-  tabs,
   activeTabId,
-  savedMap,
-  dirty,
   addTab,
-  newTab,
-  switchTab,
-  openSaved,
-  removeTab,
   deriveName,
-  persistToStorage,
+  dirty,
+  newTab,
+  openSaved,
   pendingTab,
+  persistToStorage,
+  removeTab,
+  saved,
+  savedMap,
+  switchTab,
+  tabs,
 } from './state'
 
 declare module '@cordisjs/client' {

@@ -30,11 +30,10 @@
 
 <script lang="ts" setup>
 
-import { computed, ref } from 'vue'
-import { useRoute, Activity, useConfig, useMenu } from '@cordisjs/client'
+import { computed, ref, watch } from 'vue'
+import { Activity, useConfig, useMenu, useRoute } from '@cordisjs/client'
 import { Placement } from 'element-plus'
 import ActivityButton from './button.vue'
-import { watch } from 'vue'
 
 const route = useRoute()
 

@@ -1,4 +1,4 @@
-import { Context, EffectMeta, Inject, Plugin, FiberState, Service } from 'cordis'
+import { Context, EffectMeta, FiberState, Inject, Plugin, Service } from 'cordis'
 import { readFile } from 'node:fs/promises'
 import { Dict, pick } from 'cosmokit'
 import { Entry, EntryOptions, EntryTree } from '@cordisjs/plugin-loader'

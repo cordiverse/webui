@@ -1,4 +1,4 @@
-import type { InjectionKey, Ref, ComputedRef } from 'vue'
+import type { ComputedRef, InjectionKey, Ref } from 'vue'
 import type { Dict } from 'cosmokit'
 import type { Dependency, SearchObject } from '../src'
 import type { ActivePackage } from './store'

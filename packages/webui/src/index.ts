@@ -3,14 +3,14 @@ import { Dict, Time } from 'cosmokit'
 import type {} from '@cordisjs/plugin-server'
 import type {} from '@cordisjs/plugin-hmr'
 import type { EntryOptions } from '@cordisjs/plugin-loader'
-import type { FileSystemServeOptions, Logger as ViteLogger, ViteDevServer } from 'vite'
+import type { FileSystemServeOptions, ViteDevServer, Logger as ViteLogger } from 'vite'
 import { extname, join, relative, resolve } from 'node:path'
 import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { parse } from 'es-module-lexer'
 import fetchFile from '@cordisjs/fetch-file'
-import { Entry, Events, WebUI } from './base'
+import { Entry, WebUI } from './base/index.ts'
 import open from 'open'
 import z from 'schemastery'
 
@@ -20,7 +20,7 @@ declare module 'cordis' {
   }
 }
 
-export * from './base'
+export * from './base/index.ts'
 export * from './bridge.ts'
 
 function escapeHTML(source: string, inline = false) {
@@ -300,6 +300,7 @@ class NodeWebUI extends WebUI {
     const logger = this.ctx.logger('vite')
     const hmrLogger = this.ctx.logger('vite:hmr')
     const baseDir = fileURLToPath(this.ctx.baseUrl!)
+    // oxlint-disable-next-line no-control-regex
     const ansiRegex = /\x1B\[[0-9;]*m/g
     const loggedWarnings = new Set<string>()
     const loggedErrors = new WeakSet<object>()

@@ -3,9 +3,9 @@
 import { cac } from 'cac'
 import { resolve } from 'path'
 import { build } from './index.ts'
-import { version } from '../package.json'
+import meta from '../package.json' with { type: 'json' }
 
-const cli = cac('koishi-console').help().version(version)
+const cli = cac('koishi-console').help().version(meta.version)
 
 cli.command('build [root]')
   .action((root) => {

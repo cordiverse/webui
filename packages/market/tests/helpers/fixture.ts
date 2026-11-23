@@ -1,13 +1,16 @@
 import { createServer } from 'node:net'
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
-import { dirname, join } from 'node:path'
+import { tmpdir } from 'node:os'
+import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const testsDir = dirname(here)
 const srcFixture = join(testsDir, 'fixtures', 'app')
-const tmpRoot = join(testsDir, '.tmp')
+// Outside the repository: a fixture links the workspace packages through
+// portals, and a portal inside the repository would form a symlink cycle.
+const tmpRoot = join(tmpdir(), 'cordis-market-tests')
 
 function yarnInstall(cwd: string) {
   const result = spawnSync('yarn', ['install'], {
@@ -16,7 +19,8 @@ function yarnInstall(cwd: string) {
     shell: process.platform === 'win32',
     env: {
       ...process.env,
-      // avoid yarn treating the fixture as part of an outer workspace
+      // portals are rewritten to absolute paths, which updates the lockfile
+      YARN_ENABLE_IMMUTABLE_INSTALLS: 'false',
       YARN_ENABLE_GLOBAL_CACHE: process.env.YARN_ENABLE_GLOBAL_CACHE ?? 'true',
     },
   })
@@ -25,18 +29,10 @@ function yarnInstall(cwd: string) {
   }
 }
 
-let sourceInstalled = false
-/** Install once per process in the source fixture so its yarn.lock stays in sync with package.json. */
-function ensureSourceInstalled() {
-  if (sourceInstalled) return
-  yarnInstall(srcFixture)
-  sourceInstalled = true
-}
-
 export interface SetupOptions {
   marketEndpoint: string
   serverPort: number
-  /** Subdirectory name under .tmp/. Defaults to 'app'. */
+  /** Subdirectory name under the temporary root. Defaults to 'app'. */
   name?: string
 }
 
@@ -61,22 +57,27 @@ export async function getFreePort(): Promise<number> {
   })
 }
 
-/** Wipe the .tmp directory. Call once at the top of a test file. */
+/** Wipe the temporary root. Call once at the top of a test file. */
 export function resetTmp() {
   rmSync(tmpRoot, { recursive: true, force: true })
 }
 
 export async function setupFixture(options: SetupOptions): Promise<Fixture> {
-  ensureSourceInstalled()
-
   mkdirSync(tmpRoot, { recursive: true })
   const cwd = join(tmpRoot, options.name ?? 'app')
   rmSync(cwd, { recursive: true, force: true })
+  cpSync(srcFixture, cwd, {
+    recursive: true,
+    filter: source => !/[\\/](node_modules|\.yarn)$/.test(source),
+  })
 
-  // Preserve symlinks so portal deps (pointing at the market source via `../../..`)
-  // aren't dereferenced into bulky, stale copies. `.tmp/app` sits at the same depth
-  // as `fixtures/app` under tests/, so relative symlinks resolve identically.
-  cpSync(srcFixture, cwd, { recursive: true, verbatimSymlinks: true })
+  const manifestPath = join(cwd, 'package.json')
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'))
+  for (const [name, spec] of Object.entries<string>(manifest.dependencies)) {
+    if (!spec.startsWith('portal:')) continue
+    manifest.dependencies[name] = 'portal:' + resolve(srcFixture, spec.slice(7))
+  }
+  writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n')
 
   const ymlPath = join(cwd, 'cordis.yml')
   const yml = readFileSync(ymlPath, 'utf-8')
@@ -84,5 +85,6 @@ export async function setupFixture(options: SetupOptions): Promise<Fixture> {
     .replace('__SERVER_PORT__', String(options.serverPort))
   writeFileSync(ymlPath, yml)
 
+  yarnInstall(cwd)
   return { cwd }
 }

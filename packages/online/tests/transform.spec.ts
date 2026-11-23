@@ -12,8 +12,8 @@ describe('transformImports', () => {
   })
 
   it('preserves the sub-path after the package name', () => {
-    const out = transformImports(`import x from '@cordisjs/components/form'\n`, { resolveImport })
-    expect(out).toBe(`import x from '/-/modules/@cordisjs/components@1.2.3/form'\n`)
+    const out = transformImports(`import x from '@cordisjs/ui-components/form'\n`, { resolveImport })
+    expect(out).toBe(`import x from '/-/modules/@cordisjs/ui-components@1.2.3/form'\n`)
   })
 
   it('leaves relative imports untouched', () => {

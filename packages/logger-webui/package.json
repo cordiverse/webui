@@ -1,0 +1,70 @@
+{
+  "name": "@cordisjs/logger-webui",
+  "description": "WebUI for @cordisjs/plugin-logger",
+  "version": "0.6.1",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./src/*": "./src/*",
+    "./client": "./client/index.ts",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "dist"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint src --ext .ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cordiverse/webui.git",
+    "directory": "packages/logger-webui"
+  },
+  "bugs": {
+    "url": "https://github.com/cordiverse/webui/issues"
+  },
+  "keywords": [
+    "cordis",
+    "plugin",
+    "logger",
+    "webui"
+  ],
+  "cordis": {
+    "public": [
+      "dist"
+    ],
+    "description": {
+      "en": "Dump log files and show them in the console",
+      "zh": "保存日志文件并在控制台中显示"
+    },
+    "service": {
+      "optional": [
+        "webui"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "@cordisjs/plugin-timer": "^1.1.2",
+    "@cordisjs/webui": "^0.8.2",
+    "cordis": "^4.0.0-rc.6"
+  },
+  "devDependencies": {
+    "@cordisjs/client": "^0.8.2",
+    "@cordisjs/loader-webui": "^0.10.1",
+    "@cordisjs/plugin-logger-console": "^1.0.0",
+    "@cordisjs/plugin-timer": "^1.1.2",
+    "@cordisjs/webui": "^0.8.2",
+    "ansi_up": "^6.0.6",
+    "cordis": "^4.0.0-rc.6"
+  },
+  "dependencies": {
+    "cosmokit": "^1.8.1",
+    "schemastery": "^3.18.0"
+  }
+}

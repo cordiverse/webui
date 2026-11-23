@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "es2024",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noImplicitAny": false,
+    "types": ["node"],
+    "paths": {
+      "@cordisjs/market": ["../../../src"],
+      "@cordisjs/webui": ["../../../../webui/src"],
+      "@cordisjs/loader-webui": ["../../../../loader-webui/src"]
+    }
+  }
+}

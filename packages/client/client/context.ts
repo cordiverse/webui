@@ -1,6 +1,6 @@
 import { Context, Fiber, Service } from 'cordis'
 import type {} from '@cordisjs/plugin-loader'
-import type * as shared from '@cordisjs/plugin-webui/shared'
+import type * as shared from '@cordisjs/webui/shared'
 import { inject, InjectionKey, markRaw, onScopeDispose, Ref, ref } from 'vue'
 
 declare module 'cordis' {

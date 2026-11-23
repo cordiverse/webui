@@ -97,7 +97,7 @@ export async function build(root: string, config: vite.UserConfig = {}) {
     ],
     resolve: {
       alias: {
-        '@cordisjs/components': '@cordisjs/client',
+        '@cordisjs/ui-components': '@cordisjs/client',
       },
     },
     define: {

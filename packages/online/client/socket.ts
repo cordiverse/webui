@@ -1,7 +1,7 @@
 /**
- * `WorkerBridgeSocket` — a `BridgeSocket` (from `@cordisjs/plugin-webui`)
+ * `WorkerBridgeSocket` — a `BridgeSocket` (from `@cordisjs/webui`)
  * implemented on top of a `MessagePort`. Replaces the in-process pair-based
- * bridge from `@cordisjs/plugin-webui/createSocketBridge` now that the
+ * bridge from `@cordisjs/webui/createSocketBridge` now that the
  * client and server halves live in different threads.
  *
  * Topology:
@@ -25,7 +25,7 @@
  * receiver's inbox until the receiver opens.
  */
 
-import { WebSocket as AbstractWebSocket } from '@cordisjs/plugin-webui'
+import { WebSocket as AbstractWebSocket } from '@cordisjs/webui'
 
 const { CONNECTING, OPEN, CLOSED } = AbstractWebSocket
 

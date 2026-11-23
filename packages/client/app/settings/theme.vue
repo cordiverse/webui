@@ -28,7 +28,7 @@
 
 import { PropType, computed } from 'vue'
 import { useContext, useI18nText } from '@cordisjs/client'
-import { Schema, SchemaBase } from '@cordisjs/components'
+import { Schema, SchemaBase } from '@cordisjs/ui-components'
 
 defineProps({
   schema: {} as PropType<Schema>,

@@ -7,7 +7,7 @@
  * Communication with the main thread (Vue + `@cordisjs/client`) goes
  * through a `WorkerBridgeSocket` wrapping a `MessagePort` that main
  * transferred at startup. The socket implements the same `BridgeSocket`
- * contract `@cordisjs/plugin-webui` expects, so `OnlineWebUI.accept`
+ * contract `@cordisjs/webui` expects, so `OnlineWebUI.accept`
  * doesn't know it isn't talking to a real WebSocket.
  *
  * Boot:

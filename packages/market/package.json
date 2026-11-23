@@ -1,13 +1,26 @@
 {
   "name": "@cordisjs/market",
-  "description": "Market UI for Cordis",
-  "version": "4.6.1",
-  "main": "client/index.ts",
+  "description": "Plugin market for Cordis",
+  "version": "0.5.1",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./src/*": "./src/*",
+    "./client": "./client/index.ts",
+    "./package.json": "./package.json"
+  },
   "files": [
-    "client"
+    "lib",
+    "dist"
   ],
   "author": "Shigma <shigma10826@gmail.com>",
   "license": "MIT",
+  "scripts": {
+    "lint": "eslint src --ext .ts"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/cordiverse/webui.git",
@@ -18,21 +31,53 @@
   },
   "keywords": [
     "cordis",
+    "plugin",
     "market",
-    "registry",
-    "client",
-    "utilities"
+    "webui"
   ],
-  "devDependencies": {
-    "@cordisjs/registry": "^7.2.1",
-    "@types/spark-md5": "^3.0.5"
+  "cordis": {
+    "public": [
+      "dist"
+    ],
+    "description": {
+      "en": "Install and manage Cordis plugins from the built-in market",
+      "zh": "从内置市场安装和管理 Cordis 插件"
+    },
+    "service": {
+      "required": [
+        "http",
+        "webui"
+      ],
+      "implements": [
+        "installer"
+      ]
+    }
   },
   "peerDependencies": {
-    "vue": "^3"
+    "@cordisjs/plugin-http": "^1.5.1",
+    "@cordisjs/webui": "^0.8.2",
+    "cordis": "^4.0.0-rc.6"
+  },
+  "devDependencies": {
+    "@cordisjs/client": "^0.8.2",
+    "@cordisjs/ui-market": "^4.6.1",
+    "@cordisjs/plugin-http": "^1.5.1",
+    "@cordisjs/plugin-include": "^1.0.4",
+    "@cordisjs/plugin-loader": "^1.0.0-rc.4",
+    "@cordisjs/plugin-logger-console": "^1.0.0",
+    "@cordisjs/plugin-server": "^1.6.2",
+    "@cordisjs/plugin-timer": "^1.1.2",
+    "@cordisjs/webui": "^0.8.2",
+    "@types/semver": "^7.5.8",
+    "@types/which-pm-runs": "^1.0.2",
+    "@types/ws": "^8.18.1",
+    "cordis": "^4.0.0-rc.6",
+    "ws": "^8.18.0"
   },
   "dependencies": {
-    "@cordisjs/components": "^0.4.0",
     "cosmokit": "^1.8.1",
-    "spark-md5": "^3.0.2"
+    "schemastery": "^3.18.0",
+    "semver": "^7.6.3",
+    "which-pm-runs": "^1.1.0"
   }
 }

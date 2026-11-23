@@ -42,7 +42,7 @@
     "@cordisjs/client": "0.8.2",
     "@cordisjs/plugin-include": "1.0.4",
     "@cordisjs/plugin-loader": "^1.0.0-rc.4",
-    "@cordisjs/plugin-webui": "0.8.2",
+    "@cordisjs/webui": "0.8.2",
     "cordis": "^4.0.0-rc.6"
   },
   "dependencies": {
@@ -58,11 +58,11 @@
   },
   "devDependencies": {
     "@cordisjs/client": "0.8.2",
-    "@cordisjs/components": "0.4.0",
+    "@cordisjs/ui-components": "0.4.0",
     "@cordisjs/plugin-include": "1.0.4",
     "@cordisjs/plugin-loader": "^1.0.0-rc.4",
     "@cordisjs/plugin-logger-console": "^1.0.0",
-    "@cordisjs/plugin-webui": "0.8.2",
+    "@cordisjs/webui": "0.8.2",
     "@types/js-yaml": "^4.0.9",
     "@vitejs/plugin-vue": "^6.0.6",
     "@vueuse/core": "^14.3.0",

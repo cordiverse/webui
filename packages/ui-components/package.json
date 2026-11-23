@@ -1,0 +1,40 @@
+{
+  "name": "@cordisjs/ui-components",
+  "description": "Client Components for Cordis WebUI",
+  "version": "0.4.0",
+  "type": "module",
+  "main": "client/index.ts",
+  "files": [
+    "client",
+    "tsconfig.client.json"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cordiverse/webui.git",
+    "directory": "packages/ui-components"
+  },
+  "bugs": {
+    "url": "https://github.com/cordiverse/webui/issues"
+  },
+  "homepage": "https://koishi.chat",
+  "keywords": [
+    "cordis",
+    "webui",
+    "component"
+  ],
+  "devDependencies": {
+    "@vueuse/core": "^14.3.0",
+    "element-plus": "^2.13.5",
+    "vue": "^3.5.33"
+  },
+  "peerDependencies": {
+    "vue": "^3"
+  },
+  "dependencies": {
+    "@satorijs/element": "^4.0.0-alpha.0",
+    "cosmokit": "^1.8.1",
+    "schemastery-vue": "^8.0.0-alpha.0"
+  }
+}

@@ -5,17 +5,18 @@
 ### Core packages
 
 - @cordisjs/client
-- @cordisjs/components
+- @cordisjs/ui-components
+- @cordisjs/ui-market
 - @cordisjs/registry
 
-### Official plugins
+### Official components
 
-- @cordisjs/plugin-database-webui
-- @cordisjs/plugin-http-webui
-- @cordisjs/plugin-insight
-- @cordisjs/plugin-loader-webui
-- @cordisjs/plugin-logger-webui
-- @cordisjs/plugin-market
-- @cordisjs/plugin-notifier
-- @cordisjs/plugin-server-webui
-- @cordisjs/plugin-webui
+- @cordisjs/database-webui
+- @cordisjs/http-webui
+- @cordisjs/insight
+- @cordisjs/loader-webui
+- @cordisjs/logger-webui
+- @cordisjs/market
+- @cordisjs/notifier
+- @cordisjs/server-webui
+- @cordisjs/webui

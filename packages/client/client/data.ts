@@ -1,4 +1,4 @@
-import type { ClientConfig, WebSocket } from '@cordisjs/plugin-webui'
+import type { ClientConfig, WebSocket } from '@cordisjs/webui'
 import { markRaw } from 'vue'
 import { Context } from 'cordis'
 

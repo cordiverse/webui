@@ -1,0 +1,143 @@
+import { Context, Service } from 'cordis'
+import { Dict, isNullable, remove } from 'cosmokit'
+import { Fragment, h, isElement, toElementArray, transform } from '@cordisjs/element'
+import type { Entry } from '@cordisjs/webui'
+
+declare module 'cordis' {
+  interface Context {
+    notifier: NotifierService
+  }
+}
+
+export class Notifier {
+  public options: Notifier.Config
+  public dispose: () => void
+
+  private actionKeys: string[] = []
+
+  constructor(public ctx: Context, options: Fragment | Notifier.Options) {
+    this.options = {
+      type: 'primary',
+      content: [],
+    }
+    this.dispose = ctx.effect(() => {
+      ctx.notifier.store.push(this)
+      this.update(options)
+      ctx.notifier.refresh()
+      return () => {
+        this.clearActions()
+        remove(ctx.notifier.store, this)
+        ctx.notifier.refresh()
+      }
+    })
+  }
+
+  clearActions() {
+    for (const key of this.actionKeys) {
+      delete this.ctx.notifier.actions[key]
+    }
+    this.actionKeys = []
+  }
+
+  update(options: Fragment | Notifier.Options) {
+    if (typeof options === 'string' || isElement(options) || Array.isArray(options)) {
+      options = { content: options }
+    }
+    if (!isNullable(options?.content)) {
+      this.clearActions()
+      const content = typeof options.content === 'string'
+        ? [h('p', options.content)]
+        : toElementArray(options.content)
+      options.content = transform(content, ({ type, attrs }) => {
+        if (type === 'button' && typeof attrs.onClick === 'function') {
+          const key = Math.random().toString(36).slice(2)
+          this.ctx.notifier.actions[key] = attrs.onClick
+          this.actionKeys.push(key)
+          attrs.onClick = key
+        }
+        return true
+      })
+    }
+    Object.assign(this.options, options)
+    this.ctx.notifier.refresh()
+  }
+
+  toJSON(): Notifier.Data {
+    return {
+      ...this.options,
+      content: this.options.content.join(''),
+      entryId: this.ctx.get('loader')?.locate(),
+    }
+  }
+}
+
+export namespace Notifier {
+  export type Type = 'primary' | 'success' | 'warning' | 'danger'
+
+  export interface Options<T = Fragment> {
+    type?: Type
+    content?: T
+  }
+
+  export interface Config extends Required<Options> {
+    content: h[]
+  }
+
+  export interface Data extends Required<Options> {
+    content: string
+    entryId?: string
+  }
+}
+
+class NotifierService extends Service {
+  public store: Notifier[] = []
+  public actions: Dict<() => void> = Object.create(null)
+  public entry?: Entry<NotifierService.Data>
+
+  constructor(ctx: Context, public config: NotifierService.Config) {
+    super(ctx, 'notifier')
+
+    const self = this
+    ctx.inject(['webui'], (ctx) => {
+      this.entry = ctx.webui.addEntry<NotifierService.Data>({
+        baseUrl: import.meta.url,
+        source: '../client/index.ts',
+        manifest: '../dist/manifest.json',
+      }, {
+        notifiers: [],
+        async button(id) {
+          return self.actions[id]?.()
+        },
+      })
+    })
+  }
+
+  refresh() {
+    this.entry?.mutate((d) => {
+      d.notifiers = this.store.map(notifier => notifier.toJSON())
+    })
+  }
+
+  message(options: string | Notifier.Options<string>) {
+    if (typeof options === 'string') {
+      options = { content: options }
+    }
+    options.type ||= 'primary'
+    this.ctx.get('console').broadcast('notifier/message', options)
+  }
+
+  create(options: Fragment | Notifier.Options) {
+    return new Notifier(this.ctx, options)
+  }
+}
+
+namespace NotifierService {
+  export interface Data {
+    notifiers: Notifier.Data[]
+    button(id: string): Promise<any>
+  }
+
+  export interface Config {}
+}
+
+export default NotifierService

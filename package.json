@@ -8,8 +8,7 @@
     "external/*",
     "external/*/external/*",
     "external/*/packages/*",
-    "packages/*",
-    "plugins/*"
+    "packages/*"
   ],
   "license": "MIT",
   "scripts": {

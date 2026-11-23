@@ -1,7 +1,7 @@
 import { Context, Service } from 'cordis'
 import { defineProperty } from 'cosmokit'
 import { watch } from 'vue'
-import type { RpcResponse } from '@cordisjs/plugin-webui'
+import type { RpcResponse } from '@cordisjs/webui'
 
 interface Pending {
   resolve: (value: any) => void

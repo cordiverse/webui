@@ -2,9 +2,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { Context, Service } from 'cordis'
 import LoggerConsole from '@cordisjs/plugin-logger-console'
-import { Entry } from '@cordisjs/plugin-webui'
+import { Entry } from '@cordisjs/webui'
 import { OnlineWebUI } from '../client/worker/online-webui.ts'
-import { createSocketBridge, SocketBridge } from '@cordisjs/plugin-webui'
+import { createSocketBridge, SocketBridge } from '@cordisjs/webui'
 
 /**
  * Test subclass that skips the loader-socket plumbing and takes the socket

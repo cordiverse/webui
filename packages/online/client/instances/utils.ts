@@ -69,10 +69,10 @@ function randomId() {
  * a nested `config:` array.
  *
  * Online deployment notes:
- *   - `@cordisjs/plugin-webui` is plugged directly by `bootstrap.ts` as
+ *   - `@cordisjs/webui` is plugged directly by `bootstrap.ts` as
  *     `OnlineWebUI`, so it is NOT listed here.
- *   - `@cordisjs/plugin-logger-webui` (node:sqlite) and
- *     `@cordisjs/plugin-market` (node:child_process) are disabled until
+ *   - `@cordisjs/logger-webui` (node:sqlite) and
+ *     `@cordisjs/market` (node:child_process) are disabled until
  *     browser shims for those Node builtins exist.
  */
 function defaultConfig(): EntryOptions[] {
@@ -83,8 +83,8 @@ function defaultConfig(): EntryOptions[] {
       name: '@cordisjs/plugin-group',
       label: 'WebUI',
       config: [
-        { id: randomId(), name: '@cordisjs/plugin-loader-webui' },
-        { id: randomId(), name: '@cordisjs/plugin-notifier' },
+        { id: randomId(), name: '@cordisjs/loader-webui' },
+        { id: randomId(), name: '@cordisjs/notifier' },
       ],
     },
   ]

@@ -1,4 +1,4 @@
-import { Schema, SchemaBase } from '@cordisjs/components'
+import { Schema, SchemaBase } from '@cordisjs/ui-components'
 import { RemovableRef, useLocalStorage } from '@vueuse/core'
 import { Context, Service } from 'cordis'
 import { insert, Ordered } from '../utils'

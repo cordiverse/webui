@@ -16,7 +16,7 @@
  */
 
 import { Context, Service } from 'cordis'
-import { Entry, WebSocket, WebUI } from '@cordisjs/plugin-webui'
+import { Entry, WebSocket, WebUI } from '@cordisjs/webui'
 
 export interface OnlineWebUIConfig {
   socket: WebSocket

@@ -55,7 +55,7 @@
     "yakumo": "^3.2.1"
   },
   "dependencies": {
-    "@cordisjs/components": "0.4.0",
+    "@cordisjs/ui-components": "0.4.0",
     "@cordisjs/muon": "^0.2.2",
     "@cordisjs/unyaml": "^2.0.3",
     "@vitejs/plugin-vue": "^6.0.6",

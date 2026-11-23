@@ -44,7 +44,7 @@ function takeManifest(output: RollupOutput): Record<string, any> {
 }
 
 const cwd = resolve(fileURLToPath(import.meta.url), '../../../..')
-const dist = cwd + '/plugins/webui/dist'
+const dist = cwd + '/packages/webui/dist'
 
 const EXTERNALS = ['vue', '@cordisjs/client']
 

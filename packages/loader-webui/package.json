@@ -1,0 +1,79 @@
+{
+  "name": "@cordisjs/loader-webui",
+  "description": "Manage your bots and plugins with console",
+  "version": "0.10.1",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "browser": "./lib/browser.js",
+      "default": "./lib/index.js"
+    },
+    "./shared": {
+      "types": "./lib/shared.d.ts",
+      "default": "./lib/shared.js"
+    },
+    "./src/*": "./src/*",
+    "./client": "./client/index.ts",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "dist"
+  ],
+  "author": "Shigma <shigma10826@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cordiverse/webui.git",
+    "directory": "packages/loader-webui"
+  },
+  "bugs": {
+    "url": "https://github.com/cordiverse/webui/issues"
+  },
+  "keywords": [
+    "cordis",
+    "plugin",
+    "config",
+    "manager",
+    "webui"
+  ],
+  "cordis": {
+    "public": [
+      "dist"
+    ],
+    "description": {
+      "en": "Manage your plugins with WebUI",
+      "zh": "使用控制台查看、配置你的插件"
+    },
+    "service": {
+      "implements": [
+        "manager"
+      ],
+      "optional": [
+        "webui"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "@cordisjs/plugin-loader": "^1.0.0-rc.4",
+    "@cordisjs/plugin-timer": "^1.1.2",
+    "@cordisjs/webui": "^0.8.2",
+    "cordis": "^4.0.0-rc.6"
+  },
+  "devDependencies": {
+    "@cordisjs/client": "^0.8.2",
+    "@cordisjs/plugin-hmr": "^1.0.15",
+    "@cordisjs/plugin-loader": "^1.0.0-rc.4",
+    "@cordisjs/plugin-timer": "^1.1.2",
+    "@cordisjs/webui": "^0.8.2",
+    "@types/pnpapi": "^0.0.5",
+    "cordis": "^4.0.0-rc.6"
+  },
+  "dependencies": {
+    "@npm/types": "^2.1.0",
+    "cosmokit": "^1.8.1",
+    "fast-glob": "^3.3.3",
+    "schemastery": "^3.18.0"
+  }
+}

@@ -1,6 +1,6 @@
 import { App } from 'vue'
 import Markdown from 'marked-vue'
-import components from '@cordisjs/components'
+import components from '@cordisjs/ui-components'
 import Element, { ElLoading, ElMessage, ElMessageBox } from 'element-plus'
 
 import common from './common'
@@ -20,7 +20,7 @@ export * from './layout'
 export * from './link'
 export * from './slot'
 
-export * from '@cordisjs/components'
+export * from '@cordisjs/ui-components'
 
 export { icons }
 

@@ -3,7 +3,7 @@ import {
   App, Component, createApp, customRef, defineComponent, DefineComponent, h, markRaw,
   onErrorCaptured, provide, Ref, ref, resolveComponent, watchEffect,
 } from 'vue'
-import { locale } from '@cordisjs/components'
+import { locale } from '@cordisjs/ui-components'
 import ActionService from './plugins/action'
 import LoaderService from './plugins/loader'
 import RouterService from './plugins/router'
@@ -12,7 +12,7 @@ import ThemeService from './plugins/theme'
 import RpcService from './plugins/rpc'
 import { kContext } from './context'
 import type { LoadState } from './plugins/loader'
-import type { WebSocket as AbstractWebSocket } from '@cordisjs/plugin-webui'
+import type { WebSocket as AbstractWebSocket } from '@cordisjs/webui'
 import install from './components'
 
 declare module 'cordis' {

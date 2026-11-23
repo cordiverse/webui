@@ -11,12 +11,12 @@ import './index.scss'
 
 const root = createClient()
 
-root.plugin(home)
-root.plugin(layout)
-root.plugin(settings)
-root.plugin(status)
-root.plugin(styles)
-root.plugin(theme)
+root.use(home)
+root.use(layout)
+root.use(settings)
+root.use(status)
+root.use(styles)
+root.use(theme)
 
 if (!global.static) {
   const endpoint = new URL(global.endpoint, location.origin).toString()

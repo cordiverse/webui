@@ -23,7 +23,7 @@ export function unwrapExports(module: any) {
 type LoaderFactory = (ctx: Context, url: string) => Promise<Fiber>
 
 function jsLoader(ctx: Context, exports: {}) {
-  return ctx.plugin(unwrapExports(exports), ctx.$entry!.data)
+  return ctx.use(unwrapExports(exports), ctx.$entry!.data)
 }
 
 function cssLoader(ctx: Context, link: HTMLLinkElement) {
@@ -44,11 +44,11 @@ const loaders: Dict<LoaderFactory> = {
     const link = document.createElement('link')
     link.rel = 'stylesheet'
     link.href = url
-    return ctx.plugin(cssLoader, link as any)
+    return ctx.use(cssLoader, link as any)
   },
   async [``](ctx, url) {
     const exports = await import(/* @vite-ignore */ url)
-    return ctx.plugin(jsLoader, exports)
+    return ctx.use(jsLoader, exports)
   },
 }
 

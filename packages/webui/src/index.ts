@@ -1,8 +1,9 @@
 import { Context, Inject, Service } from 'cordis'
 import { Dict, Time } from 'cosmokit'
-import type {} from '@cordisjs/plugin-server'
-import type {} from '@cordisjs/plugin-hmr'
-import type { EntryOptions } from '@cordisjs/plugin-loader'
+import type {} from '@cordisjs/server'
+import type {} from '@cordisjs/fs'
+import type {} from '@cordisjs/hmr'
+import type { EntryOptions } from '@cordisjs/loader'
 import type { FileSystemServeOptions, ViteDevServer, Logger as ViteLogger } from 'vite'
 import { extname, join, relative, resolve } from 'node:path'
 import { existsSync } from 'node:fs'
@@ -80,15 +81,6 @@ class NodeWebUI extends WebUI {
       loader.envData.clientCount = this.clients.size
     })
 
-    ctx.on('hmr/change', (url) => {
-      for (const entry of Object.values(this.entries)) {
-        if (entry.manifest?.url !== url) continue
-        const path = relative(ctx.get('hmr')!.baseDir, fileURLToPath(url))
-        ctx.logger('hmr').info('reload webui entry manifest at %C', path)
-        entry.refreshManifest()
-      }
-    })
-
     this.root = fileURLToPath(config.devMode
       ? new URL('./app', import.meta.resolve('@cordisjs/client/package.json'))
       : new URL('../dist', import.meta.url))
@@ -143,6 +135,18 @@ class NodeWebUI extends WebUI {
           return `${this.config.uiPath}/-/v1/modules/${entry.manifest!.path}/${chunk.file}`
         }
       })
+  }
+
+  watchManifest(entry: Entry) {
+    const { url } = entry.manifest!
+    const hmr = this.ctx.get('hmr')
+    const fs = entry.ctx.get('fs')
+    if (!url.startsWith('file:') || !hmr?.config.watch.enabled || !fs) return
+    fs.watch(url).on('change', () => {
+      const path = relative(hmr.baseDir, fileURLToPath(url))
+      this.ctx.logger('hmr').info('reload webui entry manifest at %C', path)
+      entry.refreshManifest()
+    })
   }
 
   resolveManifestUrl(files: Entry.Files): string | undefined {

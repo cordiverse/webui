@@ -1,6 +1,6 @@
 {
   "name": "@cordisjs/server-webui",
-  "description": "WebUI for @cordisjs/plugin-server",
+  "description": "WebUI for @cordisjs/server",
   "version": "0.5.0",
   "type": "module",
   "exports": {
@@ -51,16 +51,16 @@
     }
   },
   "peerDependencies": {
-    "@cordisjs/plugin-server": "^1.6.2",
+    "@cordisjs/server": "^1.7.0",
     "@cordisjs/webui": "^0.8.2",
-    "cordis": "^4.0.0-rc.6"
+    "cordis": "^4.0.0-rc.13"
   },
   "devDependencies": {
     "@cordisjs/client": "^0.8.2",
-    "@cordisjs/plugin-logger-console": "^1.0.0",
-    "@cordisjs/plugin-server": "^1.6.2",
+    "@cordisjs/logger-console": "^1.0.1",
+    "@cordisjs/server": "^1.7.0",
     "@cordisjs/webui": "^0.8.2",
-    "cordis": "^4.0.0-rc.6"
+    "cordis": "^4.0.0-rc.13"
   },
   "dependencies": {
     "cosmokit": "^1.8.1",

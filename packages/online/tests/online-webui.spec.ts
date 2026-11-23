@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { Context, Service } from 'cordis'
-import LoggerConsole from '@cordisjs/plugin-logger-console'
+import LoggerConsole from '@cordisjs/logger-console'
 import { Entry } from '@cordisjs/webui'
 import { OnlineWebUI } from '../client/worker/online-webui.ts'
 import { createSocketBridge, SocketBridge } from '@cordisjs/webui'
@@ -30,8 +30,8 @@ describe('OnlineWebUI', () => {
   beforeEach(async () => {
     ctx = new Context()
     bridge = createSocketBridge()
-    await ctx.plugin(LoggerConsole, { console: { enabled: false } })
-    await ctx.plugin(TestOnlineWebUI, { socket: bridge.server })
+    await ctx.use(LoggerConsole, { console: { enabled: false } })
+    await ctx.use(TestOnlineWebUI, { socket: bridge.server })
   })
 
   afterEach(() => {

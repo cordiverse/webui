@@ -7,15 +7,15 @@ const now = new Date().toISOString()
 const echoEntry: SearchObject = {
   shortname: 'server-echo',
   package: {
-    name: '@cordisjs/plugin-server-echo',
+    name: '@cordisjs/server-echo',
     version: '1.0.0',
-    description: 'Echo endpoint plugin for @cordisjs/plugin-server',
+    description: 'Echo endpoint plugin for @cordisjs/server',
     date: now,
     keywords: ['cordis', 'plugin', 'server', 'echo'],
     publisher: { name: 'shigma', email: 'shigma10826@gmail.com' },
     maintainers: [{ name: 'shigma', email: 'shigma10826@gmail.com' }],
     peerDependencies: {
-      '@cordisjs/plugin-server': '^1.0.0',
+      '@cordisjs/server': '^1.0.0',
       cordis: '^4.0.0-rc.4',
     },
   },
@@ -29,8 +29,8 @@ const echoEntry: SearchObject = {
   license: 'MIT',
   manifest: {
     description: {
-      en: 'Echo endpoint plugin for @cordisjs/plugin-server',
-      zh: '@cordisjs/plugin-server 的回显端点插件',
+      en: 'Echo endpoint plugin for @cordisjs/server',
+      zh: '@cordisjs/server 的回显端点插件',
     },
   },
   createdAt: now,

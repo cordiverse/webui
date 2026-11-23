@@ -1,6 +1,6 @@
 import { Context } from 'cordis'
 import { mount, VueWrapper } from '@vue/test-utils'
-import LoggerConsole from '@cordisjs/plugin-logger-console'
+import LoggerConsole from '@cordisjs/logger-console'
 import { createSocketBridge, SocketBridge } from '../../src/bridge.ts'
 import { TestWebUI } from './test-webui.ts'
 import type { Component } from 'vue'
@@ -39,10 +39,10 @@ export async function createHarness(opts: HarnessOptions = {}): Promise<Harness>
   const ctx = createClient()
   const bridge = createSocketBridge()
 
-  await ctx.plugin(TestWebUI, { socket: bridge.server })
+  await ctx.use(TestWebUI, { socket: bridge.server })
 
   for (const [plugin, config] of opts.plugins ?? []) {
-    await ctx.plugin(plugin, config)
+    await ctx.use(plugin, config)
   }
 
   const openP = connect(ctx, () => bridge.client)
@@ -65,7 +65,7 @@ export async function createHarness(opts: HarnessOptions = {}): Promise<Harness>
       const $entry = ctx.client.loader.entries[entryId]
       if (!$entry) throw new Error(`no such entry: ${entryId}`)
       const childCtx = ctx.extend({ $entry })
-      const fiber = await childCtx.plugin(applyFn, $entry.data.value)
+      const fiber = await childCtx.use(applyFn, $entry.data.value)
       $entry.fibers['__test__'] = fiber as any
       $entry.done.value = true
       return { ctx: childCtx }

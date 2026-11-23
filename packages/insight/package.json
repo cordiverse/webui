@@ -43,16 +43,16 @@
     }
   },
   "peerDependencies": {
-    "@cordisjs/plugin-timer": "^1.1.2",
+    "@cordisjs/timer": "^1.1.5",
     "@cordisjs/webui": "^0.8.2",
-    "cordis": "^4.0.0-rc.6"
+    "cordis": "^4.0.0-rc.13"
   },
   "devDependencies": {
     "@cordisjs/client": "^0.8.2",
-    "@cordisjs/plugin-timer": "^1.1.2",
+    "@cordisjs/timer": "^1.1.5",
     "@cordisjs/webui": "^0.8.2",
     "@types/d3-force": "^3.0.10",
-    "cordis": "^4.0.0-rc.6",
+    "cordis": "^4.0.0-rc.13",
     "d3-force": "^3.0.0"
   },
   "dependencies": {

@@ -16,7 +16,7 @@
  * (the `EntryTree.import` method at line 103).
  */
 
-import { Loader } from '@cordisjs/plugin-loader'
+import { Loader } from '@cordisjs/loader'
 import { composeError } from 'cordis'
 import { MODULE_PREFIX } from '@cordisjs/online'
 

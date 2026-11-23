@@ -55,13 +55,13 @@
   },
   "peerDependencies": {
     "@cordisjs/webui": "^0.8.2",
-    "cordis": "^4.0.0-rc.6"
+    "cordis": "^4.0.0-rc.13"
   },
   "devDependencies": {
     "@cordisjs/client": "^0.8.2",
     "@cordisjs/loader-webui": "^0.10.1",
     "@cordisjs/webui": "^0.8.2",
-    "cordis": "^4.0.0-rc.6"
+    "cordis": "^4.0.0-rc.13"
   },
   "dependencies": {
     "@cordisjs/element": "^0.3.0",

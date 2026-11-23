@@ -39,7 +39,7 @@ export class ClientService extends Service {
     super(ctx, 'client')
 
     // Initialize root-level properties for client
-    ctx.root['$entry'] = undefined as LoadState | undefined
+    ctx[Context.root]['$entry'] = undefined as LoadState | undefined
 
     // Create Vue app
     this.app = createApp(defineComponent({

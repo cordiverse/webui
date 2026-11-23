@@ -1,6 +1,6 @@
 import { Context } from 'cordis'
-import type Server from '@cordisjs/plugin-server'
-import type {} from '@cordisjs/plugin-timer'
+import type Server from '@cordisjs/server'
+import type {} from '@cordisjs/timer'
 import type {} from '@cordisjs/webui'
 import z from 'schemastery'
 

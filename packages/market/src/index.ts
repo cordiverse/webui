@@ -45,8 +45,8 @@ export const Config: z<Config> = z.intersect([
 ])
 
 export function apply(ctx: Context, config: Config) {
-  ctx.plugin(Installer, config.registry ?? {})
-  ctx.plugin(Market, config)
+  ctx.use(Installer, config.registry ?? {})
+  ctx.use(Market, config)
 
   ctx.inject(['installer', 'market'], (ctx) => {
     const refreshDeps = async () => {

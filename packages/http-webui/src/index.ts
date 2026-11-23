@@ -1,8 +1,8 @@
 import { Context } from 'cordis'
 import { Dict } from 'cosmokit'
-import type { Http } from '@cordisjs/plugin-http'
+import type { Http } from '@cordisjs/http'
 import type {} from '@cordisjs/webui'
-import type {} from '@cordisjs/plugin-server-proxy'
+import type {} from '@cordisjs/server-proxy'
 import type { WebSocket as UndiciWebSocket } from 'undici'
 import z from 'schemastery'
 

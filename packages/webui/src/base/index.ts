@@ -66,6 +66,9 @@ export abstract class WebUI extends Service {
   abstract getEntryFiles(entry: Entry): string[]
   abstract resolveManifestUrl(files: Entry.Files): string | undefined
 
+  /** Reload the manifest of `entry` when its file changes. Called once the entry is initialized. */
+  watchManifest(entry: Entry) {}
+
   addEntry<T extends object = never>(files: Entry.Files, data?: T) {
     return new Entry<T>(this.ctx, files, data as T)
   }

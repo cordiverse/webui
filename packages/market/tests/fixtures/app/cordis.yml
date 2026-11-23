@@ -1,11 +1,11 @@
 - id: log
-  name: '@cordisjs/plugin-logger'
+  name: '@cordisjs/logger-console'
 - id: timer
-  name: '@cordisjs/plugin-timer'
+  name: '@cordisjs/timer'
 - id: http
-  name: '@cordisjs/plugin-http'
+  name: '@cordisjs/http'
 - id: server
-  name: '@cordisjs/plugin-server'
+  name: '@cordisjs/server'
   config:
     port: __SERVER_PORT__
 - id: webui

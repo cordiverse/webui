@@ -40,10 +40,10 @@
   ],
   "peerDependencies": {
     "@cordisjs/client": "0.8.2",
-    "@cordisjs/plugin-include": "1.0.4",
-    "@cordisjs/plugin-loader": "^1.0.0-rc.4",
+    "@cordisjs/include": "^2.0.0-rc.0",
+    "@cordisjs/loader": "^1.0.0-rc.10",
     "@cordisjs/webui": "0.8.2",
-    "cordis": "^4.0.0-rc.6"
+    "cordis": "^4.0.0-rc.13"
   },
   "dependencies": {
     "@cordisjs/fs": "^1.3.7",
@@ -58,15 +58,15 @@
   },
   "devDependencies": {
     "@cordisjs/client": "0.8.2",
-    "@cordisjs/plugin-include": "1.0.4",
-    "@cordisjs/plugin-loader": "^1.0.0-rc.4",
-    "@cordisjs/plugin-logger-console": "^1.0.0",
+    "@cordisjs/include": "^2.0.0-rc.0",
+    "@cordisjs/loader": "^1.0.0-rc.10",
+    "@cordisjs/logger-console": "^1.0.1",
     "@cordisjs/ui-components": "0.4.0",
     "@cordisjs/webui": "0.8.2",
     "@types/js-yaml": "^4.0.9",
     "@vitejs/plugin-vue": "^6.0.6",
     "@vueuse/core": "^14.3.0",
-    "cordis": "^4.0.0-rc.6",
+    "cordis": "^4.0.0-rc.13",
     "schemastery": "^3.18.0",
     "unocss": "^66.6.8",
     "vite": "^7.3.2",

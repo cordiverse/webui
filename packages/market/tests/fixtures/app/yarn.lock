@@ -16,16 +16,16 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@cordis-market-fixture/app@workspace:."
   dependencies:
-    "@cordisjs/plugin-http": "npm:^1.4.0"
-    "@cordisjs/plugin-include": "npm:^1.0.3"
-    "@cordisjs/plugin-loader": "npm:^1.0.0-rc.3"
+    "@cordisjs/http": "npm:^1.6.0"
+    "@cordisjs/include": "npm:^2.0.0-rc.0"
+    "@cordisjs/loader": "npm:^1.0.0-rc.10"
     "@cordisjs/loader-webui": "portal:../../../../loader-webui"
-    "@cordisjs/plugin-logger-console": "npm:^1.0.0"
+    "@cordisjs/logger-console": "npm:^1.0.1"
     "@cordisjs/market": "portal:../../.."
-    "@cordisjs/plugin-server": "npm:^1.5.0"
-    "@cordisjs/plugin-timer": "npm:^1.1.1"
+    "@cordisjs/server": "npm:^1.7.0"
+    "@cordisjs/timer": "npm:^1.1.5"
     "@cordisjs/webui": "portal:../../../../webui"
-    cordis: "npm:^4.0.0-rc.4"
+    cordis: "npm:^4.0.0-rc.13"
   languageName: unknown
   linkType: soft
 
@@ -40,42 +40,33 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@cordisjs/muon@npm:^0.2.2":
-  version: 0.2.2
-  resolution: "@cordisjs/muon@npm:0.2.2"
-  dependencies:
-    cosmokit: "npm:^1.8.1"
-  checksum: 10c0/a646bffca1cd6cce6c329a9df7c9a722fffa8da9eac54ecba89ef9411abe90203bb3f8708f937183f28bac56a910e0383374b1006caaae64f60258f48211b83a
-  languageName: node
-  linkType: hard
-
-"@cordisjs/plugin-http@npm:^1.4.0":
-  version: 1.5.0
-  resolution: "@cordisjs/plugin-http@npm:1.5.0"
+"@cordisjs/http@npm:^1.6.0":
+  version: 1.6.0
+  resolution: "@cordisjs/http@npm:1.6.0"
   dependencies:
     "@cordisjs/fetch-file": "npm:^1.0.3"
     cosmokit: "npm:^1.8.1"
     schemastery: "npm:^3.18.0"
   peerDependencies:
-    cordis: ^4.0.0-rc.4
+    cordis: ^4.0.0-rc.13
     undici: "*"
   peerDependenciesMeta:
     undici:
       optional: true
-  checksum: 10c0/8a1e78ef9fd1762c3e8b92893af61fd6720a7e120df54acc360d988dc205b88d9018531ae21e07a3aba3e403665d9cc77480e1d42a25e14dcf3d8bcd3b8d848a
+  checksum: 10c0/3eda4ba76120952419dd9fda015c728e058adb61f5176ee3628cfb0432e4eb24bb1cd4aa61fc5c600e7b4a3a6a394201c1591a5384eafdb7087a5245d4815c2f
   languageName: node
   linkType: hard
 
-"@cordisjs/plugin-include@npm:^1.0.3":
-  version: 1.0.3
-  resolution: "@cordisjs/plugin-include@npm:1.0.3"
+"@cordisjs/include@npm:^2.0.0-rc.0":
+  version: 2.0.0-rc.0
+  resolution: "@cordisjs/include@npm:2.0.0-rc.0"
   dependencies:
     cosmokit: "npm:^1.8.1"
-    js-yaml: "npm:^4.1.0"
+    yaml: "npm:^2.9.1"
   peerDependencies:
-    "@cordisjs/plugin-loader": ^1.0.0-rc.2
-    cordis: ^4.0.0-rc.3
-  checksum: 10c0/38708f2116690ea1f8956e71954579153dfb4b95c2037b6b17ae247d005bbba5cd3c94ef60fc40d216186a6eb5980eb20c548448ffe4a925094fc9b34fab421a
+    "@cordisjs/loader": ^1.0.0-rc.10
+    cordis: ^4.0.0-rc.13
+  checksum: 10c0/b37c72cbaf3c098c70bbcbe8b8f01fbed0ec0bfa14ee81a2aafae04f5ab2cc98f0d59b71f65caa891c67b7e676b7a2ec6d778a0e2eb74c849e54ca8f25d20220
   languageName: node
   linkType: hard
 
@@ -88,34 +79,38 @@ __metadata:
     fast-glob: "npm:^3.3.3"
     schemastery: "npm:^3.18.0"
   peerDependencies:
-    "@cordisjs/plugin-loader": ^1.0.0-rc.4
-    "@cordisjs/plugin-timer": ^1.1.2
+    "@cordisjs/loader": ^1.0.0-rc.10
+    "@cordisjs/timer": ^1.1.5
     "@cordisjs/webui": ^0.8.2
-    cordis: ^4.0.0-rc.6
+    cordis: ^4.0.0-rc.13
   languageName: node
   linkType: soft
 
-"@cordisjs/plugin-loader@npm:^1.0.0-rc.3":
-  version: 1.0.0-rc.3
-  resolution: "@cordisjs/plugin-loader@npm:1.0.0-rc.3"
+"@cordisjs/loader@npm:^1.0.0-rc.10":
+  version: 1.0.0-rc.10
+  resolution: "@cordisjs/loader@npm:1.0.0-rc.10"
   dependencies:
     cosmokit: "npm:^1.8.1"
   peerDependencies:
-    cordis: ^4.0.0-rc.4
-  checksum: 10c0/6c26a30b06411fd2e6d81884dfd07777b5ade5096f45ddbaa6b4b2bf65f995da5c0deee5de0a5c65bdd255741bbb01e13e1d2fbe5b9c02d1621f9ff36d719b61
+    cordis: ^4.0.0-rc.13
+    node-addon-require-builtin: ^0.1.0
+  peerDependenciesMeta:
+    node-addon-require-builtin:
+      optional: true
+  checksum: 10c0/d31e4efcdfe9e2c78de094c62952b5a2f0ee1d23456d0dcc40b5d0c13e0ef75a00062471c0a4c33bffce993dbbfe4c70443f899272bf937241b6de3e9491de67
   languageName: node
   linkType: hard
 
-"@cordisjs/plugin-logger-console@npm:^1.0.0":
-  version: 1.0.0
-  resolution: "@cordisjs/plugin-logger-console@npm:1.0.0"
+"@cordisjs/logger-console@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "@cordisjs/logger-console@npm:1.0.1"
   dependencies:
     cosmokit: "npm:^1.8.1"
     schemastery: "npm:^3.18.0"
     supports-color: "npm:^9.4.0"
   peerDependencies:
-    cordis: ^4.0.0-rc.4
-  checksum: 10c0/fa9c47b1aeb6ea8223dcf3cc502b85edb580f379f48b081c78a2935988b5d1c6d23b75a29dea939b2af5b700ee399f51adc5f339677d107c4dd5805a11808d69
+    cordis: ^4.0.0-rc.13
+  checksum: 10c0/9d93ca5eb2b0c0ddded2e339d779095daf0cc4b006c3c16544ca04b98e9b6902b81942e112f67db6cd7f4879d78cfff114f7f398b77d8600b4226e105ab5fa14
   languageName: node
   linkType: hard
 
@@ -128,16 +123,26 @@ __metadata:
     semver: "npm:^7.6.3"
     which-pm-runs: "npm:^1.1.0"
   peerDependencies:
-    "@cordisjs/plugin-http": ^1.5.1
+    "@cordisjs/http": ^1.6.0
     "@cordisjs/webui": ^0.8.2
-    cordis: ^4.0.0-rc.6
+    cordis: ^4.0.0-rc.13
   languageName: node
   linkType: soft
 
-"@cordisjs/plugin-server@npm:^1.5.0":
-  version: 1.5.0
-  resolution: "@cordisjs/plugin-server@npm:1.5.0"
+"@cordisjs/muon@npm:^0.2.2":
+  version: 0.2.2
+  resolution: "@cordisjs/muon@npm:0.2.2"
   dependencies:
+    cosmokit: "npm:^1.8.1"
+  checksum: 10c0/a646bffca1cd6cce6c329a9df7c9a722fffa8da9eac54ecba89ef9411abe90203bb3f8708f937183f28bac56a910e0383374b1006caaae64f60258f48211b83a
+  languageName: node
+  linkType: hard
+
+"@cordisjs/server@npm:^1.7.0":
+  version: 1.7.0
+  resolution: "@cordisjs/server@npm:1.7.0"
+  dependencies:
+    "@standard-schema/spec": "npm:^1.1.0"
     "@types/ws": "npm:^8.18.1"
     accepts: "npm:^1.3.8"
     cosmokit: "npm:^1.8.1"
@@ -146,20 +151,19 @@ __metadata:
     schemastery: "npm:^3.18.0"
     ws: "npm:^8.19.0"
   peerDependencies:
-    "@cordisjs/plugin-logger": ^1.0.2
-    cordis: ^4.0.0-rc.4
-  checksum: 10c0/9d2956bf2425b53ffb99a446c42774bc3ad0edbccaf9c52a5a721b07aec7d60f5e98506d30c4979105ee764d99911981b7798dfe2b0ecceb381168feb6eb0a7c
+    cordis: ^4.0.0-rc.13
+  checksum: 10c0/ee8c6ec9420f9925e2da92fc354fb58ebb28e69e291be0a1e86b71328cbeef82a7c72acd902427c4f8d56be261b5dd6d63ddb3f10873507e523e25f0308f62a9
   languageName: node
   linkType: hard
 
-"@cordisjs/plugin-timer@npm:^1.1.1":
-  version: 1.1.1
-  resolution: "@cordisjs/plugin-timer@npm:1.1.1"
+"@cordisjs/timer@npm:^1.1.5":
+  version: 1.1.5
+  resolution: "@cordisjs/timer@npm:1.1.5"
   dependencies:
-    cosmokit: "npm:^1.8.0"
+    cosmokit: "npm:^1.8.1"
   peerDependencies:
-    cordis: ^4.0.0-beta.1
-  checksum: 10c0/1b1a830000c33e5880776a58680738bd45209255f12e3c5e81ce4fcc97a96a230921e07a79748a43b6b14295592b066404345dc10ff40a9cde52e37c34524857
+    cordis: ^4.0.0-rc.13
+  checksum: 10c0/89869bae2cb33de65e6f911589524ce0fe80d71c9afbb58389d26fe91c390ca82a0d74f5e9dbf59803dbe3b203dd452c5a89653ec7e7ebaee7aae2c145b9b3db
   languageName: node
   linkType: hard
 
@@ -176,7 +180,7 @@ __metadata:
     schemastery: "npm:^3.18.0"
   peerDependencies:
     "@cordisjs/client": 0.8.2
-    cordis: ^4.0.0-rc.6
+    cordis: ^4.0.0-rc.13
   peerDependenciesMeta:
     "@cordisjs/client":
       optional: true
@@ -270,13 +274,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"argparse@npm:^2.0.1":
-  version: 2.0.1
-  resolution: "argparse@npm:2.0.1"
-  checksum: 10c0/c5640c2d89045371c7cedd6a70212a04e360fd34d6edeae32f6952c63949e3525ea77dbec0289d8213a99bbaeab5abfa860b5c12cf88a2e6cf8106e90dd27a7e
-  languageName: node
-  linkType: hard
-
 "braces@npm:^3.0.3":
   version: 3.0.3
   resolution: "braces@npm:3.0.3"
@@ -295,23 +292,29 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cordis@npm:^4.0.0-rc.4":
-  version: 4.0.0-rc.4
-  resolution: "cordis@npm:4.0.0-rc.4"
+"cordis@npm:^4.0.0-rc.13":
+  version: 4.0.0-rc.13
+  resolution: "cordis@npm:4.0.0-rc.13"
   dependencies:
     "@standard-schema/spec": "npm:^1.1.0"
     cosmokit: "npm:^1.8.1"
   peerDependencies:
-    "@cordisjs/plugin-include": ^1.0.3
-    "@cordisjs/plugin-loader": ^1.0.0-rc.3
+    "@cordisjs/fs": ^2.0.0-rc.0
+    "@cordisjs/fs-node": ^0.1.0
+    "@cordisjs/include": ^2.0.0-rc.0
+    "@cordisjs/loader": ^1.0.0-rc.10
   peerDependenciesMeta:
-    "@cordisjs/plugin-include":
+    "@cordisjs/fs":
       optional: true
-    "@cordisjs/plugin-loader":
+    "@cordisjs/fs-node":
+      optional: true
+    "@cordisjs/include":
+      optional: true
+    "@cordisjs/loader":
       optional: true
   bin:
     cordis: bin.js
-  checksum: 10c0/7d52b10c328c55acea8f8a7515bd55dbb8a9ba496c17c86db29899cf4a5d60aa95ddbeab848ec7ebd20f9e85e43b8d238dee40c8ce21d5848ff634559a6d7762
+  checksum: 10c0/19b801353284838709ede6588537366fcaeb4854634a4dc5fda2132b7e47cdf2fb802e5f27195fd914ae683c98895a308557cbe356f46540126a031bd9733600
   languageName: node
   linkType: hard
 
@@ -341,13 +344,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"default-browser@npm:^5.4.0":
-  version: 5.5.0
-  resolution: "default-browser@npm:5.5.0"
+"default-browser@npm:^5.5.1":
+  version: 5.5.1
+  resolution: "default-browser@npm:5.5.1"
   dependencies:
     bundle-name: "npm:^4.1.0"
     default-browser-id: "npm:^5.0.0"
-  checksum: 10c0/576593b617b17a7223014b4571bfe1c06a2581a4eb8b130985d90d253afa3f40999caec70eb0e5776e80d4af6a41cce91018cd3f86e57ad578bf59e46fb19abe
+  checksum: 10c0/feb5e7a6a6f2fcbc7a6c5c78e071a4f7a3ab136e6244b9637e58fe6170f6e1254ae099cbe2ebc2b2823c387ed50fda176ce31d386f4f2ebbd43d8fb1cb6aacf7
   languageName: node
   linkType: hard
 
@@ -359,9 +362,9 @@ __metadata:
   linkType: hard
 
 "es-module-lexer@npm:^2.0.0":
-  version: 2.1.0
-  resolution: "es-module-lexer@npm:2.1.0"
-  checksum: 10c0/93bcf2454fa72d67fe3ccd0abef8ce7933f5840a319513418a643dd8e9c6aa8f49709cecfae02ded722805dd327232d30723a807cc52e6809d6ac697c62c29fb
+  version: 2.3.2
+  resolution: "es-module-lexer@npm:2.3.2"
+  checksum: 10c0/5e7389424c43478439f12f9a6aca1750f6f99afa384fc3de329f4a45f152ab156671055008adaafc74960877abf8cc338aeebf6bed8c21297b146fd6eb7a22f8
   languageName: node
   linkType: hard
 
@@ -490,17 +493,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"js-yaml@npm:^4.1.0":
-  version: 4.1.1
-  resolution: "js-yaml@npm:4.1.1"
-  dependencies:
-    argparse: "npm:^2.0.1"
-  bin:
-    js-yaml: bin/js-yaml.js
-  checksum: 10c0/561c7d7088c40a9bb53cc75becbfb1df6ae49b34b5e6e5a81744b14ae8667ec564ad2527709d1a6e7d5e5fa6d483aa0f373a50ad98d42fde368ec4a190d4fae7
-  languageName: node
-  linkType: hard
-
 "merge2@npm:^1.3.0":
   version: 1.4.1
   resolution: "merge2@npm:1.4.1"
@@ -549,16 +541,16 @@ __metadata:
   linkType: hard
 
 "open@npm:^11.0.0":
-  version: 11.0.0
-  resolution: "open@npm:11.0.0"
+  version: 11.0.4
+  resolution: "open@npm:11.0.4"
   dependencies:
-    default-browser: "npm:^5.4.0"
+    default-browser: "npm:^5.5.1"
     define-lazy-prop: "npm:^3.0.0"
     is-in-ssh: "npm:^1.0.0"
     is-inside-container: "npm:^1.0.0"
-    powershell-utils: "npm:^0.1.0"
-    wsl-utils: "npm:^0.3.0"
-  checksum: 10c0/7aeeda4131268ed90f90e7728dda5c46bb0c6205b27a4be3e86ea33593e30dd393423e20e31c00802a8e635ef59becaee33ef9749a8ceb027567cd253e9e7b1e
+    powershell-utils: "npm:^0.2.1"
+    wsl-utils: "npm:^1.0.0"
+  checksum: 10c0/5be0a902323ea9266cf7323edf8d714b516f739519485e98b2508e38e1ffe6f98e3426aeb182fc88239bf98777258b27abbfe5cb1938bff8dbccec2fd603aca5
   languageName: node
   linkType: hard
 
@@ -585,10 +577,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"powershell-utils@npm:^0.1.0":
-  version: 0.1.0
-  resolution: "powershell-utils@npm:0.1.0"
-  checksum: 10c0/a64713cf3583259c9ed6be211c06b4b19e8608bcb0f7f6287ffac0a95b8c7582b6b662eea0e201fd659492c8e9f9c5fd0bfc4579645c5add9c1a600075621c95
+"powershell-utils@npm:^0.2.0, powershell-utils@npm:^0.2.1":
+  version: 0.2.1
+  resolution: "powershell-utils@npm:0.2.1"
+  checksum: 10c0/be60cd95e78aa143256bfa5ce88736caf874f9b4ac1b9bb3a041749bf8eebb49cdbd1a9859ff7462f2c6421e15f96f711c1e60bd323998fe98d978a4a3116376
   languageName: node
   linkType: hard
 
@@ -633,11 +625,11 @@ __metadata:
   linkType: hard
 
 "semver@npm:^7.6.3":
-  version: 7.7.4
-  resolution: "semver@npm:7.7.4"
+  version: 7.8.6
+  resolution: "semver@npm:7.8.6"
   bin:
     semver: bin/semver.js
-  checksum: 10c0/5215ad0234e2845d4ea5bb9d836d42b03499546ddafb12075566899fc617f68794bb6f146076b6881d755de17d6c6cc73372555879ec7dce2c2feee947866ad2
+  checksum: 10c0/bf0a4d16eb067e5391323649e46b4a268644d7f8ee88e37c7668d35e861ec145b6e7df576d898007fc0d9a2cedcbc33f71460aa3bbea18eedfa5af58c064d7fe
   languageName: node
   linkType: hard
 
@@ -713,12 +705,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"wsl-utils@npm:^0.3.0":
-  version: 0.3.1
-  resolution: "wsl-utils@npm:0.3.1"
+"wsl-utils@npm:^1.0.0":
+  version: 1.0.1
+  resolution: "wsl-utils@npm:1.0.1"
   dependencies:
     is-wsl: "npm:^3.1.0"
-    powershell-utils: "npm:^0.1.0"
-  checksum: 10c0/b3ba99cc6b71f66457eef598d529beeb8cb57a72646877fe25993894b808c60b82f6d47df5463f0b6e54632272f62f5eaea105c12784fd09b06f500f3f53aa2e
+    powershell-utils: "npm:^0.2.0"
+  checksum: 10c0/535a7684d63d9dd0b4349997f81ebb38705809031f354bd0d3ec2e74ebaf94d21f2fbbf4f149e1832474827867ced07b5aadc256a17f9cfd3e70d2f9047dee8e
+  languageName: node
+  linkType: hard
+
+"yaml@npm:^2.9.1":
+  version: 2.9.1
+  resolution: "yaml@npm:2.9.1"
+  bin:
+    yaml: bin.mjs
+  checksum: 10c0/9d06676ef02b89559a8b10a71882bd2cdae81e8393dc8dbc871615c3259475d9609ad973d19cb3c9e71e72d6206e3d1e7aa241c7e55f3d16fd2e77db305827d6
   languageName: node
   linkType: hard

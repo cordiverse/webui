@@ -3,7 +3,7 @@ import { Manager } from './shared.ts'
 
 export * from './shared.ts'
 
-declare module '@cordisjs/plugin-loader' {
+declare module '@cordisjs/loader' {
   interface Loader {
     market: SearchResult
   }

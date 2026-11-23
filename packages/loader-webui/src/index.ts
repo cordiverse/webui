@@ -9,7 +9,6 @@ import glob from 'fast-glob'
 import { Dependency, LocalObject, Manager } from './shared.ts'
 import { PackageJson } from './types.ts'
 import { Ecosystem, Manifest } from './manifest.ts'
-import type { ResolveResult } from '@cordisjs/plugin-loader'
 
 export * from './shared.ts'
 
@@ -265,23 +264,12 @@ export default class NodeManager extends Manager {
 
   private async onPackageReady(object: LocalObject) {
     const { name } = object.package
-    const { internal } = this.ctx.loader
-    if (!internal) return
-    try {
-      const baseUrl = this.ctx.baseUrl!
-      let resolved: ResolveResult
-      switch (internal.version) {
-        case 'v1': resolved = await internal.resolve(name, baseUrl, {}); break
-        case 'v2': resolved = internal.resolveSync(baseUrl, { specifier: name, attributes: {} }); break
-      }
-      if (internal.loadCache.has(resolved.url)) {
-        object.runtime = await this.parseExports(name)
-      }
-    } catch (error) {
-      this.ctx.logger.warn('failed to parse %C', name)
-      this.ctx.logger.debug(error)
-      object.runtime = null
-    }
+    // a package that runs in the config tree has already been imported
+    const running = [...this.rootTree.entries()].some((entry) => {
+      return entry.options.name === name && entry.innerFiber
+    })
+    if (!running) return
+    object.runtime = await this.parseExports(name)
     this.flushPackage(name)
   }
 }

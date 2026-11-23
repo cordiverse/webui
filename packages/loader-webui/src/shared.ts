@@ -1,11 +1,10 @@
-import { Context, EffectMeta, FiberState, Inject, Plugin, Service } from 'cordis'
+import { Component, Context, EffectMeta, FiberState, Inject, Service } from 'cordis'
 import { readFile } from 'node:fs/promises'
 import { Dict, pick } from 'cosmokit'
-import { Entry, EntryOptions, EntryTree } from '@cordisjs/plugin-loader'
+import { Entry, EntryOptions, EntryTree } from '@cordisjs/loader'
 import { Entry as ClientEntry } from '@cordisjs/webui'
 import { PackageJson, SearchObject } from './types.ts'
-import type {} from '@cordisjs/plugin-timer'
-import type {} from '@cordisjs/plugin-hmr'
+import type {} from '@cordisjs/timer'
 import z from 'schemastery'
 
 declare module 'cordis' {
@@ -14,7 +13,7 @@ declare module 'cordis' {
   }
 }
 
-declare module '@cordisjs/plugin-loader' {
+declare module '@cordisjs/loader' {
   interface EntryOptions {
     label?: string | null
     collapse?: boolean | null
@@ -95,10 +94,10 @@ export abstract class Manager extends Service {
 
   protected packages: Dict<LocalObject> = Object.create(null)
 
-  private plugins = new WeakMap<Plugin, string>()
+  private plugins = new WeakMap<Component, string>()
   private pending = new Set<string>()
   private flushTimer?: NodeJS.Timeout
-  private rootTree: EntryTree
+  protected rootTree: EntryTree
   private rootPrefix = ''
 
   constructor(public ctx: Context) {
@@ -128,16 +127,16 @@ export abstract class Manager extends Service {
       parent: this.stripId(entry.parent.ctx.fiber.entry?.id),
       position: entry.parent.data.indexOf(entry.options),
       isGroup: !!entry.subgroup,
-      state: entry.fiber?.state,
-      effects: entry.fiber?.getEffects?.(),
+      state: (entry.innerFiber ?? entry.outerFiber)?.state,
+      effects: entry.innerFiber?.getEffects?.(),
     }))
   }
 
   private getServiceInfo(ctx: Context, name: string): Provider | undefined {
     const key = ctx[Context.isolate][name]
     const impl = ctx.reflect.store[key]
-    if (!impl?.fiber) return
-    const location = this.stripId(this.ctx.loader.locate(impl.fiber)) ?? undefined
+    if (!impl) return
+    const location = this.stripId(this.ctx.loader.locate(impl.ctx.fiber)) ?? undefined
     const schema = impl.value?.Config
     return { location, schema }
   }
@@ -147,7 +146,7 @@ export abstract class Manager extends Service {
     for (const [name, { type }] of Object.entries(this.ctx.reflect.props)) {
       if (type !== 'service') continue
       result[name] = {
-        root: this.getServiceInfo(this.ctx.root, name),
+        root: this.getServiceInfo(this.ctx[Context.root], name),
         local: {},
         global: {},
       }
@@ -267,8 +266,11 @@ export abstract class Manager extends Service {
 
     this.ctx.on('internal/status', updateEntries)
 
-    this.ctx.on('hmr/reload', (reloads) => {
-      reloads.forEach((_, plugin) => this.updatePlugin(plugin))
+    // a component replaced in place, e.g. by HMR, may have a new schema
+    this.ctx.on('internal/replace', (fiber) => {
+      const name = fiber.entry?.options.name
+      if (!name || fiber.entry!.innerFiber !== fiber) return
+      this.updatePackage(name)
     })
   }
 
@@ -300,9 +302,8 @@ export abstract class Manager extends Service {
     }, 100)
   }
 
-  async updatePlugin(plugin: Plugin) {
-    const name = this.plugins.get(plugin)
-    if (!name || !this.packages[name].runtime) return
+  async updatePackage(name: string) {
+    if (!this.packages[name]?.runtime) return
     this.packages[name].runtime = await this.parseExports(name)
     this.flushPackage(name)
   }

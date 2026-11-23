@@ -54,24 +54,24 @@
     }
   },
   "peerDependencies": {
-    "@cordisjs/plugin-http": "^1.5.1",
+    "@cordisjs/http": "^1.6.0",
     "@cordisjs/webui": "^0.8.2",
-    "cordis": "^4.0.0-rc.6"
+    "cordis": "^4.0.0-rc.13"
   },
   "devDependencies": {
     "@cordisjs/client": "^0.8.2",
-    "@cordisjs/plugin-http": "^1.5.1",
-    "@cordisjs/plugin-include": "^1.0.4",
-    "@cordisjs/plugin-loader": "^1.0.0-rc.4",
-    "@cordisjs/plugin-logger-console": "^1.0.0",
-    "@cordisjs/plugin-server": "^1.6.2",
-    "@cordisjs/plugin-timer": "^1.1.2",
+    "@cordisjs/http": "^1.6.0",
+    "@cordisjs/include": "^2.0.0-rc.0",
+    "@cordisjs/loader": "^1.0.0-rc.10",
+    "@cordisjs/logger-console": "^1.0.1",
+    "@cordisjs/server": "^1.7.0",
+    "@cordisjs/timer": "^1.1.5",
     "@cordisjs/ui-market": "^4.6.1",
     "@cordisjs/webui": "^0.8.2",
     "@types/semver": "^7.5.8",
     "@types/which-pm-runs": "^1.0.2",
     "@types/ws": "^8.18.1",
-    "cordis": "^4.0.0-rc.6",
+    "cordis": "^4.0.0-rc.13",
     "ws": "^8.18.0"
   },
   "dependencies": {

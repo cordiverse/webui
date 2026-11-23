@@ -83,6 +83,7 @@ export class Entry<T extends object = any> {
     if (this._disposed) return
     this.ctx.webui.entries[this.id] = this
     this._initialized = true
+    if (this.manifest) this.ctx.webui.watchManifest(this)
     this._broadcast()
   }
 

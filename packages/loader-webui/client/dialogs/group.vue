@@ -40,7 +40,7 @@ watch(createGroup, (value) => {
 
 async function action() {
   const id = await rpc.value!.createConfig({
-    name: '@cordisjs/plugin-group',
+    name: '@cordisjs/group',
     parent: createGroup.value,
     label: input.value || undefined,
     config: [],

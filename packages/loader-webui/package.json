@@ -56,19 +56,18 @@
     }
   },
   "peerDependencies": {
-    "@cordisjs/plugin-loader": "^1.0.0-rc.4",
-    "@cordisjs/plugin-timer": "^1.1.2",
+    "@cordisjs/loader": "^1.0.0-rc.10",
+    "@cordisjs/timer": "^1.1.5",
     "@cordisjs/webui": "^0.8.2",
-    "cordis": "^4.0.0-rc.6"
+    "cordis": "^4.0.0-rc.13"
   },
   "devDependencies": {
     "@cordisjs/client": "^0.8.2",
-    "@cordisjs/plugin-hmr": "^1.0.15",
-    "@cordisjs/plugin-loader": "^1.0.0-rc.4",
-    "@cordisjs/plugin-timer": "^1.1.2",
+    "@cordisjs/loader": "^1.0.0-rc.10",
+    "@cordisjs/timer": "^1.1.5",
     "@cordisjs/webui": "^0.8.2",
     "@types/pnpapi": "^0.0.5",
-    "cordis": "^4.0.0-rc.6"
+    "cordis": "^4.0.0-rc.13"
   },
   "dependencies": {
     "@npm/types": "^2.1.0",

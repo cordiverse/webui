@@ -44,7 +44,7 @@ declare module '@cordisjs/client' {
 export const coreDeps = [
   '@cordisjs/webui',
   '@cordisjs/loader-webui',
-  '@cordisjs/plugin-server',
+  '@cordisjs/server',
 ]
 
 export interface Node extends EntryData {
@@ -332,7 +332,7 @@ export default class Manager extends Service {
       type: ({ config }) => config.tree?.disabled ? '' : this.type.value,
       icon: ({ config }) => config.tree?.disabled ? IconPlay : IconStop,
       label: ({ config }) => (config.tree?.disabled ? '启用' : '停用')
-        + (config.tree?.name === '@cordisjs/plugin-group' ? '分组' : '插件'),
+        + (config.tree?.name === '@cordisjs/group' ? '分组' : '插件'),
     }, {
       id: '.save',
       icon: ({ config }) => config.tree?.disabled ? IconSave : IconCheck,
@@ -443,7 +443,7 @@ export default class Manager extends Service {
         }
         try {
           await execute(tree, !disabled || null)
-          message.success((name === '@cordisjs/plugin-group' ? '分组' : '插件') + (disabled ? '已启用。' : '已停用。'))
+          message.success((name === '@cordisjs/group' ? '分组' : '插件') + (disabled ? '已启用。' : '已停用。'))
         } catch (error) {
           message.error('操作失败，请检查日志！')
         }

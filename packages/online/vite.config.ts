@@ -40,6 +40,8 @@ const alias: Record<string, string> = {
   'node:events': 'events/',
   'node:module': resolve(clientRoot, 'shims/node-module.ts'),
   'module': resolve(clientRoot, 'shims/node-module.ts'),
+  'node:timers/promises': resolve(clientRoot, 'shims/node-timers-promises.ts'),
+  'timers/promises': resolve(clientRoot, 'shims/node-timers-promises.ts'),
 }
 
 /**

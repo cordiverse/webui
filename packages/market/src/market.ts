@@ -1,6 +1,6 @@
 import { Context, Service } from 'cordis'
 import { Dict, Time } from 'cosmokit'
-import type {} from '@cordisjs/plugin-http'
+import type {} from '@cordisjs/http'
 import type {} from '@cordisjs/webui'
 import type { SearchObject, SearchResult } from './types.ts'
 import z from 'schemastery'

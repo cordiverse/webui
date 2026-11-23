@@ -65,7 +65,7 @@ function randomId() {
 /**
  * Default config injected on first boot of a new instance. Kept intentionally
  * small — users add more from the marketplace. Cordis entry trees are arrays
- * of `{ id, name, config? }`; nested groups use `@cordisjs/plugin-group` with
+ * of `{ id, name, config? }`; nested groups use `@cordisjs/group` with
  * a nested `config:` array.
  *
  * Online deployment notes:
@@ -77,10 +77,10 @@ function randomId() {
  */
 function defaultConfig(): EntryOptions[] {
   return [
-    { id: randomId(), name: '@cordisjs/plugin-timer' },
+    { id: randomId(), name: '@cordisjs/timer' },
     {
       id: randomId(),
-      name: '@cordisjs/plugin-group',
+      name: '@cordisjs/group',
       label: 'WebUI',
       config: [
         { id: randomId(), name: '@cordisjs/loader-webui' },

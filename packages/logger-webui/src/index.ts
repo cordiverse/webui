@@ -5,7 +5,7 @@ import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { DatabaseSync } from 'node:sqlite'
 import type {} from '@cordisjs/webui'
-import type {} from '@cordisjs/plugin-timer'
+import type {} from '@cordisjs/timer'
 import z from 'schemastery'
 
 declare module 'cordis' {

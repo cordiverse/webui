@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { Context } from 'yakumo'
-import type {} from '@cordisjs/plugin-cli'
+import type {} from '@cordisjs/cli'
 import { build } from './index.ts'
 import {} from 'yakumo-esbuild'
 import type { UserConfig } from 'vite'

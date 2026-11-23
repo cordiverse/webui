@@ -1,6 +1,6 @@
 import { Context, Service } from 'cordis'
 import { Dict, Time, valueMap } from 'cosmokit'
-import type {} from '@cordisjs/plugin-http'
+import type {} from '@cordisjs/http'
 import type { PackageJson, Registry, RemotePackage } from './types.ts'
 import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'

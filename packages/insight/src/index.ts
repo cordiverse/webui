@@ -1,8 +1,8 @@
-import { Context, Fiber, Plugin } from 'cordis'
+import { Component, Context, Fiber } from 'cordis'
 import { camelize, capitalize } from 'cosmokit'
-import type {} from '@cordisjs/plugin-timer'
+import type {} from '@cordisjs/timer'
 import type {} from '@cordisjs/webui'
-import type {} from '@cordisjs/plugin-loader'
+import type {} from '@cordisjs/loader'
 import type { Link, Node } from '../shared/index.d.ts'
 import z from 'schemastery'
 import assert from 'node:assert'
@@ -11,10 +11,10 @@ function format(name: string) {
   return capitalize(camelize(name))
 }
 
-function getName(plugin: Plugin) {
-  if (!plugin) return 'Root'
-  if (!plugin.name || plugin.name === 'apply') return 'Anonymous'
-  return format(plugin.name)
+function getName(component: Component) {
+  if (!component) return 'Root'
+  if (!component.name || component.name === 'apply') return 'Anonymous'
+  return format(component.name)
 }
 
 export const name = 'insight'
@@ -41,6 +41,7 @@ export function apply(ctx: Context) {
     })
   }, 0)
   ctx.on('internal/plugin', update)
+  ctx.on('internal/replace', update)
   ctx.on('internal/service', update)
   ctx.on('internal/status', update)
 
@@ -53,8 +54,9 @@ export function apply(ctx: Context) {
       if (type !== 'service') continue
       const key = ctx[Context.isolate][name]
       const impl = ctx.reflect.store[key]
-      if (!impl?.fiber.uid) continue
-      (services[impl.fiber.uid] ??= []).push(name)
+      const { uid } = impl?.ctx.fiber ?? {}
+      if (!uid) continue
+      (services[uid] ??= []).push(name)
     }
 
     function addNode(fiber: Fiber) {
@@ -72,7 +74,7 @@ export function apply(ctx: Context) {
       edges.push({ type, source, target })
     }
 
-    addNode(ctx.root.fiber)
+    addNode(ctx[Context.root].fiber)
 
     for (const runtime of ctx.registry.values()) {
       for (const fiber of runtime.fibers) {
@@ -81,8 +83,9 @@ export function apply(ctx: Context) {
         for (const name of Object.keys(fiber.inject)) {
           const key = ctx[Context.isolate][name]
           const impl = ctx.reflect.store[key]
-          if (!impl?.fiber.uid) continue
-          addEdge('dashed', impl.fiber.uid, fiber.uid!)
+          const uid = impl?.ctx.fiber.uid
+          if (!uid) continue
+          addEdge('dashed', uid, fiber.uid!)
         }
       }
     }

@@ -1,5 +1,5 @@
 import { Context, Fiber, Service } from 'cordis'
-import type {} from '@cordisjs/plugin-loader'
+import type {} from '@cordisjs/loader'
 import type * as shared from '@cordisjs/webui/shared'
 import { inject, InjectionKey, markRaw, onScopeDispose, Ref, ref } from 'vue'
 
@@ -11,7 +11,7 @@ export const kContext = Symbol('context') as InjectionKey<Context>
 
 export function useContext() {
   const parent = inject(kContext)!
-  const fiber = parent.plugin(() => {})
+  const fiber = parent.use(() => {})
   onScopeDispose(fiber.dispose)
   return fiber.ctx as Context
 }

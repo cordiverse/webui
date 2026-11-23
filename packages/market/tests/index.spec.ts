@@ -1,6 +1,6 @@
 import { describe, it, beforeAll, afterAll, expect } from 'vitest'
 import { Context } from 'cordis'
-import Loader from '@cordisjs/plugin-loader'
+import Loader from '@cordisjs/loader'
 import { WebSocket } from 'ws'
 import { pathToFileURL } from 'node:url'
 import { existsSync } from 'node:fs'
@@ -30,9 +30,9 @@ function waitFor(cond: () => any, timeout = 8000, interval = 100): Promise<void>
 async function bootCordis(cwd: string): Promise<Context> {
   const ctx = new Context()
   ;(ctx as any).baseUrl = pathToFileURL(cwd + '/').href
-  await (ctx as any).plugin(Loader)
+  await (ctx as any).use(Loader)
   await (ctx as any).loader.create({
-    name: '@cordisjs/plugin-include',
+    name: '@cordisjs/include',
     config: { path: './cordis.yml' },
   })
   await waitFor(() => (ctx as any).webui && (ctx as any).market && (ctx as any).installer, 60_000)
@@ -113,7 +113,7 @@ describe('@cordisjs/market E2E', () => {
     }, 180_000)
 
     afterAll(async () => {
-      try { (ctx as any)?.root?.dispose?.() } catch {}
+      try { await ctx?.fiber.dispose() } catch {}
     })
 
     it('reflects the freshly installed dependency in WS broadcast', async () => {
@@ -124,15 +124,15 @@ describe('@cordisjs/market E2E', () => {
       expect(marketEntryId, 'market entry not found in entry:init').to.be.a('string')
 
       await rpcCall(ws, messages, marketEntryId!, 'install', [
-        { '@cordisjs/plugin-server-echo': '^1.0.0' },
+        { '@cordisjs/server-echo': '^1.0.0' },
       ])
 
       await waitFor(
-        () => messages.some((m) => JSON.stringify(m).includes('@cordisjs/plugin-server-echo')),
+        () => messages.some((m) => JSON.stringify(m).includes('@cordisjs/server-echo')),
         120_000,
       )
 
-      expect(existsSync(join(fixture.cwd, 'node_modules/@cordisjs/plugin-server-echo'))).to.be.true
+      expect(existsSync(join(fixture.cwd, 'node_modules/@cordisjs/server-echo'))).to.be.true
       ws.close()
     }, 180_000)
 
@@ -149,13 +149,13 @@ describe('@cordisjs/market E2E', () => {
       const baseline = messages.length
 
       await rpcCall(ws, messages, marketEntryId!, 'install', [
-        { '@cordisjs/plugin-server-echo': '^1.0.0' },
+        { '@cordisjs/server-echo': '^1.0.0' },
       ])
 
       await waitFor(() => messages.slice(baseline).some((m) =>
         m.type === 'entry:delta'
         && m.body?.id === loaderEntryId
-        && JSON.stringify(m.body ?? {}).includes('@cordisjs/plugin-server-echo'),
+        && JSON.stringify(m.body ?? {}).includes('@cordisjs/server-echo'),
       ), 60_000)
 
       ws.close()

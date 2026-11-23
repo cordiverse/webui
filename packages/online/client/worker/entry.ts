@@ -22,7 +22,7 @@
 
 import '../polyfills.ts'
 import { Context } from 'cordis'
-import LoggerConsole from '@cordisjs/plugin-logger-console'
+import LoggerConsole from '@cordisjs/logger-console'
 import { acceptWorkerSocketBridge } from '../socket.ts'
 import { BrowserLoader } from './loader.ts'
 import { OnlineWebUI } from './online-webui.ts'
@@ -54,7 +54,7 @@ async function boot() {
     // snapshot is still `file:///`. Pass an absolute path here to dodge
     // the stale snapshot — same trick the old main-thread bootstrap used.
     await ctx.loader.create({
-      name: '@cordisjs/plugin-include',
+      name: '@cordisjs/include',
       config: {
         path: `${instancesRoot}/${instanceId}/cordis.yml`,
         enableLogs: true,

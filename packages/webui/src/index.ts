@@ -9,7 +9,7 @@ import { extname, join, relative, resolve } from 'node:path'
 import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { parse } from 'es-module-lexer'
+import { init, parse } from 'es-module-lexer'
 import fetchFile from '@cordisjs/fetch-file'
 import { Entry, WebUI } from './base/index.ts'
 import open from 'open'
@@ -262,9 +262,12 @@ class NodeWebUI extends WebUI {
 
   private async transformImport(source: string, filename: string) {
     let output = '', lastIndex = 0
+    await init
     const [imports] = parse(source)
-    for (const { s, e, n, t } of imports) {
-      if (!n) continue
+    for (const imp of imports) {
+      if (imp.type === 'import-meta' || !imp.specifier) continue
+      if (imp.type === 'dynamic' && imp.glob) continue
+      const { start, end, specifier: n } = imp
       const target = DEPRECATED_ALIASES[n] ?? n
       const file = this._manifest?.resolve[target]
       if (!file) continue
@@ -276,8 +279,8 @@ class NodeWebUI extends WebUI {
         this.ctx.logger.warn(`dependency '%s' is deprecated, use '%s' instead (in %C)`, n, target, path)
       }
       const resolved = `${this.config.uiPath}/-/vendors/${target}`
-      output += source.slice(lastIndex, s) + (t === 2 ? JSON.stringify(resolved) : resolved)
-      lastIndex = e
+      output += source.slice(lastIndex, start) + (imp.type === 'dynamic' ? JSON.stringify(resolved) : resolved)
+      lastIndex = end
     }
     return output + source.slice(lastIndex)
   }

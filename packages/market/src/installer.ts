@@ -8,7 +8,6 @@ import { createRequire } from 'node:module'
 import { spawn } from 'node:child_process'
 import { dirname, join } from 'node:path'
 import { compare, satisfies, valid } from 'semver'
-import which from 'which-pm-runs'
 import z from 'schemastery'
 
 declare module 'cordis' {
@@ -28,6 +27,14 @@ export interface Dependency {
 interface LocalPackage extends PackageJson {
   private?: boolean
   $workspace?: boolean
+}
+
+/** The name of the package manager that runs the process, from its user agent. */
+function getAgent() {
+  const spec = process.env.npm_config_user_agent?.split(' ')[0]
+  if (!spec) return
+  const name = spec.slice(0, spec.lastIndexOf('/'))
+  return name === 'npminstall' ? 'cnpm' : name
 }
 
 async function isComponent(dir: string): Promise<boolean> {
@@ -78,7 +85,6 @@ class Installer extends Service {
 
   private manifest!: LocalPackage
   private depTask?: Promise<Dict<Dependency>>
-  private agent = which()
 
   constructor(public ctx: Context, public config: Installer.Config) {
     super(ctx, 'installer')
@@ -185,7 +191,7 @@ class Installer extends Service {
   }
 
   async exec(args: string[]): Promise<number> {
-    const name = this.agent?.name ?? 'npm'
+    const name = getAgent() ?? 'npm'
     if (name === 'yarn') {
       args.unshift('--no-immutable')
     } else {

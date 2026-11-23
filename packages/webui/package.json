@@ -75,9 +75,9 @@
     "@cordisjs/fetch-file": "^1.0.3",
     "@cordisjs/muon": "^0.2.2",
     "cosmokit": "^1.8.1",
-    "es-module-lexer": "^2.0.0",
-    "open": "^11.0.0",
-    "path-to-regexp": "^8.3.0",
+    "es-module-lexer": "^3.0.4",
+    "open": "^11.0.4",
+    "path-to-regexp": "^9.0.0",
     "schemastery": "^3.18.0"
   }
 }

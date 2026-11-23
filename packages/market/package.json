@@ -68,16 +68,15 @@
     "@cordisjs/timer": "^1.1.5",
     "@cordisjs/ui-market": "^4.6.1",
     "@cordisjs/webui": "^0.8.2",
-    "@types/semver": "^7.5.8",
-    "@types/which-pm-runs": "^1.0.2",
-    "@types/ws": "^8.18.1",
+    "@types/semver": "^7.8.0",
+    "@types/ws": "^8.18.2",
     "cordis": "^4.0.0-rc.13",
-    "ws": "^8.18.0"
+    "vue": "^3.5.45",
+    "ws": "^8.23.0"
   },
   "dependencies": {
     "cosmokit": "^1.8.1",
     "schemastery": "^3.18.0",
-    "semver": "^7.6.3",
-    "which-pm-runs": "^1.1.0"
+    "semver": "^7.8.6"
   }
 }

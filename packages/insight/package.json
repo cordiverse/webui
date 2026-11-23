@@ -53,7 +53,7 @@
     "@cordisjs/webui": "^0.8.2",
     "@types/d3-force": "^3.0.10",
     "cordis": "^4.0.0-rc.13",
-    "d3-force": "^3.0.0"
+    "d3-force": "^3.0.1"
   },
   "dependencies": {
     "cosmokit": "^1.8.1",

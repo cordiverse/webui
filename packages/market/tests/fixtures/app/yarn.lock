@@ -120,8 +120,7 @@ __metadata:
   dependencies:
     cosmokit: "npm:^1.8.1"
     schemastery: "npm:^3.18.0"
-    semver: "npm:^7.6.3"
-    which-pm-runs: "npm:^1.1.0"
+    semver: "npm:^7.8.6"
   peerDependencies:
     "@cordisjs/http": ^1.6.0
     "@cordisjs/webui": ^0.8.2
@@ -174,9 +173,9 @@ __metadata:
     "@cordisjs/fetch-file": "npm:^1.0.3"
     "@cordisjs/muon": "npm:^0.2.2"
     cosmokit: "npm:^1.8.1"
-    es-module-lexer: "npm:^2.0.0"
-    open: "npm:^11.0.0"
-    path-to-regexp: "npm:^8.3.0"
+    es-module-lexer: "npm:^3.0.4"
+    open: "npm:^11.0.4"
+    path-to-regexp: "npm:^9.0.0"
     schemastery: "npm:^3.18.0"
   peerDependencies:
     "@cordisjs/client": 0.8.2
@@ -361,10 +360,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"es-module-lexer@npm:^2.0.0":
-  version: 2.3.2
-  resolution: "es-module-lexer@npm:2.3.2"
-  checksum: 10c0/5e7389424c43478439f12f9a6aca1750f6f99afa384fc3de329f4a45f152ab156671055008adaafc74960877abf8cc338aeebf6bed8c21297b146fd6eb7a22f8
+"es-module-lexer@npm:^3.0.4":
+  version: 3.0.5
+  resolution: "es-module-lexer@npm:3.0.5"
+  checksum: 10c0/846a0fbe10fc0bf510995dbfa5bc48d78f9cb15ee3249a03d4c7f4f35e61924bef8602e82f08735e1d172e26df6bc4acc1d7ea2e96666eb654a55436b9b618e3
   languageName: node
   linkType: hard
 
@@ -540,7 +539,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"open@npm:^11.0.0":
+"open@npm:^11.0.4":
   version: 11.0.4
   resolution: "open@npm:11.0.4"
   dependencies:
@@ -567,6 +566,13 @@ __metadata:
   version: 8.4.2
   resolution: "path-to-regexp@npm:8.4.2"
   checksum: 10c0/05b115c49b47ad252ce05faa32930f643f23769c68b8bcfe78ad833545140c48bbffb3266986d6c8d5db13a64cf12e07e0d72d9882cab830efeefa553533ebaf
+  languageName: node
+  linkType: hard
+
+"path-to-regexp@npm:^9.0.0":
+  version: 9.0.0
+  resolution: "path-to-regexp@npm:9.0.0"
+  checksum: 10c0/1a49c788d9a9ef3af682a8e16ffcd537457fd98aab16a269ea1a20a6915053e0dca28b74fa3dc0a0ece9a12802057ab01da124af2f0c0cd669295deb06884131
   languageName: node
   linkType: hard
 
@@ -624,7 +630,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"semver@npm:^7.6.3":
+"semver@npm:^7.8.6":
   version: 7.8.6
   resolution: "semver@npm:7.8.6"
   bin:
@@ -680,13 +686,6 @@ __metadata:
   version: 7.19.2
   resolution: "undici-types@npm:7.19.2"
   checksum: 10c0/7159f10546f9f6c47d36776bb1bbf8671e87c1e587a6fee84ae1f111ae8de4f914efa8ca0dfcd224f4f4a9dfc3f6028f627ccb5ddaccf82d7fd54671b89fac3e
-  languageName: node
-  linkType: hard
-
-"which-pm-runs@npm:^1.1.0":
-  version: 1.1.0
-  resolution: "which-pm-runs@npm:1.1.0"
-  checksum: 10c0/b8f2f230aa49babe21cb93f169f5da13937f940b8cc7a47d2078d9d200950c0dba5ac5659bc01bdbe401e6db3adec6a97b6115215a4ca8e87fd714aebd0cabc6
   languageName: node
   linkType: hard
 

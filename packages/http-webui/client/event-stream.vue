@@ -122,7 +122,8 @@ function onDataKey(e: KeyboardEvent) {
 .sse-list {
   flex: 1 1 0;
   min-height: 0;
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .sse-input-bar {

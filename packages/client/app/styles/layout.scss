@@ -399,6 +399,55 @@
   }
 }
 
+// A table whose header stays outside the scroll container. The header and the
+// body are separate tables that declare the same column widths in <colgroup>.
+// Both containers reserve the scrollbar gutter so that their columns align.
+.k-table-head,
+.k-table-body {
+  scrollbar-gutter: stable;
+
+  > table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+  }
+
+  tr, tr:last-child {
+    border: none;
+  }
+}
+
+// The header has a border on both sides, and every row of the body has a border
+// on both sides. Each of these blocks extends 1px beyond its slot at both ends,
+// so that its outermost borders coincide with the adjacent edges, such as the
+// bottom border of a toolbar, the bottom border of the header or the top border
+// of the status bar. Where no such edge exists, the border of the table itself
+// remains visible. The borders of the rows scroll with the rows, so that they
+// are retained during overscroll.
+.k-table-head {
+  flex: 0 0 auto;
+  overflow: hidden;
+  margin-top: -1px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-primary);
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.k-table-body {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
+  margin: -1px 0;
+
+  td {
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  tr:first-child td {
+    border-top: 1px solid var(--border-primary);
+  }
+}
+
 .log-line {
   display: flex;
   align-items: baseline;

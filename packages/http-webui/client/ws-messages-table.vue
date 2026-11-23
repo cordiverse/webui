@@ -1,55 +1,58 @@
 <template>
-  <table class="ws-table">
-    <colgroup>
-      <col class="col-dir"/>
-      <col class="col-data"/>
-      <col class="col-size"/>
-      <col class="col-time"/>
-      <col v-if="editable" class="col-actions"/>
-    </colgroup>
-    <thead>
-      <tr>
-        <th class="text-center"></th>
-        <th class="text-left">Data</th>
-        <th class="text-right">Size</th>
-        <th class="text-left">Time</th>
-        <th v-if="editable"></th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr v-for="(msg, i) of messages" :key="i">
-        <td class="text-center ws-dir" :class="msg.direction">
-          <span :title="msg.direction === 'out' ? '发送' : '接收'">
-            {{ msg.direction === 'out' ? '↑' : '↓' }}
-          </span>
-        </td>
-        <td class="text-left ws-data">{{ msg.data }}</td>
-        <td class="text-right ws-size">{{ formatSize(msg.size) }}</td>
-        <td class="text-left ws-time">{{ msg.ts ? formatTime(msg.ts) : '待发送' }}</td>
-        <td v-if="editable" class="ws-actions">
-          <template v-if="msg.direction === 'out'">
-            <button
-              class="ws-icon-btn persist-btn"
-              :class="{ active: msg.persist }"
-              :title="msg.persist ? '已持久化 (点击取消)' : '持久化 (保存到 localStorage)'"
-              @click.stop="$emit('toggle-persist', i)"
-            >
-              <svg v-if="msg.persist" viewBox="0 0 16 16" width="12" height="12">
-                <path fill="currentColor" d="M4 2h8v12l-4-2.5L4 14z"/>
-              </svg>
-              <svg v-else viewBox="0 0 16 16" width="12" height="12">
-                <path fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" d="M4.5 2.5h7v11l-3.5-2.2-3.5 2.2z"/>
-              </svg>
-            </button>
-            <button class="ws-icon-btn" title="删除" @click.stop="$emit('remove', i)">×</button>
-          </template>
-        </td>
-      </tr>
-      <tr v-if="!messages.length" class="ws-empty">
-        <td :colspan="colspan">暂无消息</td>
-      </tr>
-    </tbody>
-  </table>
+  <div class="ws-messages">
+    <div class="k-table-head">
+      <table class="ws-table">
+        <colgroup>
+          <col v-for="(col, i) of columns" :key="i" :width="col.width"/>
+        </colgroup>
+        <thead>
+          <tr>
+            <th v-for="(col, i) of columns" :key="i" :class="col.class">{{ col.label }}</th>
+          </tr>
+        </thead>
+      </table>
+    </div>
+    <div class="k-table-body">
+      <table class="ws-table">
+        <colgroup>
+          <col v-for="(col, i) of columns" :key="i" :width="col.width"/>
+        </colgroup>
+        <tbody>
+          <tr v-for="(msg, i) of messages" :key="i">
+            <td class="text-center ws-dir" :class="msg.direction">
+              <span :title="msg.direction === 'out' ? '发送' : '接收'">
+                {{ msg.direction === 'out' ? '↑' : '↓' }}
+              </span>
+            </td>
+            <td class="text-left ws-data">{{ msg.data }}</td>
+            <td class="text-right ws-size">{{ formatSize(msg.size) }}</td>
+            <td class="text-left ws-time">{{ msg.ts ? formatTime(msg.ts) : '待发送' }}</td>
+            <td v-if="editable" class="ws-actions">
+              <template v-if="msg.direction === 'out'">
+                <button
+                  class="ws-icon-btn persist-btn"
+                  :class="{ active: msg.persist }"
+                  :title="msg.persist ? '已持久化 (点击取消)' : '持久化 (保存到 localStorage)'"
+                  @click.stop="$emit('toggle-persist', i)"
+                >
+                  <svg v-if="msg.persist" viewBox="0 0 16 16" width="12" height="12">
+                    <path fill="currentColor" d="M4 2h8v12l-4-2.5L4 14z"/>
+                  </svg>
+                  <svg v-else viewBox="0 0 16 16" width="12" height="12">
+                    <path fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" d="M4.5 2.5h7v11l-3.5-2.2-3.5 2.2z"/>
+                  </svg>
+                </button>
+                <button class="ws-icon-btn" title="删除" @click.stop="$emit('remove', i)">×</button>
+              </template>
+            </td>
+          </tr>
+          <tr v-if="!messages.length" class="ws-empty">
+            <td :colspan="colspan">暂无消息</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -68,7 +71,15 @@ defineEmits<{
   (e: 'toggle-persist', index: number): void
 }>()
 
-const colspan = computed(() => 4 + (props.editable ? 1 : 0))
+const columns = computed(() => [
+  { label: '', class: 'text-center', width: 40 },
+  { label: 'Data', class: 'text-left' },
+  { label: 'Size', class: 'text-right', width: 72 },
+  { label: 'Time', class: 'text-left', width: 110 },
+  ...props.editable ? [{ label: '', width: 68 }] : [],
+])
+
+const colspan = computed(() => columns.value.length)
 
 function formatTime(ts: number) {
   const d = new Date(ts)
@@ -83,41 +94,29 @@ function formatTime(ts: number) {
 
 <style lang="scss" scoped>
 
+.ws-messages {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .ws-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
   font-size: 12px;
   font-family: var(--font-mono);
 }
 
-.ws-table tr {
-  border: none;
-}
-
-.ws-table col.col-dir     { width: 40px; }
-.ws-table col.col-data    { width: auto; }
-.ws-table col.col-size    { width: 72px; }
-.ws-table col.col-time    { width: 110px; }
-.ws-table col.col-actions { width: 68px; }
-
 .ws-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
   padding: 6px 10px;
   font-size: 10px;
   color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-primary);
   white-space: nowrap;
 }
 
 .ws-table tbody td {
   padding: 6px 10px;
-  border-bottom: 1px solid var(--border-primary);
   vertical-align: top;
 }
 

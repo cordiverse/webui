@@ -46,47 +46,40 @@
         </div>
       </div>
 
-      <table class="req-table">
-        <colgroup>
-          <col class="col-method"/>
-          <col class="col-status"/>
-          <col class="col-path"/>
-          <col class="col-remote"/>
-          <col class="col-latency"/>
-          <col class="col-size"/>
-          <col class="col-time"/>
-        </colgroup>
-        <thead>
-          <tr>
-            <th>Method</th>
-            <th>Status</th>
-            <th class="text-left">Path</th>
-            <th class="text-left">Client</th>
-            <th class="text-center">Duration</th>
-            <th class="text-center">Size</th>
-            <th class="text-center">Time</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="req of filtered" :key="req.id" :class="{ pending: !req.endTime }">
-            <td>
-              <span class="method-badge" :class="methodClass(req.method)">{{ req.method }}</span>
-            </td>
-            <td>
-              <span v-if="!req.endTime && !req.status" class="pending-dot"></span>
-              <span v-else class="status-code" :class="statusClass(req.status)">{{ req.status || 'ERR' }}</span>
-            </td>
-            <td class="cell-path text-left">{{ req.path }}</td>
-            <td class="cell-remote text-left">{{ req.remote || '—' }}</td>
-            <td class="text-center">{{ displayDuration(req) }}</td>
-            <td class="text-center">
-              <size-pair :bytes-in="req.bytesIn || 0" :bytes-out="req.bytesOut || 0"/>
-            </td>
-            <td class="text-center">{{ formatTime(req.startTime) }}</td>
-          </tr>
-        </tbody>
-      </table>
-      <div v-if="!filtered.length" class="empty">
+      <div class="k-table-head">
+        <table class="req-table">
+          <colgroup><col v-for="col of columns" :key="col.label" :width="col.width"/></colgroup>
+          <thead>
+            <tr>
+              <th v-for="col of columns" :key="col.label" :class="col.class">{{ col.label }}</th>
+            </tr>
+          </thead>
+        </table>
+      </div>
+      <div v-if="filtered.length" class="k-table-body">
+        <table class="req-table">
+          <colgroup><col v-for="col of columns" :key="col.label" :width="col.width"/></colgroup>
+          <tbody>
+            <tr v-for="req of filtered" :key="req.id" :class="{ pending: !req.endTime }">
+              <td>
+                <span class="method-badge" :class="methodClass(req.method)">{{ req.method }}</span>
+              </td>
+              <td>
+                <span v-if="!req.endTime && !req.status" class="pending-dot"></span>
+                <span v-else class="status-code" :class="statusClass(req.status)">{{ req.status || 'ERR' }}</span>
+              </td>
+              <td class="cell-path text-left">{{ req.path }}</td>
+              <td class="cell-remote text-left">{{ req.remote || '—' }}</td>
+              <td class="text-center">{{ displayDuration(req) }}</td>
+              <td class="text-center">
+                <size-pair :bytes-in="req.bytesIn || 0" :bytes-out="req.bytesOut || 0"/>
+              </td>
+              <td class="text-center">{{ formatTime(req.startTime) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div v-else class="empty">
         <span v-if="requests.length">没有匹配的请求</span>
         <span v-else>暂无请求记录</span>
       </div>
@@ -114,6 +107,16 @@ onMounted(() => {
 onBeforeUnmount(() => {
   if (tickHandle) clearInterval(tickHandle)
 })
+
+const columns = [
+  { label: 'Method', width: 100 },
+  { label: 'Status', width: 90 },
+  { label: 'Path', class: 'text-left' },
+  { label: 'Client', class: 'text-left', width: 140 },
+  { label: 'Duration', class: 'text-center', width: 100 },
+  { label: 'Size', class: 'text-center', width: 140 },
+  { label: 'Time', class: 'text-center', width: 96 },
+]
 
 const methodOptions = [
   { id: '', label: 'ALL' },
@@ -157,7 +160,7 @@ function clearRequests() {
 .requests-body {
   flex: 1 1 0;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -168,7 +171,7 @@ function clearRequests() {
   align-items: center;
   gap: 8px;
   padding: 12px 24px;
-  border-bottom: 1px solid var(--border-secondary);
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .method-filter {
@@ -251,15 +254,13 @@ function clearRequests() {
 }
 
 .req-table {
-  width: 100%;
-  border-collapse: collapse;
   font-size: 13px;
 
   th, td {
     text-align: left;
     padding: 10px 16px;
-    border-bottom: 1px solid var(--border-secondary);
     vertical-align: middle;
+    white-space: nowrap;
   }
 
   th {
@@ -268,19 +269,12 @@ function clearRequests() {
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    background: var(--bg-secondary);
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    border-bottom: 1px solid var(--border-primary);
   }
 
-  .col-method  { width: 80px; }
-  .col-status  { width: 80px; }
-  .col-remote  { width: 140px; }
-  .col-latency { width: 100px; }
-  .col-size    { width: 140px; }
-  .col-time    { width: 96px; }
+  .cell-path, .cell-remote {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
   .text-left { text-align: left; }
   .text-center { text-align: center; }

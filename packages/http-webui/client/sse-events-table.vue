@@ -1,39 +1,40 @@
 <template>
-  <table class="sse-table">
-    <colgroup>
-      <col class="col-event"/>
-      <col v-if="hasId" class="col-id"/>
-      <col v-if="hasRetry" class="col-retry"/>
-      <col class="col-data"/>
-      <col class="col-time"/>
-      <col v-if="removable" class="col-actions"/>
-    </colgroup>
-    <thead>
-      <tr>
-        <th class="text-left">Event</th>
-        <th v-if="hasId" class="text-left">ID</th>
-        <th v-if="hasRetry" class="text-right">Retry</th>
-        <th class="text-left">Data</th>
-        <th class="text-left">Time</th>
-        <th v-if="removable"></th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr v-for="(ev, i) of events" :key="i">
-        <td class="text-left sse-event" :title="ev.event || 'message'">{{ ev.event || 'message' }}</td>
-        <td v-if="hasId" class="text-left sse-id" :title="ev.id">{{ ev.id ?? '' }}</td>
-        <td v-if="hasRetry" class="text-right sse-retry">{{ ev.retry ?? '' }}</td>
-        <td class="text-left sse-data">{{ ev.data }}</td>
-        <td class="text-left sse-time">{{ formatTime(ev.ts) }}</td>
-        <td v-if="removable" class="sse-remove-cell">
-          <button class="sse-remove" title="删除" @click.stop="$emit('remove', i)">×</button>
-        </td>
-      </tr>
-      <tr v-if="!events.length" class="sse-empty">
-        <td :colspan="colspan">暂无事件</td>
-      </tr>
-    </tbody>
-  </table>
+  <div class="sse-events">
+    <div class="k-table-head">
+      <table class="sse-table">
+        <colgroup>
+          <col v-for="(col, i) of columns" :key="i" :width="col.width"/>
+        </colgroup>
+        <thead>
+          <tr>
+            <th v-for="(col, i) of columns" :key="i" :class="col.class">{{ col.label }}</th>
+          </tr>
+        </thead>
+      </table>
+    </div>
+    <div class="k-table-body">
+      <table class="sse-table">
+        <colgroup>
+          <col v-for="(col, i) of columns" :key="i" :width="col.width"/>
+        </colgroup>
+        <tbody>
+          <tr v-for="(ev, i) of events" :key="i">
+            <td class="text-left sse-event" :title="ev.event || 'message'">{{ ev.event || 'message' }}</td>
+            <td v-if="hasId" class="text-left sse-id" :title="ev.id">{{ ev.id ?? '' }}</td>
+            <td v-if="hasRetry" class="text-right sse-retry">{{ ev.retry ?? '' }}</td>
+            <td class="text-left sse-data">{{ ev.data }}</td>
+            <td class="text-left sse-time">{{ formatTime(ev.ts) }}</td>
+            <td v-if="removable" class="sse-remove-cell">
+              <button class="sse-remove" title="删除" @click.stop="$emit('remove', i)">×</button>
+            </td>
+          </tr>
+          <tr v-if="!events.length" class="sse-empty">
+            <td :colspan="colspan">暂无事件</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -53,9 +54,16 @@ defineEmits<{
 const hasId = computed(() => props.events.some(ev => ev.id !== undefined && ev.id !== ''))
 const hasRetry = computed(() => props.events.some(ev => typeof ev.retry === 'number'))
 
-const colspan = computed(() => {
-  return 3 + (hasId.value ? 1 : 0) + (hasRetry.value ? 1 : 0) + (props.removable ? 1 : 0)
-})
+const columns = computed(() => [
+  { label: 'Event', class: 'text-left', width: 80 },
+  ...hasId.value ? [{ label: 'ID', class: 'text-left', width: 80 }] : [],
+  ...hasRetry.value ? [{ label: 'Retry', class: 'text-right', width: 64 }] : [],
+  { label: 'Data', class: 'text-left' },
+  { label: 'Time', class: 'text-left', width: 96 },
+  ...props.removable ? [{ label: '', width: 36 }] : [],
+])
+
+const colspan = computed(() => columns.value.length)
 
 function formatTime(ts: number) {
   if (!ts) return '—'
@@ -71,43 +79,33 @@ function formatTime(ts: number) {
 
 <style lang="scss" scoped>
 
+.sse-events {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .sse-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
   font-size: 12px;
   font-family: var(--font-mono);
 }
 
-.sse-table tr {
-  border: none;
-}
-
-.sse-table col.col-event   { width: 80px; }
-.sse-table col.col-id      { width: 80px; }
-.sse-table col.col-retry   { width: 64px; }
-.sse-table col.col-data    { width: auto; }
-.sse-table col.col-time    { width: 96px; }
-.sse-table col.col-actions { width: 36px; }
-
 .sse-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
   padding: 6px 10px;
   font-size: 10px;
   color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-primary);
   white-space: nowrap;
   text-align: center;
+
+  &.text-left { text-align: left; }
+  &.text-right { text-align: right; }
 }
 
 .sse-table tbody td {
   padding: 6px 10px;
-  border-bottom: 1px solid var(--border-primary);
   vertical-align: top;
 }
 

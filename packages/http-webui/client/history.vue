@@ -32,28 +32,19 @@
       </div>
     </div>
 
-    <div class="history-list">
+    <div class="k-table-head">
       <table class="hist-table">
-        <colgroup>
-          <col class="col-method"/>
-          <col class="col-status"/>
-          <col class="col-url"/>
-          <col class="col-plugin"/>
-          <col class="col-latency"/>
-          <col class="col-size"/>
-          <col class="col-time"/>
-        </colgroup>
+        <colgroup><col v-for="col of columns" :key="col.label" :width="col.width"/></colgroup>
         <thead>
           <tr>
-            <th>Method</th>
-            <th>Status</th>
-            <th class="text-left">URL</th>
-            <th class="text-left">Plugin</th>
-            <th class="text-center">Duration</th>
-            <th class="text-center">Size</th>
-            <th class="text-center">Time</th>
+            <th v-for="col of columns" :key="col.label" :class="col.class">{{ col.label }}</th>
           </tr>
         </thead>
+      </table>
+    </div>
+    <div v-if="filtered.length" class="k-table-body">
+      <table class="hist-table">
+        <colgroup><col v-for="col of columns" :key="col.label" :width="col.width"/></colgroup>
         <tbody>
           <tr
             v-for="entry of filtered"
@@ -72,7 +63,7 @@
               <span v-else class="pending-dot"></span>
             </td>
             <td class="hist-url text-left">{{ entry.url }}</td>
-            <td class="hist-source">{{ pluginLabel(entry.source) }}</td>
+            <td class="hist-source text-left">{{ pluginLabel(entry.source) }}</td>
             <td class="text-center hist-latency">{{ displayDuration(entry) }}</td>
             <td class="text-center hist-size">
               <size-pair :bytes-in="entry.bytesIn || 0" :bytes-out="entry.bytesOut || 0"/>
@@ -81,10 +72,10 @@
           </tr>
         </tbody>
       </table>
-      <div v-if="!filtered.length" class="hist-empty">
-        <span v-if="history.length">没有匹配的请求</span>
-        <span v-else>暂无请求记录</span>
-      </div>
+    </div>
+    <div v-else class="hist-empty">
+      <span v-if="history.length">没有匹配的请求</span>
+      <span v-else>暂无请求记录</span>
     </div>
   </div>
 </template>
@@ -111,6 +102,16 @@ onMounted(() => {
 onBeforeUnmount(() => {
   if (tickHandle) clearInterval(tickHandle)
 })
+
+const columns = [
+  { label: 'Method', width: 80 },
+  { label: 'Status', width: 80 },
+  { label: 'URL', class: 'text-left' },
+  { label: 'Plugin', class: 'text-left', width: 160 },
+  { label: 'Duration', class: 'text-center', width: 80 },
+  { label: 'Size', class: 'text-center', width: 140 },
+  { label: 'Time', class: 'text-center', width: 96 },
+]
 
 const methodOptions = [
   { id: '', label: 'ALL' },
@@ -306,35 +307,11 @@ function formatTime(ts: number) {
   }
 }
 
-.history-list {
-  flex: 1 1 0;
-  min-height: 0;
-  overflow-y: auto;
-}
-
 .hist-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
   font-size: 13px;
 }
 
-.hist-table tr {
-  border: none;
-}
-
-.hist-table col.col-method  { width: 80px; }
-.hist-table col.col-status  { width: 80px; }
-.hist-table col.col-url     { width: auto; }
-.hist-table col.col-plugin  { width: 160px; }
-.hist-table col.col-latency { width: 80px; }
-.hist-table col.col-size    { width: 140px; }
-.hist-table col.col-time    { width: 96px; }
-
 .hist-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
   text-align: center;
   padding: 8px 12px;
   font-size: 11px;
@@ -342,15 +319,14 @@ function formatTime(ts: number) {
   color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-secondary);
   white-space: nowrap;
+
+  &.text-left { text-align: left; }
 }
 
 .hist-table tbody td {
   padding: 10px 12px;
   vertical-align: middle;
-  border-bottom: 1px solid var(--border-primary);
   white-space: nowrap;
 }
 
@@ -446,6 +422,7 @@ function formatTime(ts: number) {
 .hist-time { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); }
 
 .hist-empty {
+  flex: 1 1 0;
   display: flex;
   align-items: center;
   justify-content: center;

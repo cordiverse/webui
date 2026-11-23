@@ -350,7 +350,8 @@ function shortContentType(type: string) {
 .response-sse {
   flex: 1 1 0;
   min-height: 0;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   background: var(--bg-tertiary);
 
   .response-error {

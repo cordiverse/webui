@@ -273,15 +273,15 @@ function onTogglePersist(index: number) {
 .ws-scroll-area {
   flex: 1 1 0;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   background: var(--bg-tertiary);
 }
 
 .ws-timeline {
-  flex: 1 1 auto;
-  min-height: 240px;
+  flex: 1 1 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }

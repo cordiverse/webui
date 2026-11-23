@@ -27,44 +27,39 @@
         </div>
       </div>
 
-      <table class="route-table">
-        <colgroup>
-          <col class="col-method"/>
-          <col class="col-path"/>
-          <col class="col-plugin"/>
-          <col class="col-requests"/>
-          <col class="col-latency"/>
-          <col class="col-status"/>
-        </colgroup>
-        <thead>
-          <tr>
-            <th>Method</th>
-            <th class="text-left">Path</th>
-            <th class="text-left">Plugin</th>
-            <th class="text-center">Requests</th>
-            <th class="text-center">Avg Latency</th>
-            <th class="text-center">Last Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="route of routes" :key="route.id">
-            <td>
-              <span class="method-badge" :class="methodClass(route.method)">{{ route.method }}</span>
-            </td>
-            <td class="cell-path text-left">{{ fullPath(route) }}</td>
-            <td class="cell-plugin text-left">{{ pluginLabel(route.plugin) }}</td>
-            <td class="text-center">{{ route.requests || '—' }}</td>
-            <td class="text-center">{{ route.requests ? formatDuration(route.avgLatency) : '—' }}</td>
-            <td class="text-center">
-              <span v-if="route.lastStatus" class="status-code" :class="statusClass(route.lastStatus)">
-                {{ route.lastStatus }}
-              </span>
-              <span v-else>—</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <div v-if="!routes.length" class="empty">暂无已注册的路由</div>
+      <div class="k-table-head">
+        <table class="route-table">
+          <colgroup><col v-for="col of columns" :key="col.label" :width="col.width"/></colgroup>
+          <thead>
+            <tr>
+              <th v-for="col of columns" :key="col.label" :class="col.class">{{ col.label }}</th>
+            </tr>
+          </thead>
+        </table>
+      </div>
+      <div v-if="routes.length" class="k-table-body">
+        <table class="route-table">
+          <colgroup><col v-for="col of columns" :key="col.label" :width="col.width"/></colgroup>
+          <tbody>
+            <tr v-for="route of routes" :key="route.id">
+              <td>
+                <span class="method-badge" :class="methodClass(route.method)">{{ route.method }}</span>
+              </td>
+              <td class="cell-path text-left">{{ fullPath(route) }}</td>
+              <td class="cell-plugin text-left">{{ pluginLabel(route.plugin) }}</td>
+              <td class="text-center">{{ route.requests || '—' }}</td>
+              <td class="text-center">{{ route.requests ? formatDuration(route.avgLatency) : '—' }}</td>
+              <td class="text-center">
+                <span v-if="route.lastStatus" class="status-code" :class="statusClass(route.lastStatus)">
+                  {{ route.lastStatus }}
+                </span>
+                <span v-else>—</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div v-else class="empty">暂无已注册的路由</div>
     </div>
   </k-layout>
 </template>
@@ -81,6 +76,15 @@ const ctx = useContext()
 const data = useRpc<Data>()
 
 const routes = computed<ServerRoute[]>(() => Object.values(data.value?.routes ?? {}))
+
+const columns = [
+  { label: 'Method', width: 100 },
+  { label: 'Path', class: 'text-left' },
+  { label: 'Plugin', class: 'text-left', width: 160 },
+  { label: 'Requests', class: 'text-center', width: 100 },
+  { label: 'Avg Latency', class: 'text-center', width: 110 },
+  { label: 'Last Status', class: 'text-center', width: 110 },
+]
 
 // Sliding-window stats are computed on the client from `requests`, driven by
 // a lightweight `now` tick so windows still slide when the server is idle.
@@ -130,7 +134,7 @@ function pluginLabel(source?: string) {
 .routes-body {
   flex: 1 1 0;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -162,15 +166,13 @@ function pluginLabel(source?: string) {
 }
 
 .route-table {
-  width: 100%;
-  border-collapse: collapse;
   font-size: 13px;
 
   th, td {
     text-align: left;
     padding: 10px 16px;
-    border-bottom: 1px solid var(--border-secondary);
     vertical-align: middle;
+    white-space: nowrap;
   }
 
   th {
@@ -179,18 +181,12 @@ function pluginLabel(source?: string) {
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    background: var(--bg-secondary);
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    border-bottom: 1px solid var(--border-primary);
   }
 
-  .col-method  { width: 80px; }
-  .col-plugin  { width: 160px; }
-  .col-requests { width: 100px; }
-  .col-latency { width: 100px; }
-  .col-status  { width: 100px; }
+  .cell-path, .cell-plugin {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
   .text-left { text-align: left; }
   .text-center { text-align: center; }

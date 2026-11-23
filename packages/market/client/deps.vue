@@ -44,62 +44,65 @@
     </template>
 
     <div class="deps-body">
-      <table class="deps-table" v-if="rows.length">
-        <colgroup>
-          <col>
-          <col width="140">
-          <col width="220">
-          <col width="180">
-        </colgroup>
-        <thead>
-          <tr>
-            <th>依赖</th>
-            <th>本地版本</th>
-            <th>目标版本</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="row in rows" :key="row.name">
-            <td class="name">
-              <span class="pkg">{{ row.name }}</span>
-              <span v-if="row.workspace" class="badge workspace">工作区</span>
-              <span v-if="row.invalid" class="badge danger">无效</span>
-              <span v-if="row.missing" class="badge warning">未安装</span>
-            </td>
-            <td class="version">{{ row.resolved ?? '—' }}</td>
-            <td>
-              <el-select
-                v-if="!row.workspace && row.versionKeys.length"
-                size="small"
-                :model-value="row.target ?? ''"
-                @update:model-value="setVersion(row.name, $event)"
-                class="target-select"
-              >
-                <el-option value="" label="不变更"/>
-                <el-option value="__remove__" label="移除"/>
-                <el-option
-                  v-for="v in row.versionKeys"
-                  :key="v"
-                  :value="v"
-                  :label="v + (v === row.resolved ? ' (当前)' : '')"
-                />
-              </el-select>
-              <span v-else class="version muted">{{ row.workspace ? '工作区' : '—' }}</span>
-            </td>
-            <td class="actions">
-              <button class="action-btn primary" @click="openDetail(row.name)">详情</button>
-              <button
-                v-if="row.target !== undefined"
-                class="action-btn ghost"
-                @click="clearVersion(row.name)"
-              >
-                取消
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <template v-if="rows.length">
+        <div class="k-table-head">
+          <table class="deps-table">
+            <colgroup><col v-for="col of columns" :key="col.label" :width="col.width"/></colgroup>
+            <thead>
+              <tr>
+                <th v-for="col of columns" :key="col.label">{{ col.label }}</th>
+              </tr>
+            </thead>
+          </table>
+        </div>
+        <div class="k-table-body">
+          <table class="deps-table">
+            <colgroup><col v-for="col of columns" :key="col.label" :width="col.width"/></colgroup>
+            <tbody>
+              <tr v-for="row in rows" :key="row.name">
+                <td class="name">
+                  <span class="pkg">{{ row.name }}</span>
+                  <span v-if="row.workspace" class="badge workspace">工作区</span>
+                  <span v-if="row.invalid" class="badge danger">无效</span>
+                  <span v-if="row.missing" class="badge warning">未安装</span>
+                </td>
+                <td class="version">{{ row.resolved ?? '—' }}</td>
+                <td>
+                  <el-select
+                    v-if="!row.workspace && row.versionKeys.length"
+                    size="small"
+                    :model-value="row.target ?? ''"
+                    @update:model-value="setVersion(row.name, $event)"
+                    class="target-select"
+                  >
+                    <el-option value="" label="不变更"/>
+                    <el-option value="__remove__" label="移除"/>
+                    <el-option
+                      v-for="v in row.versionKeys"
+                      :key="v"
+                      :value="v"
+                      :label="v + (v === row.resolved ? ' (当前)' : '')"
+                    />
+                  </el-select>
+                  <span v-else class="version muted">{{ row.workspace ? '工作区' : '—' }}</span>
+                </td>
+                <td>
+                  <div class="actions">
+                    <button class="action-btn primary" @click="openDetail(row.name)">详情</button>
+                    <button
+                      v-if="row.target !== undefined"
+                      class="action-btn ghost"
+                      @click="clearVersion(row.name)"
+                    >
+                      取消
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </template>
       <k-empty v-else>
         <p>未检测到任何依赖。</p>
       </k-empty>
@@ -117,6 +120,13 @@ import { kActivePackage, kDependencies, kPackagesMap, kRefresh, kShowConfirm, kS
 import { activePackage, showConfirm, showManual, storage } from './store'
 
 const data = useRpc<Data>()
+
+const columns = [
+  { label: '依赖' },
+  { label: '本地版本', width: 140 },
+  { label: '目标版本', width: 220 },
+  { label: '操作', width: 180 },
+]
 
 const market = computed(() => data.value?.market)
 const deps = computed(() => data.value?.dependencies ?? {})
@@ -264,18 +274,16 @@ async function refresh() {
 .deps-body {
   flex: 1 1 0;
   min-height: 0;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .deps-table {
-  width: 100%;
-  border-collapse: collapse;
   font-size: 13px;
 
   th, td {
     text-align: left;
     padding: 10px 16px;
-    border-bottom: 1px solid var(--border-secondary);
     vertical-align: middle;
   }
 
@@ -283,11 +291,6 @@ async function refresh() {
     color: var(--text-tertiary);
     font-weight: 500;
     font-size: 12px;
-    background: var(--bg-secondary);
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    border-bottom: 1px solid var(--border-primary);
   }
 
   td.name {

@@ -23,39 +23,47 @@
     <div v-if="!info" class="table-empty">表 {{ tab.table }} 已不存在</div>
     <div v-else-if="error" class="table-error">{{ error }}</div>
     <div v-else class="table-scroll">
-      <table class="data-grid">
-        <thead>
-          <tr>
-            <th
-              v-for="field of info.fields"
-              :key="field.name"
-              :class="{ sortable: true, active: tab.sort?.field === field.name }"
-              @click="onHeaderClick(field.name)"
-            >
-              <field-type :type="field.type"/>
-              <span class="header-name">{{ field.name }}</span>
-              <span class="header-sort" v-if="tab.sort?.field === field.name">
-                {{ tab.sort.direction === 'asc' ? '▲' : '▼' }}
-              </span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(row, idx) of rows" :key="rowKey(row, idx)">
-            <td
-              v-for="field of info.fields"
-              :key="field.name"
-              :title="renderCell(row[field.name])"
-              @dblclick="onCellDblClick(row, field)"
-            >
-              <span class="cell" :class="cellClass(row[field.name])">{{ renderCell(row[field.name]) }}</span>
-            </td>
-          </tr>
-          <tr v-if="!rows.length && !loading">
-            <td :colspan="info.fields.length" class="grid-empty">空表</td>
-          </tr>
-        </tbody>
-      </table>
+      <div ref="headRef" class="k-table-head">
+        <table class="data-grid" :style="gridStyle">
+          <colgroup><col v-for="field of info.fields" :key="field.name" :width="columnWidth"/></colgroup>
+          <thead>
+            <tr>
+              <th
+                v-for="field of info.fields"
+                :key="field.name"
+                :class="{ sortable: true, active: tab.sort?.field === field.name }"
+                @click="onHeaderClick(field.name)"
+              >
+                <field-type :type="field.type"/>
+                <span class="header-name">{{ field.name }}</span>
+                <span class="header-sort" v-if="tab.sort?.field === field.name">
+                  {{ tab.sort.direction === 'asc' ? '▲' : '▼' }}
+                </span>
+              </th>
+            </tr>
+          </thead>
+        </table>
+      </div>
+      <div class="k-table-body" @scroll="onBodyScroll">
+        <table class="data-grid" :style="gridStyle">
+          <colgroup><col v-for="field of info.fields" :key="field.name" :width="columnWidth"/></colgroup>
+          <tbody>
+            <tr v-for="(row, idx) of rows" :key="rowKey(row, idx)">
+              <td
+                v-for="field of info.fields"
+                :key="field.name"
+                :title="renderCell(row[field.name])"
+                @dblclick="onCellDblClick(row, field)"
+              >
+                <span class="cell" :class="cellClass(row[field.name])">{{ renderCell(row[field.name]) }}</span>
+              </td>
+            </tr>
+            <tr v-if="!rows.length && !loading">
+              <td :colspan="info.fields.length" class="grid-empty">空表</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       <div v-if="loading" class="table-loading">加载中…</div>
     </div>
 
@@ -87,6 +95,19 @@ const props = defineProps<{
   tab: TableTab
   info?: TableInfo
 }>()
+
+const columnWidth = 180
+
+const gridStyle = computed(() => ({
+  minWidth: (props.info?.fields.length ?? 0) * columnWidth + 'px',
+}))
+
+const headRef = ref<HTMLElement>()
+
+function onBodyScroll(event: Event) {
+  if (!headRef.value) return
+  headRef.value.scrollLeft = (event.target as HTMLElement).scrollLeft
+}
 
 const loading = ref(false)
 const error = ref('')
@@ -222,7 +243,7 @@ function onCellDblClick(row: any, field: FieldInfo) {
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  border-bottom: 1px solid var(--border-secondary);
+  border-bottom: 1px solid var(--border-primary);
   font-size: 12px;
 }
 
@@ -273,24 +294,20 @@ function onCellDblClick(row: any, field: FieldInfo) {
 .table-scroll {
   flex: 1 1 0;
   min-height: 0;
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
   position: relative;
 }
 
 .data-grid {
-  width: 100%;
-  border-collapse: collapse;
   font-size: 12px;
 
   thead th {
-    position: sticky;
-    top: 0;
-    z-index: 1;
     text-align: left;
     padding: 8px 12px;
-    background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-primary);
     color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
     user-select: none;
     white-space: nowrap;
 
@@ -318,8 +335,6 @@ function onCellDblClick(row: any, field: FieldInfo) {
 
   tbody td {
     padding: 6px 12px;
-    border-bottom: 1px solid var(--border-secondary);
-    max-width: 360px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -385,7 +400,7 @@ function onCellDblClick(row: any, field: FieldInfo) {
   justify-content: center;
   gap: 6px;
   padding: 8px;
-  border-top: 1px solid var(--border-secondary);
+  border-top: 1px solid var(--border-primary);
   font-size: 12px;
 }
 

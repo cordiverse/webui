@@ -717,7 +717,7 @@ function onAddWorkspace() {
   th, td {
     text-align: left;
     padding: 6px 10px;
-    border-bottom: 1px solid var(--border-secondary);
+    border-bottom: 1px solid var(--border-primary);
     vertical-align: middle;
   }
 

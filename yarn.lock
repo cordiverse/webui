@@ -347,6 +347,14 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@cordisjs/muon@workspace:packages/muon":
+  version: 0.0.0-use.local
+  resolution: "@cordisjs/muon@workspace:packages/muon"
+  dependencies:
+    cosmokit: "npm:^1.8.1"
+  languageName: unknown
+  linkType: soft
+
 "@cordisjs/notifier@workspace:packages/notifier":
   version: 0.0.0-use.local
   resolution: "@cordisjs/notifier@workspace:packages/notifier"

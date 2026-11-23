@@ -5,6 +5,7 @@
 ### Core packages
 
 - @cordisjs/client
+- @cordisjs/muon
 - @cordisjs/ui-components
 - @cordisjs/ui-market
 - @cordisjs/registry

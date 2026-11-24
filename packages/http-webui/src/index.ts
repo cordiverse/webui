@@ -38,7 +38,7 @@ export interface Config {
 }
 
 export const Config: z<Config> = z.object({
-  historyLimit: z.natural().default(500).description('请求历史的最大条数。'),
+  historyLimit: z.natural().default(500).description('The maximum number of requests kept in the history.'),
 })
 
 export const inject = ['http', 'webui', 'server.proxy']

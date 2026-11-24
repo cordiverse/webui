@@ -437,6 +437,9 @@ namespace NodeWebUI {
     content?: string
   }
 
+  const attrs = z.dict(z.string()).role('table').description('The attributes of the element.')
+  const content = z.string().role('textarea').description('The content of the element.')
+
   export const Head: z<Head> = z.intersect([
     z.object({
       tag: z.union([
@@ -446,35 +449,35 @@ namespace NodeWebUI {
         'script',
         'style',
         z.string(),
-      ]).required(),
+      ]).required().description('The tag name of the element.'),
     }),
     z.union([
       z.object({
         tag: z.const('title').required(),
-        content: z.string().role('textarea'),
+        content,
       }),
       z.object({
         tag: z.const('link').required(),
-        attrs: z.dict(z.string()).role('table'),
+        attrs,
       }),
       z.object({
         tag: z.const('meta').required(),
-        attrs: z.dict(z.string()).role('table'),
+        attrs,
       }),
       z.object({
         tag: z.const('script').required(),
-        attrs: z.dict(z.string()).role('table'),
-        content: z.string().role('textarea'),
+        attrs,
+        content,
       }),
       z.object({
         tag: z.const('style').required(),
-        attrs: z.dict(z.string()).role('table'),
-        content: z.string().role('textarea'),
+        attrs,
+        content,
       }),
       z.object({
         tag: z.string().required(),
-        attrs: z.dict(z.string()).role('table'),
-        content: z.string().role('textarea'),
+        attrs,
+        content,
       }),
     ]),
   ])
@@ -493,15 +496,15 @@ namespace NodeWebUI {
 
   export const Config: z<Config> = z.intersect([
     z.object({
-      uiPath: z.string().default(''),
-      apiPath: z.string().default('/api'),
-      selfUrl: z.string().role('link').default(''),
-      open: z.boolean(),
-      head: z.array(Head),
+      uiPath: z.string().default('').description('The path under which the console is served. An empty string serves it at the root of the server.'),
+      apiPath: z.string().default('/api').description('The path of the WebSocket endpoint to which the client connects.'),
+      selfUrl: z.string().role('link').default('').description('The URL prepended to `apiPath` to form the address of the WebSocket endpoint. An empty string resolves the endpoint against the origin of the page.'),
+      open: z.boolean().description('Open the console in the default browser at startup, unless a client was connected before a restart.'),
+      head: z.array(Head).description('Additional elements inserted into the `<head>` of the page.'),
       heartbeat: z.object({
-        interval: z.number().default(Time.second * 30),
-        timeout: z.number().default(Time.minute),
-      }),
+        interval: z.number().default(Time.second * 30).description('The time without incoming messages after which the client sends a ping, in milliseconds.'),
+        timeout: z.number().default(Time.minute).description('The time without incoming messages after which the client closes the connection and reconnects, in milliseconds.'),
+      }).description('The heartbeat of the WebSocket connection.'),
       devMode: z.boolean().default(process.env.NODE_ENV === 'development').hidden(),
       cacheDir: z.string().default('cache/vite').hidden(),
       dev: Dev,

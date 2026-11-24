@@ -56,7 +56,7 @@ export interface Config {
 }
 
 export const Config: z<Config> = z.object({
-  pageSize: z.natural().default(50).description('每页默认行数(客户端可改)。'),
+  pageSize: z.natural().default(50).description('The default number of rows on a page.'),
 })
 
 function describeFields(model: any): FieldInfo[] {

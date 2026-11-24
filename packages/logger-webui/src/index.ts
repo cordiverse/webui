@@ -27,11 +27,11 @@ export interface Config {
 export const Config: z<Config> = z.object({
   path: z.string().role('path', { filters: ['file'] })
     .default('data/logs.db')
-    .description('日志数据库文件路径。'),
+    .description('The path of the database file that stores the logs.'),
   maxAge: z.natural().default(30)
-    .description('日志保存的最大天数，0 表示永久保留。'),
+    .description('The number of days for which the logs are kept. `0` keeps the logs permanently.'),
   bufferSize: z.natural().default(1000)
-    .description('客户端连接时预加载的最新日志条数。'),
+    .description('The number of the latest logs that are sent to a client when it connects.'),
 })
 
 export const inject = ['webui', 'timer']

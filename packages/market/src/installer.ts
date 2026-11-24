@@ -243,8 +243,8 @@ namespace Installer {
   }
 
   export const Config: z<Config> = z.object({
-    endpoint: z.string().role('link').description('npm 源地址；留空默认 registry.npmjs.org。'),
-    timeout: z.number().role('time').default(Time.second * 30).description('请求超时时间。'),
+    endpoint: z.string().role('link').description('The URL of the npm registry. Defaults to `https://registry.npmjs.org`.'),
+    timeout: z.number().role('time').default(Time.second * 30).description('The timeout of a request to the registry, in milliseconds.'),
   })
 }
 

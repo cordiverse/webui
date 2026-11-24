@@ -40,7 +40,7 @@ export interface Config {
 export const Config: z<Config> = z.intersect([
   Market.Config,
   z.object({
-    registry: Installer.Config.description('npm 源与安装设置。'),
+    registry: Installer.Config.description('The npm registry from which packages are resolved and installed.'),
   }),
 ])
 

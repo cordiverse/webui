@@ -97,11 +97,11 @@ namespace Market {
 
   export const Config: z<Config> = z.object({
     endpoint: z.string().role('link').default('https://registry.cordis.io/index.json')
-      .description('搜索服务地址。应当返回一个符合 SearchResult 结构的 JSON。'),
+      .description('The URL of the search service, which responds with a JSON document of the `SearchResult` structure.'),
     timeout: z.number().role('time').default(Time.second * 30)
-      .description('请求超时时间。'),
+      .description('The timeout of a request to the search service, in milliseconds.'),
     ttl: z.number().role('time').default(Time.hour * 12)
-      .description('市场缓存的有效期；过期后客户端连接会触发自动刷新。'),
+      .description('The lifetime of the cached search result, after which the result is fetched again.'),
   })
 }
 

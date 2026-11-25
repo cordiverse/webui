@@ -50,18 +50,20 @@
     }
   },
   "peerDependencies": {
-    "@cordisjs/timer": "^1.1.5",
+    "@cordisjs/fs": "^2.0.0-rc.1",
+    "@cordisjs/timer": "^2.0.0-rc.0",
     "@cordisjs/webui": "^0.9.0",
-    "cordis": "^4.0.0-rc.13"
+    "cordis": "^4.0.0-rc.14"
   },
   "devDependencies": {
     "@cordisjs/client": "^0.9.0",
+    "@cordisjs/fs": "^2.0.0-rc.1",
     "@cordisjs/loader-webui": "^0.11.0",
-    "@cordisjs/logger-console": "^1.0.1",
-    "@cordisjs/timer": "^1.1.5",
+    "@cordisjs/logger-console": "^1.0.2",
+    "@cordisjs/timer": "^2.0.0-rc.0",
     "@cordisjs/webui": "^0.9.0",
     "ansi_up": "^6.0.6",
-    "cordis": "^4.0.0-rc.13"
+    "cordis": "^4.0.0-rc.14"
   },
   "dependencies": {
     "cosmokit": "^1.8.1",

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { DatabaseSync } from 'node:sqlite'
 import type {} from '@cordisjs/webui'
 import type {} from '@cordisjs/timer'
+import type {} from '@cordisjs/fs'
 import z from 'schemastery'
 
 declare module 'cordis' {
@@ -34,7 +35,7 @@ export const Config: z<Config> = z.object({
     .description('The number of the latest logs that are sent to a client when it connects.'),
 })
 
-export const inject = ['webui', 'timer']
+export const inject = ['webui', 'std:timer', 'std:fs']
 
 export interface Data {
   messages: Message[]
@@ -69,7 +70,7 @@ function rowToMessage(row: Row): Message {
 }
 
 export async function* apply(ctx: Context, config: Config) {
-  const filename = fileURLToPath(new URL(config.path, ctx.baseUrl))
+  const filename = fileURLToPath(ctx.std.fs.resolve(config.path))
   await mkdir(dirname(filename), { recursive: true })
 
   const db = new DatabaseSync(filename)

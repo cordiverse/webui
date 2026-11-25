@@ -1,5 +1,5 @@
 import { Context } from 'cordis'
-import type {} from '@cordisjs/plugin-database'
+import type {} from '@cordisjs/database'
 import type {} from '@cordisjs/webui'
 import z from 'schemastery'
 import { Codec } from './codec.ts'

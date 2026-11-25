@@ -62,7 +62,7 @@ class Market extends Service {
     this.emit()
 
     try {
-      const result = await this.ctx.http.get<SearchResult>(this.config.endpoint, {
+      const result = await this.ctx.std.http.get<SearchResult>(this.config.endpoint, {
         timeout: this.config.timeout,
       })
       this.data = Object.fromEntries(result.objects.map(obj => [obj.package.name, obj]))

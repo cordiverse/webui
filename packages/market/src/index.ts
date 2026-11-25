@@ -28,7 +28,7 @@ export interface Data {
 }
 
 export const name = 'market'
-export const inject = ['http', 'webui']
+export const inject = ['std:http', 'std:fs', 'webui']
 
 export interface Config {
   endpoint: string
@@ -93,7 +93,7 @@ export function apply(ctx: Context, config: Config) {
       },
       async describe(name) {
         try {
-          const registry = await ctx.http.get<any>(`${ctx.installer.endpoint}/${name}`, {
+          const registry = await ctx.std.http.get<any>(`${ctx.installer.endpoint}/${name}`, {
             timeout: config.registry?.timeout ?? config.timeout,
           })
           const latest = registry['dist-tags']?.latest

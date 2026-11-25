@@ -6,10 +6,10 @@ import { build } from './index.ts'
 import {} from 'yakumo-esbuild'
 import type { UserConfig } from 'vite'
 
-export const inject = ['yakumo', 'cli']
+export const inject = ['yakumo', 'std:cli']
 
 export function apply(ctx: Context) {
-  ctx.cli
+  ctx.std.cli
     .command('client')
     .action(async ({ args }) => {
       await ctx.yakumo.initialize()

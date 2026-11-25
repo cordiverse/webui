@@ -1,5 +1,5 @@
 import { Binary, Dict, isNullable } from 'cosmokit'
-import type { Field, Type } from '@cordisjs/plugin-database'
+import type { Field, Type } from '@cordisjs/database'
 
 export class CodecError extends TypeError {
   constructor(public path: string, message: string) {

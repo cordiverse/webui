@@ -63,7 +63,8 @@ const DEPRECATED_ALIASES: Record<string, string> = {
   'vue-router': '@cordisjs/client',
 }
 
-@Inject('server')
+@Inject('std:server')
+@Inject('std:fs')
 class NodeWebUI extends WebUI {
   static name = 'webui'
 
@@ -106,12 +107,12 @@ class NodeWebUI extends WebUI {
 
     this.serveAssets()
 
-    this.ctx.server.ws(this.config.apiPath, async (req, next) => {
+    this.ctx.std.server.ws(this.config.apiPath, async (req, next) => {
       const socket = await next()
       this.accept(socket as any)
     })
 
-    const target = this.ctx.server.baseUrl + this.config.uiPath
+    const target = this.ctx.std.server.publicUrl + this.config.uiPath
     const loader = this.ctx.get('loader')
     if (this.config.open && !loader?.envData.clientCount && !process.env.CORDIS_AGENT) {
       open(target)
@@ -139,8 +140,8 @@ class NodeWebUI extends WebUI {
 
   watchManifest(entry: Entry) {
     const { url } = entry.manifest!
-    const hmr = this.ctx.get('hmr')
-    const fs = entry.ctx.get('fs')
+    const hmr = this.ctx.get('std:hmr')
+    const fs = entry.ctx.get('std:fs')
     if (!url.startsWith('file:') || !hmr?.config.watch.enabled || !fs) return
     fs.watch(url).on('change', () => {
       const path = relative(hmr.baseDir, fileURLToPath(url))
@@ -158,7 +159,7 @@ class NodeWebUI extends WebUI {
   }
 
   private serveAssets() {
-    this.ctx.server.get('{/*path}', async (req, res, next) => {
+    this.ctx.std.server.get('{/*path}', async (req, res, next) => {
       const innerResponse = await next()
       if (innerResponse || res.claimed) return innerResponse
 
@@ -274,7 +275,7 @@ class NodeWebUI extends WebUI {
       const key = `${n}:${filename}`
       if (target !== n && !this._warnedAliases.has(key)) {
         this._warnedAliases.add(key)
-        const baseDir = fileURLToPath(this.ctx.baseUrl!)
+        const baseDir = fileURLToPath(this.ctx.std.fs.baseUrl!)
         const path = relative(baseDir, filename)
         this.ctx.logger.warn(`dependency '%s' is deprecated, use '%s' instead (in %C)`, n, target, path)
       }
@@ -306,7 +307,7 @@ class NodeWebUI extends WebUI {
 
     const logger = this.ctx.logger('vite')
     const hmrLogger = this.ctx.logger('vite:hmr')
-    const baseDir = fileURLToPath(this.ctx.baseUrl!)
+    const baseDir = fileURLToPath(this.ctx.std.fs.baseUrl!)
     // oxlint-disable-next-line no-control-regex
     const ansiRegex = /\x1B\[[0-9;]*m/g
     const loggedWarnings = new Set<string>()
@@ -350,7 +351,7 @@ class NodeWebUI extends WebUI {
     this.vite = await createServer({
       root: this.root,
       base: '/vite/',
-      cacheDir: cacheDir && fileURLToPath(new URL(cacheDir, this.ctx.baseUrl)),
+      cacheDir: cacheDir && fileURLToPath(this.ctx.std.fs.resolve(cacheDir)),
       server: {
         middlewareMode: true,
         fs: {
@@ -402,7 +403,7 @@ class NodeWebUI extends WebUI {
       }],
     })
 
-    this.ctx.server.use(async (req, res, next) => {
+    this.ctx.std.server.use(async (req, res, next) => {
       if (!req.url.startsWith('/vite/')) return next()
       await new Promise<void>((resolve, reject) => {
         res._res.once('close', () => resolve())

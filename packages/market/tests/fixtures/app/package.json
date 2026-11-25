@@ -5,15 +5,16 @@
   "version": "0.0.0",
   "packageManager": "yarn@4.14.1",
   "dependencies": {
-    "@cordisjs/http": "^1.6.0",
-    "@cordisjs/include": "^2.0.0-rc.0",
-    "@cordisjs/loader": "^1.0.0-rc.10",
+    "@cordisjs/fs": "^2.0.0-rc.1",
+    "@cordisjs/http": "^2.0.0-rc.0",
+    "@cordisjs/include": "^2.0.0-rc.1",
+    "@cordisjs/loader": "^1.0.0-rc.11",
     "@cordisjs/loader-webui": "portal:../../../../loader-webui",
-    "@cordisjs/logger-console": "^1.0.1",
+    "@cordisjs/logger-console": "^1.0.2",
     "@cordisjs/market": "portal:../../..",
-    "@cordisjs/server": "^1.7.0",
-    "@cordisjs/timer": "^1.1.5",
+    "@cordisjs/server": "^2.0.0-rc.0",
+    "@cordisjs/timer": "^2.0.0-rc.0",
     "@cordisjs/webui": "portal:../../../../webui",
-    "cordis": "^4.0.0-rc.13"
+    "cordis": "^4.0.0-rc.14"
   }
 }

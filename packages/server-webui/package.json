@@ -45,22 +45,22 @@
     },
     "service": {
       "required": [
-        "server",
+        "std:server",
         "webui"
       ]
     }
   },
   "peerDependencies": {
-    "@cordisjs/server": "^1.7.0",
+    "@cordisjs/server": "^2.0.0-rc.0",
     "@cordisjs/webui": "^0.9.0",
-    "cordis": "^4.0.0-rc.13"
+    "cordis": "^4.0.0-rc.14"
   },
   "devDependencies": {
     "@cordisjs/client": "^0.9.0",
-    "@cordisjs/logger-console": "^1.0.1",
-    "@cordisjs/server": "^1.7.0",
+    "@cordisjs/logger-console": "^1.0.2",
+    "@cordisjs/server": "^2.0.0-rc.0",
     "@cordisjs/webui": "^0.9.0",
-    "cordis": "^4.0.0-rc.13"
+    "cordis": "^4.0.0-rc.14"
   },
   "dependencies": {
     "cosmokit": "^1.8.1",

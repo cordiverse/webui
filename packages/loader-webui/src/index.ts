@@ -1,4 +1,5 @@
-import { Context } from 'cordis'
+import { Context, Inject } from 'cordis'
+import type {} from '@cordisjs/fs'
 import { defineProperty, Dict, pick } from 'cosmokit'
 import { dirname, join } from 'node:path'
 import { createRequire } from 'node:module'
@@ -42,6 +43,7 @@ interface PackageLocation {
   path: string
 }
 
+@Inject('std:fs')
 export default class NodeManager extends Manager {
   private baseDir: string
   private ecosystems: Ecosystem[] = []
@@ -53,7 +55,8 @@ export default class NodeManager extends Manager {
 
   constructor(ctx: Context) {
     super(ctx)
-    this.baseDir = fileURLToPath(this.ctx.baseUrl!)
+    // Node.js has a working directory, so `baseUrl` is set
+    this.baseDir = fileURLToPath(this.ctx.std.fs.baseUrl!)
   }
 
   async getDependencies() {

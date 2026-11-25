@@ -45,25 +45,25 @@
     },
     "service": {
       "required": [
-        "http",
+        "std:http",
         "webui",
-        "server.proxy"
+        "std:server:proxy"
       ]
     }
   },
   "peerDependencies": {
-    "@cordisjs/http": "^1.6.0",
-    "@cordisjs/server-proxy": "^1.2.1",
+    "@cordisjs/http": "^2.0.0-rc.0",
+    "@cordisjs/server-proxy": "^2.0.0-rc.0",
     "@cordisjs/webui": "^0.9.0",
-    "cordis": "^4.0.0-rc.13"
+    "cordis": "^4.0.0-rc.14"
   },
   "devDependencies": {
     "@cordisjs/client": "^0.9.0",
-    "@cordisjs/http": "^1.6.0",
-    "@cordisjs/server": "^1.7.0",
-    "@cordisjs/server-proxy": "^1.2.1",
+    "@cordisjs/http": "^2.0.0-rc.0",
+    "@cordisjs/server": "^2.0.0-rc.0",
+    "@cordisjs/server-proxy": "^2.0.0-rc.0",
     "@cordisjs/webui": "^0.9.0",
-    "cordis": "^4.0.0-rc.13"
+    "cordis": "^4.0.0-rc.14"
   },
   "dependencies": {
     "cosmokit": "^1.8.1",

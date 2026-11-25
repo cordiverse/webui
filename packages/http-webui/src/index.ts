@@ -41,7 +41,7 @@ export const Config: z<Config> = z.object({
   historyLimit: z.natural().default(500).description('The maximum number of requests kept in the history.'),
 })
 
-export const inject = ['http', 'webui', 'server.proxy']
+export const inject = ['std:http', 'webui', 'std:server:proxy']
 
 function headersToDict(headers: HeadersInit | Dict<string> | undefined): Dict<string> {
   const result: Dict<string> = {}
@@ -89,7 +89,7 @@ export function apply(ctx: Context, config: Config) {
   }, {
     history: [],
     limit: config.historyLimit,
-    proxyBaseUrl: ctx.get('server.proxy')!.baseUrl,
+    proxyBaseUrl: ctx.get('std:server:proxy')!.publicUrl,
     async clear() {
       entry.mutate((d) => {
         d.history.length = 0

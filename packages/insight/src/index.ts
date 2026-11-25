@@ -2,7 +2,7 @@ import { Component, Context, Fiber } from 'cordis'
 import { camelize, capitalize } from 'cosmokit'
 import type {} from '@cordisjs/timer'
 import type {} from '@cordisjs/webui'
-import type {} from '@cordisjs/loader'
+import type { Entry } from '@cordisjs/loader'
 import type { Link, Node } from '../shared/index.d.ts'
 import z from 'schemastery'
 import assert from 'node:assert'
@@ -19,7 +19,7 @@ function getName(component: Component) {
 
 export const name = 'insight'
 
-export const inject = ['webui', 'timer']
+export const inject = ['webui', 'std:timer']
 
 export interface Config {}
 
@@ -60,7 +60,9 @@ export function apply(ctx: Context) {
     }
 
     function addNode(fiber: Fiber) {
-      const { uid, entry, state, runtime } = fiber
+      const { uid, state, runtime } = fiber
+      // read through the symbol, so that the loader is not required at runtime
+      const entry: Entry | undefined = fiber.ctx[Symbol.for('cordis.entry') as typeof Entry.key]
       assert(uid !== null)
       const isGroup = !!runtime?.callback?.[Symbol.for('cordis.group')]
       const isRoot = uid === 0

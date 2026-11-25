@@ -54,7 +54,7 @@
   },
   "peerDependencies": {
     "@cordisjs/client": "0.9.0",
-    "cordis": "^4.0.0-rc.13"
+    "cordis": "^4.0.0-rc.14"
   },
   "peerDependenciesMeta": {
     "@cordisjs/client": {
@@ -63,12 +63,12 @@
   },
   "devDependencies": {
     "@cordisjs/client": "0.9.0",
-    "@cordisjs/fs": "^2.0.0-rc.0",
-    "@cordisjs/hmr": "^2.0.0-rc.0",
-    "@cordisjs/loader": "^1.0.0-rc.10",
-    "@cordisjs/logger-console": "^1.0.1",
-    "@cordisjs/server": "^1.7.0",
-    "cordis": "^4.0.0-rc.13",
+    "@cordisjs/fs": "^2.0.0-rc.1",
+    "@cordisjs/hmr": "^2.0.0-rc.1",
+    "@cordisjs/loader": "^1.0.0-rc.11",
+    "@cordisjs/logger-console": "^1.0.2",
+    "@cordisjs/server": "^2.0.0-rc.0",
+    "cordis": "^4.0.0-rc.14",
     "vite": "^7.3.2"
   },
   "dependencies": {

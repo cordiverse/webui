@@ -86,7 +86,7 @@ export interface EntryLocation {
 }
 
 @Inject('loader')
-@Inject('timer')
+@Inject('std:timer')
 export abstract class Manager extends Service {
   static name = 'manager'
 
@@ -102,12 +102,12 @@ export abstract class Manager extends Service {
 
   constructor(public ctx: Context) {
     super(ctx, '_manager')
-    let entry: Entry | undefined = this.ctx.fiber.entry
-    while (entry?.parent.tree.ctx.fiber.entry) {
-      entry = entry.parent.tree.ctx.fiber.entry
+    let entry: Entry | undefined = this.ctx[Entry.key]
+    while (entry?.parent.tree.ctx[Entry.key]) {
+      entry = entry.parent.tree.ctx[Entry.key]
     }
     this.rootTree = entry?.subtree ?? this.ctx.loader
-    const rootEntry = this.rootTree.ctx.fiber.entry
+    const rootEntry = this.rootTree.ctx[Entry.key]
     this.rootPrefix = rootEntry ? rootEntry.id + EntryTree.sep : ''
   }
 
@@ -124,7 +124,7 @@ export abstract class Manager extends Service {
       ...entry.options,
       id: this.stripId(entry.id)!,
       config: entry.subgroup?.data === entry.options.config ? undefined : entry.options.config,
-      parent: this.stripId(entry.parent.ctx.fiber.entry?.id),
+      parent: this.stripId(entry.parent.ctx[Entry.key]?.id),
       position: entry.parent.data.indexOf(entry.options),
       isGroup: !!entry.subgroup,
       state: (entry.innerFiber ?? entry.outerFiber)?.state,
@@ -268,8 +268,9 @@ export abstract class Manager extends Service {
 
     // a component replaced in place, e.g. by HMR, may have a new schema
     this.ctx.on('internal/replace', (fiber) => {
-      const name = fiber.entry?.options.name
-      if (!name || fiber.entry!.innerFiber !== fiber) return
+      const entry = fiber.ctx[Entry.key]
+      const name = entry?.options.name
+      if (!name || entry!.innerFiber !== fiber) return
       this.updatePackage(name)
     })
   }

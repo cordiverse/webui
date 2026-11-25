@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { Context } from 'cordis'
-import Database, { Type } from '@cordisjs/plugin-database'
+import Database, { Type } from '@cordisjs/database'
 import { isNullable } from 'cosmokit'
 import { Codec } from '../src/codec.ts'
 
@@ -17,7 +17,7 @@ function transfer(value: any, type: Type) {
 
 beforeAll(async () => {
   const ctx = new Context()
-  await ctx.plugin(Database)
+  await ctx.use(Database)
   db = ctx.model
   db.define('bigint2' as never, {
     type: 'string',

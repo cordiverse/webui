@@ -51,7 +51,7 @@ export const Config: z<Config> = z.object({
   requestLimit: z.natural().default(500).description('The maximum number of requests kept in the history.'),
 })
 
-export const inject = ['server', 'timer', 'webui']
+export const inject = ['std:server', 'std:timer', 'webui']
 
 function routeKey(method: string, path: string | RegExp, interceptPath?: string) {
   const p = typeof path === 'string' ? path : path.toString()
@@ -69,7 +69,7 @@ function resolvePlugin(ctx: Context, route: any): string | undefined {
 }
 
 export function apply(ctx: Context, config: Config) {
-  const server: Server = ctx.server
+  const server: Server = ctx.std.server
   let nextRequestId = 0
 
   // Build the current routes dict keyed by routeKey. Existing stats (per-route
@@ -121,7 +121,7 @@ export function apply(ctx: Context, config: Config) {
     listening: Boolean(server.host && server.port),
     host: server.host ?? '',
     port: server.port ?? 0,
-    baseUrl: server.baseUrl ?? '',
+    baseUrl: server.publicUrl ?? '',
     routes: collectRoutes({}),
     requests: [],
     requestLimit: config.requestLimit,
@@ -145,7 +145,7 @@ export function apply(ctx: Context, config: Config) {
       const listening = Boolean(server.host && server.port)
       const host = server.host ?? ''
       const port = server.port ?? 0
-      const baseUrl = server.baseUrl ?? ''
+      const baseUrl = server.publicUrl ?? ''
       if (d.listening !== listening) d.listening = listening
       if (d.host !== host) d.host = host
       if (d.port !== port) d.port = port

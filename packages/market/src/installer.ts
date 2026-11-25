@@ -1,6 +1,7 @@
 import { Context, Service } from 'cordis'
 import { Dict, Time, valueMap } from 'cosmokit'
 import type {} from '@cordisjs/http'
+import type {} from '@cordisjs/fs'
 import type { PackageJson, Registry, RemotePackage } from './types.ts'
 import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
@@ -91,13 +92,14 @@ class Installer extends Service {
   }
 
   async [Service.init]() {
-    this.manifestPath = fileURLToPath(new URL('package.json', this.ctx.baseUrl))
+    this.manifestPath = fileURLToPath(this.ctx.std.fs.resolve('package.json'))
     this.manifest = await loadManifest(this.manifestPath)
     this.endpoint = this.config.endpoint || 'https://registry.npmjs.org'
   }
 
   get cwd() {
-    return fileURLToPath(this.ctx.baseUrl!)
+    // Node.js has a working directory, so `baseUrl` is set
+    return fileURLToPath(this.ctx.std.fs.baseUrl!)
   }
 
   resolveName(name: string): string[] {
@@ -112,7 +114,7 @@ class Installer extends Service {
 
   async getPackage(name: string): Promise<Dict<RemotePackage> | undefined> {
     try {
-      const registry = await this.ctx.http.get<Registry>(`${this.endpoint}/${name}`, {
+      const registry = await this.ctx.std.http.get<Registry>(`${this.endpoint}/${name}`, {
         timeout: this.config.timeout,
       })
       const filtered = Object.values(registry.versions).filter(remote => !remote.deprecated)
@@ -123,7 +125,7 @@ class Installer extends Service {
   }
 
   private async _getDeps() {
-    const require = createRequire(this.ctx.baseUrl!)
+    const require = createRequire(this.ctx.std.fs.baseUrl!)
     const result = valueMap(this.manifest.dependencies ?? {}, (request): Dependency => ({
       request: request.replace(/^[~^]/, ''),
     }))

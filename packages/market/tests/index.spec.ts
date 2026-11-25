@@ -1,5 +1,7 @@
 import { describe, it, beforeAll, afterAll, expect } from 'vitest'
 import { Context } from 'cordis'
+import Fs from '@cordisjs/fs'
+import NodeFs from '@cordisjs/fs-node'
 import Loader from '@cordisjs/loader'
 import { WebSocket } from 'ws'
 import { pathToFileURL } from 'node:url'
@@ -29,7 +31,8 @@ function waitFor(cond: () => any, timeout = 8000, interval = 100): Promise<void>
 
 async function bootCordis(cwd: string): Promise<Context> {
   const ctx = new Context()
-  ;(ctx as any).baseUrl = pathToFileURL(cwd + '/').href
+  await ctx.use(Fs, { baseUrl: pathToFileURL(cwd + '/').href })
+  await ctx.use(NodeFs)
   await (ctx as any).use(Loader)
   await (ctx as any).loader.create({
     name: '@cordisjs/include',

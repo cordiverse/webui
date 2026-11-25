@@ -33,14 +33,14 @@ export class BrowserLoader extends Loader {
     import: (name: string, _baseUrl: string, _opts: object) => importViaModulePrefix(name),
   }
 
-  override import(name: string, getOuterStack?: () => string[]) {
+  override import(name: string, getStack?: () => string[]) {
     if (name.startsWith('cordis:')) {
       return this.builtins[name.slice(7)]
     }
     return composeError(async (info) => {
       info.offset += 3
       return await importViaModulePrefix(name)
-    }, getOuterStack)
+    }, getStack)
   }
 }
 

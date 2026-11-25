@@ -1,7 +1,7 @@
 {
   "name": "@cordisjs/market",
   "description": "Plugin market for Cordis",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "type": "module",
   "exports": {
     ".": {
@@ -57,11 +57,11 @@
   "peerDependencies": {
     "@cordisjs/fs": "^2.0.0-rc.1",
     "@cordisjs/http": "^2.0.0-rc.0",
-    "@cordisjs/webui": "^0.9.0",
+    "@cordisjs/webui": "^0.10.0",
     "cordis": "^4.0.0-rc.14"
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.9.0",
+    "@cordisjs/client": "^0.10.0",
     "@cordisjs/fs": "^2.0.0-rc.1",
     "@cordisjs/fs-node": "^1.0.0-rc.0",
     "@cordisjs/http": "^2.0.0-rc.0",
@@ -71,7 +71,7 @@
     "@cordisjs/server": "^2.0.0-rc.0",
     "@cordisjs/timer": "^2.0.0-rc.0",
     "@cordisjs/ui-market": "^4.6.1",
-    "@cordisjs/webui": "^0.9.0",
+    "@cordisjs/webui": "^0.10.0",
     "@types/semver": "^7.8.0",
     "@types/ws": "^8.18.2",
     "cordis": "^4.0.0-rc.14",

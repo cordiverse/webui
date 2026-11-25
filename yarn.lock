@@ -88,7 +88,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@cordisjs/client@npm:0.9.0, @cordisjs/client@npm:^0.9.0, @cordisjs/client@workspace:packages/client":
+"@cordisjs/client@npm:0.10.0, @cordisjs/client@npm:^0.10.0, @cordisjs/client@workspace:packages/client":
   version: 0.0.0-use.local
   resolution: "@cordisjs/client@workspace:packages/client"
   dependencies:
@@ -124,15 +124,15 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@cordisjs/database-webui@workspace:packages/database-webui"
   dependencies:
-    "@cordisjs/client": "npm:^0.9.0"
+    "@cordisjs/client": "npm:^0.10.0"
     "@cordisjs/database": "npm:^4.2.0"
-    "@cordisjs/webui": "npm:^0.9.0"
+    "@cordisjs/webui": "npm:^0.10.0"
     cordis: "npm:^4.0.0-rc.14"
     cosmokit: "npm:^1.8.1"
     schemastery: "npm:^3.18.0"
   peerDependencies:
     "@cordisjs/database": ^4.2.0
-    "@cordisjs/webui": ^0.9.0
+    "@cordisjs/webui": ^0.10.0
     cordis: ^4.0.0-rc.14
   languageName: unknown
   linkType: soft
@@ -232,18 +232,18 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@cordisjs/http-webui@workspace:packages/http-webui"
   dependencies:
-    "@cordisjs/client": "npm:^0.9.0"
+    "@cordisjs/client": "npm:^0.10.0"
     "@cordisjs/http": "npm:^2.0.0-rc.0"
     "@cordisjs/server": "npm:^2.0.0-rc.0"
     "@cordisjs/server-proxy": "npm:^2.0.0-rc.0"
-    "@cordisjs/webui": "npm:^0.9.0"
+    "@cordisjs/webui": "npm:^0.10.0"
     cordis: "npm:^4.0.0-rc.14"
     cosmokit: "npm:^1.8.1"
     schemastery: "npm:^3.18.0"
   peerDependencies:
     "@cordisjs/http": ^2.0.0-rc.0
     "@cordisjs/server-proxy": ^2.0.0-rc.0
-    "@cordisjs/webui": ^0.9.0
+    "@cordisjs/webui": ^0.10.0
     cordis: ^4.0.0-rc.14
   languageName: unknown
   linkType: soft
@@ -283,9 +283,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@cordisjs/insight@workspace:packages/insight"
   dependencies:
-    "@cordisjs/client": "npm:^0.9.0"
+    "@cordisjs/client": "npm:^0.10.0"
     "@cordisjs/timer": "npm:^2.0.0-rc.0"
-    "@cordisjs/webui": "npm:^0.9.0"
+    "@cordisjs/webui": "npm:^0.10.0"
     "@types/d3-force": "npm:^3.0.10"
     cordis: "npm:^4.0.0-rc.14"
     cosmokit: "npm:^1.8.1"
@@ -293,20 +293,20 @@ __metadata:
     schemastery: "npm:^3.18.0"
   peerDependencies:
     "@cordisjs/timer": ^2.0.0-rc.0
-    "@cordisjs/webui": ^0.9.0
+    "@cordisjs/webui": ^0.10.0
     cordis: ^4.0.0-rc.14
   languageName: unknown
   linkType: soft
 
-"@cordisjs/loader-webui@npm:^0.11.0, @cordisjs/loader-webui@workspace:packages/loader-webui":
+"@cordisjs/loader-webui@npm:^0.12.0, @cordisjs/loader-webui@workspace:packages/loader-webui":
   version: 0.0.0-use.local
   resolution: "@cordisjs/loader-webui@workspace:packages/loader-webui"
   dependencies:
-    "@cordisjs/client": "npm:^0.9.0"
+    "@cordisjs/client": "npm:^0.10.0"
     "@cordisjs/fs": "npm:^2.0.0-rc.1"
     "@cordisjs/loader": "npm:^1.0.0-rc.11"
     "@cordisjs/timer": "npm:^2.0.0-rc.0"
-    "@cordisjs/webui": "npm:^0.9.0"
+    "@cordisjs/webui": "npm:^0.10.0"
     "@npm/types": "npm:^2.1.0"
     "@types/pnpapi": "npm:^0.0.5"
     cordis: "npm:^4.0.0-rc.14"
@@ -317,7 +317,7 @@ __metadata:
     "@cordisjs/fs": ^2.0.0-rc.1
     "@cordisjs/loader": ^1.0.0-rc.11
     "@cordisjs/timer": ^2.0.0-rc.0
-    "@cordisjs/webui": ^0.9.0
+    "@cordisjs/webui": ^0.10.0
     cordis: ^4.0.0-rc.14
   languageName: unknown
   linkType: soft
@@ -357,12 +357,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@cordisjs/logger-webui@workspace:packages/logger-webui"
   dependencies:
-    "@cordisjs/client": "npm:^0.9.0"
+    "@cordisjs/client": "npm:^0.10.0"
     "@cordisjs/fs": "npm:^2.0.0-rc.1"
-    "@cordisjs/loader-webui": "npm:^0.11.0"
+    "@cordisjs/loader-webui": "npm:^0.12.0"
     "@cordisjs/logger-console": "npm:^1.0.2"
     "@cordisjs/timer": "npm:^2.0.0-rc.0"
-    "@cordisjs/webui": "npm:^0.9.0"
+    "@cordisjs/webui": "npm:^0.10.0"
     ansi_up: "npm:^6.0.6"
     cordis: "npm:^4.0.0-rc.14"
     cosmokit: "npm:^1.8.1"
@@ -370,7 +370,7 @@ __metadata:
   peerDependencies:
     "@cordisjs/fs": ^2.0.0-rc.1
     "@cordisjs/timer": ^2.0.0-rc.0
-    "@cordisjs/webui": ^0.9.0
+    "@cordisjs/webui": ^0.10.0
     cordis: ^4.0.0-rc.14
   languageName: unknown
   linkType: soft
@@ -379,7 +379,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@cordisjs/market@workspace:packages/market"
   dependencies:
-    "@cordisjs/client": "npm:^0.9.0"
+    "@cordisjs/client": "npm:^0.10.0"
     "@cordisjs/fs": "npm:^2.0.0-rc.1"
     "@cordisjs/fs-node": "npm:^1.0.0-rc.0"
     "@cordisjs/http": "npm:^2.0.0-rc.0"
@@ -389,7 +389,7 @@ __metadata:
     "@cordisjs/server": "npm:^2.0.0-rc.0"
     "@cordisjs/timer": "npm:^2.0.0-rc.0"
     "@cordisjs/ui-market": "npm:^4.6.1"
-    "@cordisjs/webui": "npm:^0.9.0"
+    "@cordisjs/webui": "npm:^0.10.0"
     "@types/semver": "npm:^7.8.0"
     "@types/ws": "npm:^8.18.2"
     cordis: "npm:^4.0.0-rc.14"
@@ -401,7 +401,7 @@ __metadata:
   peerDependencies:
     "@cordisjs/fs": ^2.0.0-rc.1
     "@cordisjs/http": ^2.0.0-rc.0
-    "@cordisjs/webui": ^0.9.0
+    "@cordisjs/webui": ^0.10.0
     cordis: ^4.0.0-rc.14
   languageName: unknown
   linkType: soft
@@ -418,15 +418,15 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@cordisjs/notifier@workspace:packages/notifier"
   dependencies:
-    "@cordisjs/client": "npm:^0.9.0"
+    "@cordisjs/client": "npm:^0.10.0"
     "@cordisjs/element": "npm:^0.3.0"
-    "@cordisjs/loader-webui": "npm:^0.11.0"
-    "@cordisjs/webui": "npm:^0.9.0"
+    "@cordisjs/loader-webui": "npm:^0.12.0"
+    "@cordisjs/webui": "npm:^0.10.0"
     cordis: "npm:^4.0.0-rc.14"
     cosmokit: "npm:^1.8.1"
     schemastery: "npm:^3.18.0"
   peerDependencies:
-    "@cordisjs/webui": ^0.9.0
+    "@cordisjs/webui": ^0.10.0
     cordis: ^4.0.0-rc.14
   languageName: unknown
   linkType: soft
@@ -435,7 +435,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@cordisjs/online@workspace:packages/online"
   dependencies:
-    "@cordisjs/client": "npm:0.9.0"
+    "@cordisjs/client": "npm:0.10.0"
     "@cordisjs/fs": "npm:^1.3.7"
     "@cordisjs/include": "npm:^2.0.0-rc.1"
     "@cordisjs/loader": "npm:^1.0.0-rc.11"
@@ -444,7 +444,7 @@ __metadata:
     "@cordisjs/path": "npm:^1.0.0"
     "@cordisjs/ui-components": "npm:0.4.0"
     "@cordisjs/url": "npm:^1.0.3"
-    "@cordisjs/webui": "npm:0.9.0"
+    "@cordisjs/webui": "npm:0.10.0"
     "@types/js-yaml": "npm:^4.0.9"
     "@vitejs/plugin-vue": "npm:^6.0.6"
     "@vueuse/core": "npm:^14.3.0"
@@ -459,10 +459,10 @@ __metadata:
     vite: "npm:^7.3.2"
     vue: "npm:^3.5.33"
   peerDependencies:
-    "@cordisjs/client": 0.9.0
+    "@cordisjs/client": 0.10.0
     "@cordisjs/include": ^2.0.0-rc.1
     "@cordisjs/loader": ^1.0.0-rc.11
-    "@cordisjs/webui": 0.9.0
+    "@cordisjs/webui": 0.10.0
     cordis: ^4.0.0-rc.14
   languageName: unknown
   linkType: soft
@@ -520,16 +520,16 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@cordisjs/server-webui@workspace:packages/server-webui"
   dependencies:
-    "@cordisjs/client": "npm:^0.9.0"
+    "@cordisjs/client": "npm:^0.10.0"
     "@cordisjs/logger-console": "npm:^1.0.2"
     "@cordisjs/server": "npm:^2.0.0-rc.0"
-    "@cordisjs/webui": "npm:^0.9.0"
+    "@cordisjs/webui": "npm:^0.10.0"
     cordis: "npm:^4.0.0-rc.14"
     cosmokit: "npm:^1.8.1"
     schemastery: "npm:^3.18.0"
   peerDependencies:
     "@cordisjs/server": ^2.0.0-rc.0
-    "@cordisjs/webui": ^0.9.0
+    "@cordisjs/webui": ^0.10.0
     cordis: ^4.0.0-rc.14
   languageName: unknown
   linkType: soft
@@ -609,11 +609,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@cordisjs/webui@npm:0.9.0, @cordisjs/webui@npm:^0.9.0, @cordisjs/webui@workspace:packages/webui":
+"@cordisjs/webui@npm:0.10.0, @cordisjs/webui@npm:^0.10.0, @cordisjs/webui@workspace:packages/webui":
   version: 0.0.0-use.local
   resolution: "@cordisjs/webui@workspace:packages/webui"
   dependencies:
-    "@cordisjs/client": "npm:0.9.0"
+    "@cordisjs/client": "npm:0.10.0"
     "@cordisjs/fetch-file": "npm:^1.0.3"
     "@cordisjs/fs": "npm:^2.0.0-rc.1"
     "@cordisjs/hmr": "npm:^2.0.0-rc.1"
@@ -629,7 +629,7 @@ __metadata:
     schemastery: "npm:^3.18.0"
     vite: "npm:^7.3.2"
   peerDependencies:
-    "@cordisjs/client": 0.9.0
+    "@cordisjs/client": 0.10.0
     cordis: ^4.0.0-rc.14
   peerDependenciesMeta:
     "@cordisjs/client":

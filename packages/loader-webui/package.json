@@ -1,7 +1,7 @@
 {
   "name": "@cordisjs/loader-webui",
   "description": "Manage your bots and plugins with console",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "type": "module",
   "exports": {
     ".": {
@@ -59,15 +59,15 @@
     "@cordisjs/fs": "^2.0.0-rc.1",
     "@cordisjs/loader": "^1.0.0-rc.11",
     "@cordisjs/timer": "^2.0.0-rc.0",
-    "@cordisjs/webui": "^0.9.0",
+    "@cordisjs/webui": "^0.10.0",
     "cordis": "^4.0.0-rc.14"
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.9.0",
+    "@cordisjs/client": "^0.10.0",
     "@cordisjs/fs": "^2.0.0-rc.1",
     "@cordisjs/loader": "^1.0.0-rc.11",
     "@cordisjs/timer": "^2.0.0-rc.0",
-    "@cordisjs/webui": "^0.9.0",
+    "@cordisjs/webui": "^0.10.0",
     "@types/pnpapi": "^0.0.5",
     "cordis": "^4.0.0-rc.14"
   },

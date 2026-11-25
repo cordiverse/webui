@@ -1,7 +1,7 @@
 {
   "name": "@cordisjs/insight",
   "description": "Show plugin dependency graph for Cordis",
-  "version": "4.6.0",
+  "version": "4.7.0",
   "type": "module",
   "main": "lib/index.js",
   "files": [
@@ -44,13 +44,13 @@
   },
   "peerDependencies": {
     "@cordisjs/timer": "^2.0.0-rc.0",
-    "@cordisjs/webui": "^0.9.0",
+    "@cordisjs/webui": "^0.10.0",
     "cordis": "^4.0.0-rc.14"
   },
   "devDependencies": {
-    "@cordisjs/client": "^0.9.0",
+    "@cordisjs/client": "^0.10.0",
     "@cordisjs/timer": "^2.0.0-rc.0",
-    "@cordisjs/webui": "^0.9.0",
+    "@cordisjs/webui": "^0.10.0",
     "@types/d3-force": "^3.0.10",
     "cordis": "^4.0.0-rc.14",
     "d3-force": "^3.0.1"

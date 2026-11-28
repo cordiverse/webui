@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2024",
+    "lib": ["esnext", "dom", "dom.iterable", "dom.asynciterable"],
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "declaration": true,

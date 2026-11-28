@@ -1,6 +1,7 @@
 import { Context, Fiber, Service } from 'cordis'
 import { defineProperty, Dict } from 'cosmokit'
-import type { HostSync } from '@cordisjs/webui/shared'
+import type { HostSync, RpcStep } from '@cordisjs/webui/shared'
+import { kChain } from './rpc'
 
 declare module 'cordis' {
   interface Context {
@@ -8,15 +9,30 @@ declare module 'cordis' {
   }
 }
 
-function createStub(ctx: Context, name: string) {
-  const methods: Dict<(...args: any[]) => Promise<any>> = Object.create(null)
-  const isMethod = (prop: string | symbol): prop is string => {
-    return typeof prop === 'string' && prop !== 'then' && !prop.startsWith('__') && !(prop in Object.prototype)
-  }
-  return new Proxy(Object.create(null), {
+const isProbe = (prop: string | symbol): prop is symbol => {
+  return typeof prop === 'symbol' || prop.startsWith('__') || prop in Object.prototype
+}
+
+// An expression is sent once it is awaited, and evaluated on the host.
+function createChain(ctx: Context, name: string, chain: RpcStep[]): any {
+  let result: Promise<any> | undefined
+  // a function expression rather than an arrow function, so that it can be constructed
+  return new Proxy(function () {}, {
     get(target, prop) {
-      if (!isMethod(prop)) return Reflect.get(target, prop)
-      return methods[prop] ??= (...args: any[]) => ctx.client.rpc.invoke(name, prop, args)
+      if (prop === kChain) return true
+      if (isProbe(prop)) return Reflect.get(target, prop)
+      if (prop === 'then' || prop === 'catch' || prop === 'finally') {
+        // the service itself is not a thenable
+        if (!chain.length) return
+        return (...args: any[]) => (result ??= ctx.client.rpc.invoke(name, chain))[prop as 'then'](...args)
+      }
+      return createChain(ctx, name, [...chain, prop])
+    },
+    apply(target, thisArg, args) {
+      return createChain(ctx, name, [...chain, args])
+    },
+    construct(target, args) {
+      return createChain(ctx, name, [...chain, { new: args }])
     },
   })
 }
@@ -55,7 +71,7 @@ export default class HostService {
     const fiber = this._fibers[name]
     const expected = this._services.has(name)
     if (expected && !fiber) {
-      const stub = createStub(this.ctx, name)
+      const stub = createChain(this.ctx, name, [])
       this._fibers[name] = this.ctx.use({
         name: `host:${name}`,
         apply: (ctx: Context) => {

@@ -25,6 +25,27 @@ class Counter extends Service {
   async fail() {
     throw Object.assign(new Error('denied'), { code: 'PermissionDenied' })
   }
+
+  Scale = class {
+    constructor(public factor: number) {}
+
+    apply(value: number) {
+      return value * this.factor
+    }
+  }
+
+  async* count(limit: number) {
+    for (let i = 0; i < limit; i++) yield i
+  }
+
+  async scale(factor: number) {
+    return {
+      factor,
+      apply(value: number) {
+        return value * this.factor
+      },
+    }
+  }
 }
 
 declare module 'cordis' {
@@ -102,6 +123,39 @@ describe('host services', () => {
     expect(await harness.ctx.host.later.ping()).toBe('pong')
   })
 
+  it('evaluates a chain of calls and reads on the host', async () => {
+    await useCounter()
+    const { counter } = harness.ctx.host
+    expect(await counter.scale(3).apply(2)).toBe(6)
+    expect(await counter.scale(3).factor).toBe(3)
+    expect(await new counter.Scale(3).apply(2)).toBe(6)
+    await counter.add(4)
+    expect(await counter.value).toBe(4)
+  })
+
+  it('resolves an async iterable to the array of its items', async () => {
+    await useCounter()
+    expect(await harness.ctx.host.counter.count(3)).toEqual([0, 1, 2])
+  })
+
+  it('sends an expression once however often it is awaited', async () => {
+    await useCounter()
+    const result = harness.ctx.host.counter.add(1)
+    expect(await result).toBe(1)
+    expect(await result).toBe(1)
+    expect(await result.then(value => value + 1)).toBe(2)
+    expect(await harness.ctx.host.counter.value).toBe(1)
+  })
+
+  it('rejects a function or an expression as an argument without sending it', async () => {
+    await useCounter()
+    const { counter } = harness.ctx.host
+    await expect(counter.add(counter.value as any)).rejects.toThrow(/await it first/)
+    await expect(counter.add({ delta: counter.value } as any)).rejects.toThrow(/await it first/)
+    await expect(counter.add((() => 1) as any)).rejects.toThrow(/cannot send a function/)
+    expect(await counter.add(await counter.value)).toBe(0)
+  })
+
   it('rejects with the code of the error', async () => {
     await useCounter()
     await expect(harness.ctx.host.counter.fail()).rejects.toMatchObject({
@@ -113,10 +167,12 @@ describe('host services', () => {
   it('rejects a missing service or method', async () => {
     await useCounter()
     const { rpc } = harness.ctx.client
-    await expect(rpc.invoke('absent', 'add', [])).rejects.toMatchObject({ code: 'service-unavailable' })
-    await expect(rpc.invoke('counter', 'absent', [])).rejects.toMatchObject({ code: 'method-unavailable' })
-    await expect(rpc.invoke('counter', 'constructor', [])).rejects.toMatchObject({ code: 'method-unavailable' })
-    await expect(rpc.invoke('counter', 'value', [])).rejects.toMatchObject({ code: 'method-unavailable' })
+    await expect(rpc.invoke('absent', ['add', []])).rejects.toMatchObject({ code: 'service-unavailable' })
+    await expect(rpc.invoke('counter', ['absent', []])).rejects.toMatchObject({ code: 'method-unavailable' })
+    await expect(rpc.invoke('counter', ['value', []])).rejects.toMatchObject({ code: 'method-unavailable' })
+    await expect(rpc.invoke('counter', ['constructor'])).rejects.toMatchObject({ code: 'member-unavailable' })
+    await expect(rpc.invoke('counter', ['absent', 'value'])).rejects.toMatchObject({ code: 'member-unavailable' })
+    await expect(rpc.invoke('counter', ['value', { new: [] }])).rejects.toMatchObject({ code: 'method-unavailable' })
   })
 
   it('is not taken as a thenable', async () => {

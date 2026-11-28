@@ -1,7 +1,21 @@
 import { Context, Service } from 'cordis'
 import { defineProperty } from 'cosmokit'
 import { watch } from 'vue'
-import type { RpcRequest, RpcResponse } from '@cordisjs/webui/shared'
+import type { RpcRequest, RpcResponse, RpcStep } from '@cordisjs/webui/shared'
+
+/** the marker of an expression on a service of the host */
+export const kChain = Symbol('cordis.client.chain')
+
+// A function, or an expression that has not been awaited, cannot be sent.
+function checkArgument(key: string, value: any) {
+  if (value?.[kChain]) {
+    throw new TypeError('cannot send an expression on a host service, await it first')
+  }
+  if (typeof value === 'function') {
+    throw new TypeError('cannot send a function')
+  }
+  return value
+}
 
 interface Pending {
   resolve: (value: any) => void
@@ -46,21 +60,24 @@ export default class RpcService {
     return this.request({ entryId, method, args })
   }
 
-  /** Call a method of a service of the host. */
-  invoke(service: string, method: string, args: any[]): Promise<any> {
-    return this.request({ service, method, args })
+  /** Evaluate an expression on a service of the host. */
+  invoke(service: string, chain: RpcStep[]): Promise<any> {
+    return this.request({ service, chain })
   }
 
-  request(target: Omit<RpcRequest, 'sn'>): Promise<any> {
+  request(target: RpcRequest extends infer R ? R extends any ? Omit<R, 'sn'> : never : never): Promise<any> {
     const socket = this.ctx.client.socket.value
     if (!socket) return Promise.reject(new Error('socket not connected'))
     const sn = ++this._sn
+    let payload: string
+    try {
+      payload = JSON.stringify({ type: 'rpc:request', body: { sn, ...target } }, checkArgument)
+    } catch (error) {
+      return Promise.reject(error)
+    }
     return new Promise((resolve, reject) => {
       this._pending.set(sn, { resolve, reject })
-      socket.send(JSON.stringify({
-        type: 'rpc:request',
-        body: { sn, ...target },
-      }))
+      socket.send(payload)
     })
   }
 }

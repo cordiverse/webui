@@ -22,15 +22,26 @@ export interface EntryDelta extends Delta {
   id: string
 }
 
-/** A call of a method of an entry, by `entryId`, or of a service, by `service`. */
-export interface RpcRequest {
+/**
+ * A step of an expression on a service: a string reads the property of that
+ * name, an array calls the current value with these arguments, and `{ new }`
+ * constructs the current value with these arguments.
+ */
+export type RpcStep = string | any[] | { new: any[] }
+
+/**
+ * A call of a method of an entry, by `entryId`, `method` and `args`, or the
+ * evaluation of an expression on a service, by `service` and `chain`. The
+ * result of an expression whose value is an async iterable is the array of
+ * its items.
+ */
+export type RpcRequest = {
   /** unique within a connection, and echoed by the response */
   sn: number
-  entryId?: string
-  service?: string
-  method: string
-  args: any[]
-}
+} & (
+  | { entryId: string; method: string; args: any[] }
+  | { service: string; chain: RpcStep[] }
+)
 
 /** The result of a call. A call has at most one result, and none if the connection closes first. */
 export type RpcResponse =

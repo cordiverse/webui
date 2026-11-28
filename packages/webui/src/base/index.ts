@@ -4,7 +4,7 @@ import { pathToRegexp } from 'path-to-regexp'
 import { Client } from './client.ts'
 import { Entry } from './entry.ts'
 import { WebSocket } from './types.ts'
-import type { HostSync, RpcRequest } from '../../shared/index.d.ts'
+import type { HostSync, RpcRequest, RpcStep } from '../../shared/index.d.ts'
 
 export * from './client.ts'
 export * from './entry.ts'
@@ -19,6 +19,41 @@ export class RpcError extends Error {
 
 function isObject(value: unknown): value is object {
   return typeof value === 'function' || typeof value === 'object' && value !== null
+}
+
+// Evaluate the steps of an expression in order, awaiting the value of each
+// step. A call receives the value of the preceding read as `this`.
+async function evaluate(value: any, chain: RpcStep[]) {
+  let thisArg: any
+  for (const step of chain) {
+    if (Array.isArray(step)) {
+      if (typeof value !== 'function') {
+        throw new RpcError('method-unavailable', 'the value is not a function')
+      }
+      value = await Reflect.apply(value, thisArg, step)
+      thisArg = undefined
+    } else if (typeof step === 'object' && step !== null) {
+      if (typeof value !== 'function' || !Array.isArray(step.new)) {
+        throw new RpcError('method-unavailable', 'the value is not a constructor')
+      }
+      value = await Reflect.construct(value, step.new)
+      thisArg = undefined
+    } else {
+      // a member of `Object.prototype`, such as `constructor`, is not read
+      if (typeof step !== 'string' || step in Object.prototype) {
+        throw new RpcError('member-unavailable', `cannot read "${step}"`)
+      }
+      if (value === null || value === undefined) {
+        throw new RpcError('member-unavailable', `cannot read "${step}" of ${value}`)
+      }
+      thisArg = value
+      value = await value[step]
+    }
+  }
+  if (typeof value?.[Symbol.asyncIterator] === 'function') {
+    return Array.fromAsync(value)
+  }
+  return value
 }
 
 declare module 'cordis' {
@@ -97,20 +132,16 @@ export abstract class WebUI extends Service {
   }
 
   async invoke(body: RpcRequest) {
-    const { entryId, service, method } = body
-    const args = Array.isArray(body.args) ? body.args : []
-    if (typeof service === 'string') {
+    if ('service' in body) {
+      const { service, chain } = body
       const target = this.isHostService(service) ? this.ctx.reflect.get(service) : undefined
       if (!isObject(target)) {
         throw new RpcError('service-unavailable', `service "${service}" is unavailable`)
       }
-      // a member of `Object.prototype`, such as `constructor`, is not a method of the service
-      const fn = typeof method === 'string' && !(method in Object.prototype) ? (target as any)[method] : undefined
-      if (typeof fn !== 'function') {
-        throw new RpcError('method-unavailable', `service "${service}" has no method "${method}"`)
-      }
-      return await Reflect.apply(fn, target, args)
+      return await evaluate(target, Array.isArray(chain) ? chain : [])
     }
+    const { entryId, method } = body
+    const args = Array.isArray(body.args) ? body.args : []
     const entry = typeof entryId === 'string' ? this.entries[entryId] : undefined
     const fn = entry?.data?.[method]
     if (typeof fn !== 'function') {

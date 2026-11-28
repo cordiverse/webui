@@ -10,6 +10,7 @@ import RouterService from './plugins/router'
 import SettingService from './plugins/setting'
 import ThemeService from './plugins/theme'
 import RpcService from './plugins/rpc'
+import HostService from './plugins/host'
 import { kContext } from './context'
 import type { LoadState } from './plugins/loader'
 import type { WebSocket as AbstractWebSocket } from '@cordisjs/webui'
@@ -30,6 +31,7 @@ export class ClientService extends Service {
   public setting: SettingService
   public theme: ThemeService
   public rpc: RpcService
+  public host: HostService
 
   public socket: Ref<AbstractWebSocket | undefined> = ref()
 
@@ -58,6 +60,7 @@ export class ClientService extends Service {
     this.setting = new SettingService(ctx)
     this.theme = new ThemeService(ctx)
     this.rpc = new RpcService(ctx)
+    this.host = new HostService(ctx)
 
     // Vue reactivity tracking for services
     const store = this._store
@@ -124,7 +127,9 @@ export class ClientService extends Service {
 }
 
 export * from './plugins/action'
+export * from './plugins/host'
 export * from './plugins/loader'
+export { RpcError } from './plugins/rpc'
 export * from './plugins/router'
 export * from './plugins/setting'
 export * from './plugins/theme'

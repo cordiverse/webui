@@ -1,11 +1,18 @@
 import { Context, Service } from 'cordis'
 import { defineProperty } from 'cosmokit'
 import { watch } from 'vue'
-import type { RpcResponse } from '@cordisjs/webui'
+import type { RpcRequest, RpcResponse } from '@cordisjs/webui/shared'
 
 interface Pending {
   resolve: (value: any) => void
   reject: (error: Error) => void
+}
+
+/** A failure of a call, with the `code` that the host reports, if any. */
+export class RpcError extends Error {
+  constructor(message: string, public code?: string) {
+    super(message)
+  }
 }
 
 export default class RpcService {
@@ -22,7 +29,7 @@ export default class RpcService {
       if (!pending) return
       this._pending.delete(body.sn)
       if (body.ok) pending.resolve(body.value)
-      else pending.reject(new Error(body.message))
+      else pending.reject(new RpcError(body.message, body.code))
     })
 
     // Reject all pending RPCs when the socket goes away (reconnect, manual close, etc.)
@@ -34,7 +41,17 @@ export default class RpcService {
     }))
   }
 
+  /** Call a method of the data of an entry. */
   call(entryId: string, method: string, args: any[]): Promise<any> {
+    return this.request({ entryId, method, args })
+  }
+
+  /** Call a method of a service of the host. */
+  invoke(service: string, method: string, args: any[]): Promise<any> {
+    return this.request({ service, method, args })
+  }
+
+  request(target: Omit<RpcRequest, 'sn'>): Promise<any> {
     const socket = this.ctx.client.socket.value
     if (!socket) return Promise.reject(new Error('socket not connected'))
     const sn = ++this._sn
@@ -42,7 +59,7 @@ export default class RpcService {
       this._pending.set(sn, { resolve, reject })
       socket.send(JSON.stringify({
         type: 'rpc:request',
-        body: { sn, entryId, method, args },
+        body: { sn, ...target },
       }))
     })
   }

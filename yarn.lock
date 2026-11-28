@@ -235,14 +235,14 @@ __metadata:
     "@cordisjs/client": "npm:^0.10.0"
     "@cordisjs/http": "npm:^2.0.0-rc.0"
     "@cordisjs/server": "npm:^2.0.0-rc.0"
-    "@cordisjs/server-proxy": "npm:^2.0.0-rc.0"
+    "@cordisjs/server-proxy": "npm:^2.0.0-rc.1"
     "@cordisjs/webui": "npm:^0.10.0"
     cordis: "npm:^4.0.0-rc.14"
     cosmokit: "npm:^1.8.1"
     schemastery: "npm:^3.18.0"
   peerDependencies:
     "@cordisjs/http": ^2.0.0-rc.0
-    "@cordisjs/server-proxy": ^2.0.0-rc.0
+    "@cordisjs/server": ^2.0.0-rc.0
     "@cordisjs/webui": ^0.10.0
     cordis: ^4.0.0-rc.14
   languageName: unknown
@@ -503,16 +503,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@cordisjs/server-proxy@npm:^2.0.0-rc.0":
-  version: 2.0.0-rc.0
-  resolution: "@cordisjs/server-proxy@npm:2.0.0-rc.0"
+"@cordisjs/server-proxy@npm:^2.0.0-rc.1":
+  version: 2.0.0-rc.1
+  resolution: "@cordisjs/server-proxy@npm:2.0.0-rc.1"
   dependencies:
     schemastery: "npm:^3.18.0"
   peerDependencies:
     "@cordisjs/http": ^2.0.0-rc.0
     "@cordisjs/server": ^2.0.0-rc.0
     cordis: ^4.0.0-rc.14
-  checksum: 10c0/20af1901c4209267967200cbea8a0d625d5c74643bcb9eec46bd08392e0824bd2aa3040afb6b053f9a4487212639544cf12cf2b18f5c58cacbd131e3497a1f46
+  checksum: 10c0/54ff08644919dee4fdf6f348e2b386485bfd9ae664a42bde34fbe17ce29f729d0011de06b7b3e79b65aef057b58123ace5a9a226104c03940d7187ddae35f3c3
   languageName: node
   linkType: hard
 
@@ -1760,7 +1760,6 @@ __metadata:
     "@cordisjs/logger-console": "npm:^1.0.2"
     "@cordisjs/oxlint-config": "npm:^1.0.0"
     "@cordisjs/server": "npm:^2.0.0-rc.0"
-    "@cordisjs/server-proxy": "npm:^2.0.0-rc.0"
     "@cordisjs/timer": "npm:^2.0.0-rc.0"
     "@cordisjs/unyaml": "npm:^3.0.0"
     "@types/node": "npm:^25.3.5"

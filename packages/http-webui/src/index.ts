@@ -2,7 +2,8 @@ import { Context } from 'cordis'
 import { Dict } from 'cosmokit'
 import type { Http } from '@cordisjs/http'
 import type {} from '@cordisjs/webui'
-import type {} from '@cordisjs/server-proxy'
+import type {} from '@cordisjs/server'
+import * as ServerProxy from '@cordisjs/server-proxy'
 import type { WebSocket as UndiciWebSocket } from 'undici'
 import z from 'schemastery'
 
@@ -41,7 +42,9 @@ export const Config: z<Config> = z.object({
   historyLimit: z.natural().default(500).description('The maximum number of requests kept in the history.'),
 })
 
-export const inject = ['std:http', 'webui', 'std:server:proxy']
+export const inject = ['std:http', 'std:server', 'webui']
+
+const UPSTREAM_HEADERS = ['authorization', 'cookie']
 
 function headersToDict(headers: HeadersInit | Dict<string> | undefined): Dict<string> {
   const result: Dict<string> = {}
@@ -78,8 +81,16 @@ function sizeOfRecv(data: any): number {
   return 0
 }
 
-export function apply(ctx: Context, config: Config) {
+export async function apply(ctx: Context, config: Config) {
   let nextId = 0
+
+  // the proxy through which the client sends the requests it composes, to the URL in the path
+  const proxy = ctx.intercept('std:server', { path: '/http-webui/proxy' })
+  await proxy.use(ServerProxy, {
+    target: '',
+    isolateOrigin: true,
+    requestHeaders: Object.fromEntries(UPSTREAM_HEADERS.map(name => [name, 'upstream-' + name])),
+  })
 
   const entry = ctx.webui.addEntry<Data>({
     baseUrl: import.meta.url,
@@ -89,7 +100,7 @@ export function apply(ctx: Context, config: Config) {
   }, {
     history: [],
     limit: config.historyLimit,
-    proxyBaseUrl: ctx.get('std:server:proxy')!.publicUrl,
+    proxyBaseUrl: proxy.std.server.publicUrl,
     async clear() {
       entry.mutate((d) => {
         d.history.length = 0

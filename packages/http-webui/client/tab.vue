@@ -64,6 +64,7 @@ import Response, { type ResponseData } from './response.vue'
 import WsPanel from './ws-panel.vue'
 import { createSseParser, encodeEvent } from './sse'
 import type { Data } from '../src'
+import { proxyHeaderName } from './headers'
 import type { BodyType, TabState } from './types'
 
 const rpcData = useRpc<Data>()
@@ -173,7 +174,7 @@ function buildTarget(): URL {
 function buildHeaders(): Headers {
   const h = new Headers()
   for (const row of props.state.headers) {
-    if (row.enabled && row.key) h.append(row.key, row.value)
+    if (row.enabled && row.key) h.append(proxyHeaderName(row.key), row.value)
   }
   const autoCT = contentTypeFor(props.state.bodyType)
   if (autoCT && !h.has('content-type')) {

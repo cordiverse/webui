@@ -13,7 +13,7 @@
   "license": "MIT",
   "scripts": {
     "lint": "oxlint",
-    "yakumo": "node --expose-internals --import tsx --import @cordisjs/unyaml node_modules/yakumo/lib/cli.js",
+    "yakumo": "node --expose-internals --import tsx node_modules/yakumo/lib/cli.js",
     "postinstall": "yarn yakumo postinstall",
     "build": "yarn yakumo build",
     "dev": "yarn workspace @cordisjs/online dev",
@@ -32,7 +32,6 @@
     "@cordisjs/logger-console": "^1.0.2",
     "@cordisjs/oxlint-config": "^1.0.0",
     "@cordisjs/server": "^2.0.0-rc.0",
-    "@cordisjs/server-proxy": "^2.0.0-rc.0",
     "@cordisjs/timer": "^2.0.0-rc.0",
     "@cordisjs/unyaml": "^3.0.0",
     "@types/node": "^25.3.5",
